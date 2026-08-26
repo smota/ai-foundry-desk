@@ -30,6 +30,6 @@ try {
     Set-Content -LiteralPath (Join-Path $OutputDirectory "afd-bootstrap-windows.ps1.sha256") -Value "$bootstrapHash  afd-bootstrap-windows.ps1" -Encoding ascii
     $posixHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $OutputDirectory "afd-bootstrap-posix.sh")).Hash.ToLowerInvariant()
     Set-Content -LiteralPath (Join-Path $OutputDirectory "afd-bootstrap-posix.sh.sha256") -Value "$posixHash  afd-bootstrap-posix.sh" -Encoding ascii
-    Set-Content -LiteralPath (Join-Path $OutputDirectory "RELEASE-NOTES.md") -Value "# AI Foundry Desk v$version`r`n`r`nVerified Windows x64 bootstrap release. Installing the CLI does not apply Layer 1 or Layer 2.`r`n" -Encoding utf8
+    Set-Content -LiteralPath (Join-Path $OutputDirectory "RELEASE-NOTES.md") -Value "# AI Foundry Desk v$version`r`n`r`nWindows x64 includes the full PowerShell bootstrap and Layer 1 doctor/fix. The separate POSIX bootstrap is validated for the portable CLI cycle on Ubuntu 26.04.1 LTS under WSL2 x86_64; native Linux Layers remain unavailable. macOS detection is experimental and unvalidated. Installing the CLI never applies Layer 1 or Layer 2.`r`n" -Encoding utf8
     Write-Host "Release assets created in $OutputDirectory"
 } finally { Pop-Location }
