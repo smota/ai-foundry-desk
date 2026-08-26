@@ -21,7 +21,24 @@ Windows x64 is the only validated platform today. The project is licensed under 
 Canonical configuration lives under `%USERPROFILE%\.afd`; operational state lives under
 `%LOCALAPPDATA%\AI Foundry Desk`. Neither is published.
 
-## Safe local start
+## Recommended remote install
+
+The versioned GitHub Release bootstrap installs only `afd`; it does **not** apply either layer.
+This command downloads the bootstrap and its checksum, verifies SHA-256 locally, and only then runs it:
+
+```powershell
+$v='0.1.1'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap.ps1" -OutFile "$d/afd-bootstrap.ps1"; Invoke-WebRequest "$u/afd-bootstrap.ps1.sha256" -OutFile "$d/afd-bootstrap.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap.ps1" -Version $v
+```
+
+The bootstrap requires Node.js 24+ and pnpm. After installation, open a new terminal and preview:
+
+```powershell
+afd init --dry-run
+afd layer1 --dry-run
+afd layer2 --dry-run
+```
+
+## Local development install
 
 From a clone, install the CLI from an audited local package in one command:
 
@@ -49,12 +66,6 @@ afd layer2 --apply
 
 Layer 2 preserves functional installations and does not authenticate agents. `afd sync --dry-run`
 previews shared skill/profile reconciliation; `afd sync` is always explicit.
-
-## Future public one-line install
-
-The intended release flow is a pinned GitHub release or npm package followed by `afd init --dry-run`.
-No remote pipe command is published yet: registry ownership, signed release automation, checksums,
-SBOM and provenance must be established first. The local command above is the supported audited path.
 
 ## Safety boundaries
 
