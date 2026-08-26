@@ -180,6 +180,8 @@ $wingetLinks = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links"
 $miseShims = Join-Path $env:LOCALAPPDATA "mise\shims"
 $pnpmHome = Join-Path $env:LOCALAPPDATA "pnpm"
 $pnpmBin = Join-Path $pnpmHome "bin"
+$uvExe = Get-ChildItem (Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Packages") -Filter "uv.exe" -File -Recurse -ErrorAction SilentlyContinue |
+    Where-Object FullName -Match '(?i)astral-sh\.uv' | Select-Object -First 1
 $documentsDir = [Environment]::GetFolderPath("MyDocuments")
 $profilePaths = @(
     (Join-Path $documentsDir "PowerShell\Microsoft.PowerShell_profile.ps1"),
@@ -187,6 +189,7 @@ $profilePaths = @(
 )
 Add-UserPathEntry -PathEntry $wingetLinks
 Add-UserPathEntry -PathEntry $miseShims
+if ($uvExe) { Add-UserPathEntry -PathEntry (Split-Path -Parent $uvExe.FullName) }
 Set-UserEnvironmentVariableIfNeeded -Name "UV_NO_MANAGED_PYTHON" -Value "1"
 Set-UserEnvironmentVariableIfNeeded -Name "UV_PYTHON_DOWNLOADS" -Value "0"
 Set-UserEnvironmentVariableIfNeeded -Name "PNPM_HOME" -Value $pnpmHome

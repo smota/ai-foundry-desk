@@ -44,3 +44,10 @@ Antes de aplicar qualquer reconciliação, use `afd layer1 --dry-run`, `afd laye
 Consulte [ROADMAP.md](ROADMAP.md). Comece por uma tarefa isolada, com inventário e dry-run.
 Organização, registry, canal de segurança e SLA dependem do mantenedor. Nome e licença MIT já estão
 decididos.
+
+## Nota da validação de migração
+
+O tarball 0.1.0 e `afd` foram validados em PowerShell 5.1/7 e cmd. No host de migração, `afd verify`
+detectou que o pacote uv estava instalado, mas seu diretório físico não constava no PATH persistente.
+O instalador foi corrigido para reconciliar esse caminho em futura execução; a máquina não foi
+alterada nesta migração. Revise `afd layer1 --dry-run` antes de optar por `--apply`.
