@@ -3,7 +3,8 @@
 ## Ready
 
 - One product with `afd`, Layer 1, Layer 2, toolbox, Agent Manager, dry-run, verification, and backups.
-- Windows x64 validated; MIT license; GitHub repository and release artifact allowlist.
+- Windows x64 is the only implemented, tested, and validated platform; MIT license; GitHub
+  repository and release artifact allowlist.
 
 ## Next cycle
 
@@ -19,10 +20,19 @@
 - CI, SBOM, provenance, checksum signing, and artifact signing.
 - Registry/organization governance; npm publication is not planned for the current channel.
 
+## Platform expansion — contributions welcome
+
+- Implement, test, document, and validate macOS adapters while preserving the shared core.
+- Implement, test, document, and validate Linux adapters while preserving the shared core.
+- Define WSL behavior separately from native Windows and Linux after its boundaries are tested.
+- Add platform and architecture CI matrices only when representative environments are available.
+
+These are roadmap goals, not current compatibility claims. New platform behavior belongs behind
+explicit adapters; AI Foundry Desk remains one product with one portable core.
+
 ## Later
 
 - OpenTUI interface over existing CLI contracts.
-- Layer 1 for macOS, Linux, and WSL.
 - Windows ARM64 and native CI matrices.
 
 ## Deliberately out of scope

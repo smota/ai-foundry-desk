@@ -7,7 +7,13 @@ It is a local workbench—not a SaaS platform, team orchestrator or credential m
 combines a conservative Windows foundation, an idempotent agent bootstrap and a portable
 Node/TypeScript control plane for shared skills and small profiles.
 
-Windows x64 is the only validated platform today. The project is licensed under MIT.
+Windows x64 is the only platform implemented, tested, and validated today. macOS and Linux are
+product direction and roadmap items, not currently supported platforms. The project is licensed
+under MIT.
+
+Contributions that implement, test, and validate macOS or Linux adapters are warmly welcomed.
+The product will keep one portable core and place operating-system behavior behind explicit,
+reviewable adapters; see [Contributing](CONTRIBUTING.md) and the [Roadmap](docs/ROADMAP.md).
 
 ## What is included
 
