@@ -1,10 +1,8 @@
-# Layer 2 — sincronização de skills e perfis
+# Layer 2 skills and profiles
 
-O Agent Manager mantém uma base canônica por usuário em `~/.ai-workstation` e sincroniza somente no
-sentido catálogo → agentes. Não usa rede, não executa `npx skills`, não toca em login, tokens,
-histórico, memória ou plugins.
-
-## Comandos
+The Agent Manager maintains an approved per-user catalog at `~/.afd` and synchronizes
+only from catalog to agents. It does not use the network, run `npx skills`, or access authentication,
+history, memory, or plugins.
 
 ```powershell
 afd status
@@ -12,36 +10,18 @@ afd review
 afd sync --dry-run
 afd sync
 afd verify
-afd adopt claude-code minha-skill --dry-run
+afd adopt claude-code my-skill --dry-run
 ```
 
-`adopt`/`import` copia uma skill direta para `catalog/pending/<agent>/`; pending nunca é promovido ou
-sincronizado automaticamente. Drift em conteúdo gerenciado bloqueia sobrescrita. Perfis existentes
-recebem somente um bloco pequeno, com backup datado antes da primeira alteração.
+Direct content is copied to `catalog/pending/<agent>/` by adopt/import and is never promoted
+automatically. Drift blocks overwrites. Existing profile files are backed up before a small marked
+block is added.
 
-A skill canônica versiona a política da Common Agent Toolbox: preferência contextual por `rg`,
-`fd`, `jq`, `yq`, `bat` e `delta`, com alternativas nativas quando necessárias e sem autorizar
-comandos mutantes. Revisões reconhecidas aparecem como `UPDATE` no dry-run e só substituem a revisão
-gerenciada anterior; qualquer outro conteúdo permanece como drift.
-
-## Capacidades atuais
-
-| Agente | Skills | Perfil-base | Estratégia |
+| Agent | Skills | Base profile | Strategy |
 |---|---|---|---|
-| Claude Code | suportado | suportado | espelho em `~/.claude/skills`; bloco em `~/.claude/CLAUDE.md` |
-| Codex | suportado | suportado | `~/.agents/skills`; bloco em `~/.codex/AGENTS.md` |
-| Pi | suportado | suportado | `~/.agents/skills`; bloco em `~/.pi/agent/AGENTS.md` |
-| Grok | suportado | deferred | leitura nativa de `~/.agents/skills`; configuração preservada |
-| Hermes | suportado | deferred | espelho em `skills/`; catálogo não é linkável nem gravável pelo agente |
-| Antigravity | deferred | deferred | nenhum caminho global é assumido sem contrato oficial estável |
-
-Codex, Pi e Grok consomem a mesma skill nativa em `~/.agents/skills`. Claude e Hermes recebem
-espelhos; no Hermes o perfil continua intocado. Perfis de Grok e Hermes e todo o adapter de
-Antigravity permanecem deferred.
-
-As skills internas existentes do Hermes permanecem privadas e aparecem como importáveis; nunca são copiadas,
-apagadas ou promovidas automaticamente.
-
-Referências oficiais usadas no desenho: documentação de skills do Claude Code, documentação de
-skills do Codex, `pi-mono/packages/coding-agent/docs/skills.md` e documentação Grok Build
-“Skills, Plugins & Marketplaces”.
+| Claude Code | supported | supported | mirror plus a marked CLAUDE.md block |
+| Codex | supported | supported | `~/.agents/skills` plus a marked AGENTS.md block |
+| Pi | supported | supported | `~/.agents/skills` plus a marked AGENTS.md block |
+| Grok | supported | deferred | native `~/.agents/skills`; configuration preserved |
+| Hermes | supported | deferred | one-way mirror; private skills preserved |
+| Antigravity | deferred | deferred | no stable official global contract assumed |

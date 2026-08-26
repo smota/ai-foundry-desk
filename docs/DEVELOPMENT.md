@@ -1,16 +1,13 @@
-# Desenvolvimento
+# Development
 
-Requisitos: Windows x64 para Foundation/bootstrap; Node 24 e pnpm 11 para o Agent Manager; PowerShell
-5.1 e 7 para mudanças de perfis/guardrails.
+Requirements: Windows x64 for Foundation/bootstrap, Node.js 24, pnpm 11, and PowerShell 5.1/7.
 
 ```powershell
-pnpm install
+pnpm install --frozen-lockfile
 pnpm check
+.\scripts\release-audit.ps1
 ```
 
-`pnpm check` executa lint, typecheck, testes e build. Em PowerShell, faça parse dos scripts e execute
-primeiro com `-WhatIf`. Preserve comandos existentes, derive caminhos do sistema e nunca versione
-`backups/`, `setup-logs/`, estado local, `.env` ou instalações.
-
-Comece uma nova sessão por [`NEXT-SESSION.md`](NEXT-SESSION.md). Mudanças documentais devem manter
-links relativos válidos e não transformar evidência de uma máquina em requisito do produto.
+Parse PowerShell changes and run every mutating path with `-WhatIf` or `--dry-run` first. Never
+commit backups, logs, local state, profiles, credentials, `.env`, caches, installations, `dist`, or
+`node_modules`. Start future work from [NEXT-SESSION.md](NEXT-SESSION.md).

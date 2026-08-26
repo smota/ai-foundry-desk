@@ -1,15 +1,11 @@
-# Segurança e limites
+# Security boundaries
 
-- Fontes oficiais, versões verificáveis, WhatIf e verificação separada.
-- Dependências de projetos isoladas; nenhum token, login ou segredo gerenciado.
-- Revisão explícita antes de futura sincronização.
-- Skills geradas pelo Hermes não são confiáveis até promoção humana.
+- Use official sources, verifiable versions, dry-run, and separate verification.
+- Keep project dependencies isolated and never manage user secrets or login state.
+- Preserve drift and require human review before promoting pending or Hermes-created skills.
+- Back up existing managed files under `%LOCALAPPDATA%\AI Foundry Desk\backups` before replacement.
+- Never use agent directories as the canonical catalog; Hermes receives a one-way copy.
 
-O projeto não oferece sandbox total nem audita toda dependência upstream. Scripts que pedem elevação,
-alteram perfis, criam serviços ou escrevem fora do projeto exigem parada e revisão. Repositórios não
-confiáveis devem usar ambiente descartável.
-
-O CLI escreve somente em destinos allowlisted pelos adapters, oferece dry-run, preserva drift e cria
-backup local em `%LOCALAPPDATA%\ai-workstation\backups` antes de anexar perfil a arquivo existente.
-A fonte canônica nunca é junction de diretório de
-agente; Hermes recebe cópia unidirecional, portanto não pode modificar o catálogo compartilhado.
+AI Foundry Desk is not a sandbox and cannot audit every upstream dependency. Stop and review scripts
+that request elevation, alter profiles, create services, or write outside expected targets. Use a
+disposable environment for untrusted code.

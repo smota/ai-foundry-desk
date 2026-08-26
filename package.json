@@ -1,6 +1,6 @@
 {
   "name": "ai-foundry-desk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI Foundry Desk — Multi-Agent Workbench for a personal AI workstation.",
   "license": "MIT",
   "type": "module",
@@ -19,6 +19,7 @@
     "afd:review": "pnpm --filter @ai-foundry-desk/cli dev review",
     "afd:sync": "pnpm --filter @ai-foundry-desk/cli dev sync",
     "afd:verify": "pnpm --filter @ai-foundry-desk/cli dev verify",
-    "pack:dry-run": "pnpm build && pnpm pack --dry-run"
+    "pack:dry-run": "pnpm build && pnpm pack --dry-run",
+    "release:build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-release.ps1"
   }
 }

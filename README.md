@@ -16,10 +16,10 @@ Windows x64 is the only validated platform today. The project is licensed under 
   Hermes and Grok; no login or token handling.
 - **Agent Manager:** one-way catalog sync, status, review, verify, drift protection and pending import.
 - **Common toolbox:** `rg`, `fd`, `jq`, `yq`, `bat` and `delta`; RTK is deliberately excluded.
-- **Recovery:** local backups under `%LOCALAPPDATA%\ai-workstation\backups` with bounded retention.
+- **Recovery:** local backups under `%LOCALAPPDATA%\AI Foundry Desk\backups` with bounded retention.
 
-Existing state paths keep the `ai-workstation` name for compatibility with installations made
-before the product rename. They are local implementation details and are never published.
+Canonical configuration lives under `%USERPROFILE%\.afd`; operational state lives under
+`%LOCALAPPDATA%\AI Foundry Desk`. Neither is published.
 
 ## Safe local start
 

@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Instala a Common Agent Toolbox da Layer 2 no Windows.
+    Installs the Layer 2 Common Agent Toolbox on Windows.
 .DESCRIPTION
     Garante rg, fd, jq, yq, bat e delta. RTK e deliberadamente excluido.
 #>
@@ -29,12 +29,12 @@ $tools = @(
 )
 
 Refresh-UserPath
-if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { throw "WinGet nao encontrado." }
+if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { throw "WinGet was not found." }
 foreach ($tool in $tools) {
-    if (Test-Tool $tool.Command) { Write-Host "  $($tool.Command) funcional; preservado sem atualizar."; continue }
-    if ($WhatIf) { Write-Host "  [WhatIf] Instalaria $($tool.Command) via WinGet ($($tool.Package))."; continue }
+    if (Test-Tool $tool.Command) { Write-Host "  $($tool.Command) is functional; preserved without updating."; continue }
+    if ($WhatIf) { Write-Host "  [WhatIf] Would install $($tool.Command) with WinGet ($($tool.Package))."; continue }
     winget install --id $tool.Package -e --source winget --accept-package-agreements --accept-source-agreements
     Refresh-UserPath
-    if (-not (Test-Tool $tool.Command)) { throw "$($tool.Command) nao ficou funcional apos a instalacao." }
+    if (-not (Test-Tool $tool.Command)) { throw "$($tool.Command) is not functional after installation." }
 }
-Write-Host "Common Agent Toolbox pronta. RTK nao foi instalado." -ForegroundColor Green
+Write-Host "Common Agent Toolbox is ready. RTK was not installed." -ForegroundColor Green

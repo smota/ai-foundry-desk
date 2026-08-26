@@ -1,19 +1,23 @@
-# Distribuição e release
+# Releasing
 
-Nome e licença MIT estão definidos. Publicação ainda depende de registry/organização, automação e assinatura.
+GitHub Releases are the official distribution channel for the current phase. npm publication is
+deferred until registry governance and broader supply-chain controls are decided.
 
-Uma release única do AI Foundry Desk deverá conter scripts/docs Windows e o build/schema do
-Agent Manager. Nunca incluir `backups/`, `setup-logs/`, estado local, `.env`, caches, `node_modules/`,
-perfis capturados ou instalações.
+Run:
 
-Backups são estado operacional local em `%LOCALAPPDATA%\ai-workstation\backups`, nunca conteúdo do
-pacote. A retenção preserva os três snapshots mais recentes por alvo e remove apenas excedentes com
-mais de 30 dias. Instalações e artefatos integralmente reproduzíveis não recebem backup.
+```powershell
+pnpm check
+.\scripts\build-release.ps1 -OutputDirectory .\release
+```
 
-Pipeline planejado: validar PowerShell Windows x64; executar `pnpm install --frozen-lockfile` e
-`pnpm check`; executar `scripts/release-audit.ps1`; gerar SBOM/checksums;
-assinar e publicar uma GitHub Release. Publicação npm e automação de release são backlog.
+The builder creates an allowlisted npm tarball, `afd-bootstrap.ps1`, SHA-256 files, and release notes.
+The bootstrap downloads only the versioned tarball and checksum from the same GitHub Release,
+verifies SHA-256, installs with pnpm, and never applies Layer 1/2.
 
-O campo `files` do package raiz e `scripts/release-audit.ps1` formam a allowlist executável inicial.
-Ainda não existe pipeline de release; não publique o diretório de trabalho inteiro. Proveniência, assinatura, SLA/canal de segurança
-e organização responsável dependem de decisão explícita do mantenedor.
+Before publishing, verify a clean tree, version/tag agreement, tests, PowerShell parse, secrets scan,
+artifact contents, checksums, bootstrap fixture, and release notes. Publish the tag and assets without
+force. Do not advertise the remote command until the tag and all checksum assets exist publicly.
+
+Backups, logs, local state, profiles, `.env`, caches, node_modules, dist source directories, and tool
+installations must never enter a release. SBOM, provenance, checksum signing, artifact signing, and
+automated CI releases remain backlog items.

@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-    Verificacao somente leitura da Layer 1.
+    Read-only Layer 1 verification.
 .DESCRIPTION
-    Confirma comandos, versoes efetivas, origem via mise e configuracao contra instalacao
-    automatica implicita. Nao instala nem altera arquivos.
+    Confirms commands, effective versions, mise provenance, and protection against implicit
+    installation. Does not install or alter files.
 #>
 param([switch]$WhatIf)
 
@@ -30,7 +30,7 @@ foreach ($command in $commands) {
     $found = Get-Command $command -CommandType Application,ExternalScript -ErrorAction SilentlyContinue |
         Select-Object -First 1
     Add-Check -Item "$command no PATH" -Passed ([bool]$found) `
-        -Observed $(if ($found) { $found.Source } else { "ausente" }) -Expected "presente"
+        -Observed $(if ($found) { $found.Source } else { "missing" }) -Expected "present"
 }
 
 $versions = [ordered]@{
@@ -66,15 +66,15 @@ $expectedPnpmBin = Join-Path $expectedPnpmHome "bin"
 $userPathEntries = @([Environment]::GetEnvironmentVariable("Path", "User") -split ";" |
     Where-Object { $_ })
 Add-Check "PNPM_HOME" ($pnpmHome -eq $expectedPnpmHome) $pnpmHome $expectedPnpmHome
-Add-Check "diretorio PNPM_HOME" (Test-Path -LiteralPath $expectedPnpmHome -PathType Container) `
-    $(if (Test-Path -LiteralPath $expectedPnpmHome) { "presente" } else { "ausente" }) "presente"
+Add-Check "PNPM_HOME directory" (Test-Path -LiteralPath $expectedPnpmHome -PathType Container) `
+    $(if (Test-Path -LiteralPath $expectedPnpmHome) { "present" } else { "missing" }) "present"
 Add-Check "PNPM_HOME bin no PATH" ($userPathEntries -contains $expectedPnpmBin) `
-    $(if ($userPathEntries -contains $expectedPnpmBin) { $expectedPnpmBin } else { "ausente" }) $expectedPnpmBin
+    $(if ($userPathEntries -contains $expectedPnpmBin) { $expectedPnpmBin } else { "missing" }) $expectedPnpmBin
 
 $checks | Format-Table -AutoSize
 $failed = @($checks | Where-Object Status -ne "OK")
 if ($failed.Count -gt 0) {
-    Write-Host "`n$($failed.Count) verificacao(oes) falharam." -ForegroundColor Yellow
+    Write-Host "`n$($failed.Count) check(s) failed." -ForegroundColor Yellow
     exit 1
 }
-Write-Host "`nLayer 1 verificada com sucesso." -ForegroundColor Green
+Write-Host "`nLayer 1 verification passed." -ForegroundColor Green

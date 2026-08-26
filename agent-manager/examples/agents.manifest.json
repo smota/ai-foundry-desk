@@ -3,9 +3,9 @@
   "manifestVersion": 1,
   "profile": { "source": "profile/base.md" },
   "catalog": [
-    { "id": "ai-workstation-principles", "kind": "skill", "source": "catalog/skills/ai-workstation-principles" }
+    { "id": "afd-workbench-principles", "kind": "skill", "source": "catalog/skills/afd-workbench-principles" }
   ],
   "targets": [
-    { "agent": "claude-code", "entries": ["ai-workstation-principles"], "profile": true }
+    { "agent": "claude-code", "entries": ["afd-workbench-principles"], "profile": true }
   ]
 }

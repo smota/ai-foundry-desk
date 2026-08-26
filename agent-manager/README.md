@@ -1,9 +1,8 @@
-# Agent Manager
+# AFD Agent Manager
 
-Módulo Node/TypeScript do AI Foundry Desk. É o control plane portátil para catálogo,
-manifesto, inventário, adoção, sincronização, verificação e revisão de skills/perfis.
+Portable Node.js/TypeScript control plane for the AI Foundry Desk catalog, manifest, inventory,
+adoption, synchronization, verification, and review workflows.
 
-`afd status`, `review`, `sync`, `verify` e `adopt/import` operam sobre `~/.ai-workstation`.
-Esse caminho legado é preservado para compatibilidade e pode ser migrado em versão futura explícita.
-`sync --dry-run` não escreve. Mudanças divergentes são preservadas; adoção entra em `catalog/pending`
-e nunca promove skills Hermes automaticamente. TUI permanece backlog.
+`afd status`, `review`, `sync`, `verify`, and `adopt/import` operate on `%USERPROFILE%\.afd`.
+`sync --dry-run` does not write. Divergent content is preserved and adoption enters
+`catalog/pending`; Hermes-created skills are never promoted automatically. OpenTUI remains backlog.

@@ -1,39 +1,31 @@
-# Roadmap priorizado
+# Roadmap
 
-## Pronto
+## Ready
 
-- produto único com Layer 1, bootstrap Layer 2, toolbox e Agent Manager;
-- Windows x64 validado; verificadores e WhatIf independentes;
-- catálogo/profile-base, sync unidirecional, drift, pending e import/adopt;
-- skills Claude/Codex/Pi/Grok/Hermes; perfis Claude/Codex/Pi; Antigravity deferred;
-- backups locais centralizados com retenção e auditoria.
+- One product with `afd`, Layer 1, Layer 2, toolbox, Agent Manager, dry-run, verification, and backups.
+- Windows x64 validated; MIT license; GitHub repository and release artifact allowlist.
 
-## Próximo ciclo
+## Next cycle
 
-1. atualização segura do Hermes, sem `hermes update` direto, com origem/hash, backup, rollback e validação do launcher;
-2. revisão e promoção explícitas de `catalog/pending`, incluindo skills privadas do Hermes;
-3. integração assistida com `npx skills`, usando o mecanismo nativo sem duplicá-lo nem acessar rede implicitamente;
-4. adapter Antigravity quando houver contrato oficial global estável; perfis Grok/Hermes somente com contrato seguro;
-5. observabilidade Tokscale opcional, local e privada por padrão, sem login/submissão automáticos.
+1. Safe Hermes update with pin, checksum, backup, rollback, and launcher validation.
+2. Explicit review/promotion for pending and private Hermes skills.
+3. Assisted `npx skills` integration without duplicating the native workflow or implicit network use.
+4. Antigravity adapter and Grok/Hermes profiles after stable official contracts exist.
+5. Optional Tokscale observability, local and private by default.
 
-## Dependências e decisões do mantenedor
+## Maintainer/release decisions
 
-- organização/registry e governança;
-- canal de segurança, responsáveis e SLA;
-- compatibilidade e versionamento do manifesto;
-- CI/release por allowlist, SBOM, proveniência, checksums e assinatura;
-- publicação npm do comando `afd`.
+- Security contact and response SLA.
+- CI, SBOM, provenance, checksum signing, and artifact signing.
+- Registry/organization governance; npm publication is not planned for the current channel.
 
-## Evolução posterior
+## Later
 
-- TUI OpenTUI sobre os contratos existentes;
-- Layer 1 para macOS, Linux e WSL;
-- Windows ARM64 e matrizes de CI nativas;
-- adapters adicionais orientados por documentação oficial.
+- OpenTUI interface over existing CLI contracts.
+- Layer 1 for macOS, Linux, and WSL.
+- Windows ARM64 and native CI matrices.
 
-## Deliberadamente fora de escopo
+## Deliberately out of scope
 
-- tokens, login, memória, sessões e plugins proprietários compartilhados;
-- promoção automática de skills, sandbox total ou execução automática de repositórios não confiáveis;
-- Paperclip/hub legado, RTK, loopersai, ai-memory, ponytail, agentacct e stack observável pesada;
-- aliases globais para `cat`/`git` e reimplementação dos mecanismos nativos dos agentes.
+Shared credentials, login state, memory, sessions, proprietary plugins, automatic skill promotion,
+full sandboxing, Paperclip, RTK, loopersai, ai-memory, ponytail, and agentacct.

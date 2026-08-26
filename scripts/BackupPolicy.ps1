@@ -1,8 +1,8 @@
 Set-StrictMode -Version Latest
 
 function Get-AiWorkstationBackupRoot {
-    if (-not $env:LOCALAPPDATA) { throw "LOCALAPPDATA nao esta definido." }
-    return [IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA "ai-workstation\backups"))
+    if (-not $env:LOCALAPPDATA) { throw "LOCALAPPDATA is not defined." }
+    return [IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA "AI Foundry Desk\backups"))
 }
 
 function Assert-BackupPath {
@@ -10,7 +10,7 @@ function Assert-BackupPath {
     $rootFull = [IO.Path]::GetFullPath($Root).TrimEnd('\') + '\'
     $pathFull = [IO.Path]::GetFullPath($Path)
     if (-not $pathFull.StartsWith($rootFull, [StringComparison]::OrdinalIgnoreCase)) {
-        throw "Operacao recusada fora da raiz controlada: $pathFull"
+        throw "Operation refused outside the controlled root: $pathFull"
     }
     return $pathFull
 }
@@ -19,11 +19,11 @@ function Backup-ManagedFile {
     param([Parameter(Mandatory)][string]$Source, [Parameter(Mandatory)][string]$Target,
           [switch]$WhatIf, [string]$Root = (Get-AiWorkstationBackupRoot))
     if (-not (Test-Path -LiteralPath $Source -PathType Leaf)) { return $null }
-    if ($Target -notmatch '^[a-z0-9][a-z0-9._-]*$') { throw "Nome de alvo de backup invalido: $Target" }
+    if ($Target -notmatch '^[a-z0-9][a-z0-9._-]*$') { throw "Invalid backup target name: $Target" }
     $snapshot = Join-Path (Join-Path $Root $Target) (Get-Date -Format 'yyyyMMdd-HHmmss-fffffff')
     $null = Assert-BackupPath -Path $snapshot -Root $Root
     $destination = Join-Path $snapshot (Split-Path -Leaf $Source)
-    if ($WhatIf) { Write-Host "  [WhatIf] Criaria backup: $destination"; return $destination }
+    if ($WhatIf) { Write-Host "  [WhatIf] Would create backup: $destination"; return $destination }
     New-Item -ItemType Directory -Path $snapshot -Force | Out-Null
     Copy-Item -LiteralPath $Source -Destination $destination
     Write-Host "  Backup: $destination"

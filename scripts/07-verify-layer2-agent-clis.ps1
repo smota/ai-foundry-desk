@@ -1,8 +1,8 @@
 <#
 .SYNOPSIS
-    Verificacao somente leitura dos agentes CLI iniciais da Layer 2.
+    Read-only verification of the initial Layer 2 agent CLIs.
 .DESCRIPTION
-    Mostra comando, origem, metodo e versao. Nao le credenciais e nao autentica agentes.
+    Shows command, source, method, and version. Does not read credentials or authenticate agents.
 #>
 param([switch]$WhatIf)
 
@@ -12,20 +12,20 @@ $claudeDesktop = winget list --id Anthropic.Claude -e --accept-source-agreements
 $claudeDesktopVersion = if ($claudeDesktop -and $claudeDesktop.Line -match '(\d+(?:\.\d+){2,3})') { $Matches[1] } else { "-" }
 $desktopRows += [PSCustomObject]@{
     Application = "Claude Desktop"
-    Status = if ($claudeDesktop) { "INSTALADO" } else { "AUSENTE" }
+    Status = if ($claudeDesktop) { "INSTALLED" } else { "MISSING" }
     Method = if ($claudeDesktop) { "WinGet: Anthropic.Claude" } else { "WinGet: Anthropic.Claude" }
     Version = $claudeDesktopVersion
-    Authentication = if ($claudeDesktop) { "LOGIN MANUAL NAO VERIFICADO" } else { "-" }
+    Authentication = if ($claudeDesktop) { "MANUAL LOGIN NOT VERIFIED" } else { "-" }
 }
 
 $codexDesktop = Get-AppxPackage -Name OpenAI.Codex -ErrorAction SilentlyContinue |
     Where-Object Status -eq "Ok" | Select-Object -First 1
 $desktopRows += [PSCustomObject]@{
     Application = "Codex Desktop"
-    Status = if ($codexDesktop) { "INSTALADO" } else { "AUSENTE" }
-    Method = if ($codexDesktop) { "MSIX oficial: OpenAI.Codex" } else { "canal oficial/Microsoft Store; sem pacote WinGet adequado" }
+    Status = if ($codexDesktop) { "INSTALLED" } else { "MISSING" }
+    Method = if ($codexDesktop) { "Official MSIX: OpenAI.Codex" } else { "Official channel/Microsoft Store; no suitable WinGet package" }
     Version = if ($codexDesktop) { [string]$codexDesktop.Version } else { "-" }
-    Authentication = if ($codexDesktop) { "LOGIN MANUAL NAO VERIFICADO" } else { "-" }
+    Authentication = if ($codexDesktop) { "MANUAL LOGIN NOT VERIFIED" } else { "-" }
 }
 
 Write-Host "Aplicativos desktop:"
@@ -47,7 +47,7 @@ $rows = foreach ($agent in $agents) {
     if ($found -and $agent.WingetId) {
         $registered = winget list --id $agent.WingetId -e --accept-source-agreements 2>$null |
             Select-String -SimpleMatch $agent.WingetId
-        $method = if ($registered) { "WinGet: $($agent.WingetId)" } else { "instalador oficial / nao registrado no WinGet" }
+        $method = if ($registered) { "WinGet: $($agent.WingetId)" } else { "official installer / not registered in WinGet" }
     }
     elseif ($found -and $agent.Package) { $method = "pnpm global: $($agent.Package)" }
     elseif ($found -and $agent.Command -eq "hermes") { $method = "instalador oficial fixado: v2026.8.19" }
@@ -59,28 +59,28 @@ $rows = foreach ($agent in $agents) {
     }
     [PSCustomObject]@{
         Agent = $agent.Name
-        Status = if ($found) { "INSTALADO" } else { "AUSENTE" }
+        Status = if ($found) { "INSTALLED" } else { "MISSING" }
         Command = if ($found) { $found.Source } else { $agent.Command }
         Method = if ($found) { $method } else { "-" }
         Version = if ($found) { $version } else { "-" }
-        Authentication = if ($found) { "LOGIN MANUAL NAO VERIFICADO" } else { "-" }
+        Authentication = if ($found) { "MANUAL LOGIN NOT VERIFIED" } else { "-" }
     }
 }
 
 Write-Host "`nAgentes CLI:"
 $rows | Format-List Agent, Status, Command, Method, Version, Authentication
-$missing = @($rows | Where-Object Status -ne "INSTALADO")
-$missingDesktop = @($desktopRows | Where-Object Status -ne "INSTALADO")
+$missing = @($rows | Where-Object Status -ne "INSTALLED")
+$missingDesktop = @($desktopRows | Where-Object Status -ne "INSTALLED")
 $hermesShim = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links\hermes.cmd"
 Write-Host "`nIntegracao PATH do Hermes:"
-Write-Host "  Shim compartilhado: $(if (Test-Path -LiteralPath $hermesShim) { $hermesShim } else { 'AUSENTE' })"
+Write-Host "  Shared shim: $(if (Test-Path -LiteralPath $hermesShim) { $hermesShim } else { 'MISSING' })"
 Write-Host "  PATH persistente contem WinGet Links: $((([Environment]::GetEnvironmentVariable('Path', 'User') -split ';') -contains (Split-Path -Parent $hermesShim)))"
 $hermesTargets = @(Get-ChildItem -LiteralPath (Join-Path $env:LOCALAPPDATA "Packages") -Directory -Filter "OpenAI.Codex_*" -ErrorAction SilentlyContinue |
         ForEach-Object { Join-Path $_.FullName "LocalCache\Local\hermes\hermes-agent\bin\hermes.exe" }) +
     @((Join-Path $env:LOCALAPPDATA "hermes\hermes-agent\bin\hermes.exe"))
 $realHermes = $hermesTargets | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
-Write-Host "  Executavel oficial fisico: $(if ($realHermes) { $realHermes } else { 'AUSENTE' })"
-Write-Host "  Diretorio fisico no PATH persistente: $([bool]($realHermes -and (([Environment]::GetEnvironmentVariable('Path', 'User') -split ';') -contains (Split-Path -Parent $realHermes))))"
+Write-Host "  Physical official executable: $(if ($realHermes) { $realHermes } else { 'MISSING' })"
+Write-Host "  Physical directory on persistent PATH: $([bool]($realHermes -and (([Environment]::GetEnvironmentVariable('Path', 'User') -split ';') -contains (Split-Path -Parent $realHermes))))"
 $hermesShimContent = if (Test-Path -LiteralPath $hermesShim) { Get-Content -Raw -LiteralPath $hermesShim } else { "" }
 Write-Host "  Launcher evita trampoline uv: $($hermesShimContent -match '-m hermes_cli\.main')"
 $hermesRoutes = @(Get-Command hermes -All -CommandType Application,ExternalScript -ErrorAction SilentlyContinue)
@@ -91,8 +91,8 @@ Write-Host "  Rota canonica unica primeiro: $routeValid"
 Write-Host "  Rotas resolvidas: $(@($hermesRoutes | ForEach-Object Source) -join ' | ')"
 $grokShim = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links\grok.cmd"
 Write-Host "`nIntegracao PATH do Grok:"
-Write-Host "  Shim compartilhado: $(if (Test-Path -LiteralPath $grokShim) { $grokShim } else { 'AUSENTE' })"
-Write-Host "  Origem pnpm: $(Join-Path $env:LOCALAPPDATA 'pnpm\bin\grok.CMD')"
+Write-Host "  Shared shim: $(if (Test-Path -LiteralPath $grokShim) { $grokShim } else { 'MISSING' })"
+Write-Host "  pnpm source: $(Join-Path $env:LOCALAPPDATA 'pnpm\bin\grok.CMD')"
 $documents = [Environment]::GetFolderPath("MyDocuments")
 $profilePaths = @(
     (Join-Path $documents "PowerShell\profile.ps1"),
@@ -101,14 +101,14 @@ $profilePaths = @(
 Write-Host "`nCobertura de terminais PowerShell:"
 foreach ($profilePath in $profilePaths) {
     $managed = (Test-Path -LiteralPath $profilePath) -and
-        [bool](Select-String -LiteralPath $profilePath -SimpleMatch "# >>> AI Workstation Layer 2 PATH >>>" -Quiet)
+        [bool](Select-String -LiteralPath $profilePath -SimpleMatch "# >>> AI Foundry Desk Layer 2 PATH >>>" -Quiet)
     $guardrail = $managed -and
-        [bool](Select-String -LiteralPath $profilePath -SimpleMatch "Atualizacao direta do Hermes bloqueada" -Quiet)
-    Write-Host "  $profilePath : $(if ($managed) { 'GERENCIADO' } else { 'AUSENTE' }); guardrail update: $guardrail"
+        [bool](Select-String -LiteralPath $profilePath -SimpleMatch "Direct Hermes updates are blocked" -Quiet)
+    Write-Host "  $profilePath : $(if ($managed) { 'MANAGED' } else { 'MISSING' }); update guardrail: $guardrail"
 }
 Write-Host "  PATHEXT aceita .CMD: $((($env:PATHEXT -split ';') -contains '.CMD'))"
 if ($missing.Count -or $missingDesktop.Count -or -not $routeValid) {
-    Write-Host "`n$($missing.Count) CLI(s) e $($missingDesktop.Count) aplicativo(s) desktop ausente(s). Execute 07-layer2-agent-clis.ps1." -ForegroundColor Yellow
+    Write-Host "`n$($missing.Count) CLI(s) and $($missingDesktop.Count) desktop app(s) are missing. Run 07-layer2-agent-clis.ps1." -ForegroundColor Yellow
     exit 1
 }
-Write-Host "`nAplicativos desktop e CLIs detectados. Autenticacao continua manual e nao foi inspecionada." -ForegroundColor Green
+Write-Host "`nDesktop apps and CLIs detected. Authentication remains manual and was not inspected." -ForegroundColor Green

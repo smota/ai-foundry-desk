@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-    07 - Instala o conjunto inicial de agentes CLI da Layer 2.
+    07 - Installs the initial Layer 2 agent CLI set.
 .DESCRIPTION
-    Instala somente Claude Code, Codex CLI, Antigravity CLI, Pi, Hermes Agent e Grok Build.
-    Nao autentica, nao configura skills e nao instala a stack legada de Paperclip.
+    Installs only Claude Code, Codex CLI, Antigravity CLI, Pi, Hermes Agent, and Grok Build.
+    Does not authenticate, configure skills, or install the legacy Paperclip stack.
 #>
 param([switch]$WhatIf)
 
@@ -36,7 +36,7 @@ function Add-UserPathEntry {
     $entries = @($userPath -split ";" | Where-Object { $_ })
     if ($entries -contains $PathEntry) { return }
     if ($WhatIf) {
-        Write-Host "  [WhatIf] Adicionaria ao PATH do usuario: $PathEntry"
+        Write-Host "  [WhatIf] Would add to user PATH: $PathEntry"
         return
     }
     [Environment]::SetEnvironmentVariable("Path", ((($entries + $PathEntry) -join ";") + ";"), "User")
@@ -52,7 +52,7 @@ function Remove-HermesUserPathEntries {
     })
     if ($kept.Count -eq $entries.Count) { return }
     if ($WhatIf) {
-        Write-Host "  [WhatIf] Removeria do PATH do usuario diretorios que expoem o hermes.exe trampoline."
+        Write-Host "  [WhatIf] Would remove user PATH entries that expose the hermes.exe trampoline."
         return
     }
     [Environment]::SetEnvironmentVariable("Path", (($kept -join ";") + ";"), "User")
@@ -60,7 +60,7 @@ function Remove-HermesUserPathEntries {
 
 function Publish-EnvironmentChange {
     if ($WhatIf) {
-        Write-Host "  [WhatIf] Notificaria o Windows sobre a alteracao persistente de ambiente."
+        Write-Host "  [WhatIf] Would notify Windows about the persistent environment change."
         return
     }
     if (-not ("Layer2.NativeMethods" -as [type])) {
@@ -76,10 +76,12 @@ public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, UIntPtr wP
 }
 
 function Ensure-Layer2PowerShellPathProfiles {
-    $start = "# >>> AI Workstation Layer 2 PATH >>>"
-    $end = "# <<< AI Workstation Layer 2 PATH <<<"
+    $start = "# >>> AI Foundry Desk Layer 2 PATH >>>"
+    $end = "# <<< AI Foundry Desk Layer 2 PATH <<<"
+    $legacyStart = "# >>> AI Workstation Layer 2 PATH >>>"
+    $legacyEnd = "# <<< AI Workstation Layer 2 PATH <<<"
     $block = @'
-# >>> AI Workstation Layer 2 PATH >>>
+# >>> AI Foundry Desk Layer 2 PATH >>>
 # Managed by AI Foundry Desk. Legacy markers are preserved for idempotent upgrades.
 $env:Path = (@($env:Path -split ";" | Where-Object {
     $normalized = $_.TrimEnd("\")
@@ -103,13 +105,13 @@ function hermes {
         $args.Count -gt 0 -and
         [string]$args[0] -eq "update"
     if ($interactiveUpdate) {
-        Write-Warning "Atualizacao direta do Hermes bloqueada. Aguarde o fluxo seguro de update do AI Foundry Desk."
+        Write-Warning "Direct Hermes updates are blocked. Wait for the verified AI Foundry Desk update workflow."
         return
     }
     $launcher = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links\hermes.cmd"
     & $launcher @args
 }
-# <<< AI Workstation Layer 2 PATH <<<
+# <<< AI Foundry Desk Layer 2 PATH <<<
 '@
     $documents = [Environment]::GetFolderPath("MyDocuments")
     $profiles = @(
@@ -120,6 +122,8 @@ function hermes {
         $content = if (Test-Path -LiteralPath $profilePath) { Get-Content -Raw -LiteralPath $profilePath } else { "" }
         if ($null -eq $content) { $content = "" }
         $pattern = "(?s)" + [regex]::Escape($start) + ".*" + [regex]::Escape($end)
+        $legacyPattern = "(?s)" + [regex]::Escape($legacyStart) + ".*" + [regex]::Escape($legacyEnd)
+        $content = [regex]::Replace($content, $legacyPattern, "")
         $updated = if ($content -match $pattern) {
             [regex]::Replace($content, $pattern, [Text.RegularExpressions.MatchEvaluator]{ param($match) $block.Trim() })
         } else {
@@ -151,7 +155,7 @@ function Ensure-CodexShim {
     $shimPath = Join-Path $shimDir "codex.cmd"
     if (-not (Test-Path -LiteralPath $codexExe -PathType Leaf)) { return }
     if ($WhatIf) {
-        Write-Host "  [WhatIf] Criaria o shim codex.cmd em $shimDir para o binario WinGet."
+        Write-Host "  [WhatIf] Would create codex.cmd in $shimDir for the WinGet binary."
         return
     }
     New-Item -ItemType Directory -Path $shimDir -Force | Out-Null
@@ -182,14 +186,14 @@ function Ensure-HermesShim {
     if (-not (Test-Path -LiteralPath $hermesPython -PathType Leaf)) { return }
     $shimDir = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links"
     $shimPath = Join-Path $shimDir "hermes.cmd"
-    # O hermes.exe criado pelo uv e um trampoline com caminho logico embutido. Em apps MSIX,
-    # esse caminho pode ser virtualizado. Invoque o entrypoint oficial pela venv diretamente.
+    # The uv-created hermes.exe is a trampoline with an embedded logical path. MSIX apps may
+    # virtualize that path, so invoke the official entry point through the existing venv.
     $shimContent = "@echo off`r`nsetlocal`r`npushd `"$hermesRoot`"`r`n`"$hermesPython`" -m hermes_cli.main %*`r`nset `"_hermes_exit=%ERRORLEVEL%`"`r`npopd`r`nexit /b %_hermes_exit%`r`n"
     if ((Test-Path -LiteralPath $shimPath) -and (Get-Content -Raw -LiteralPath $shimPath) -eq $shimContent) {
         return
     }
     if ($WhatIf) {
-        Write-Host "  [WhatIf] Criaria o launcher hermes.cmd em $shimDir para invocar a venv sem o trampoline uv."
+        Write-Host "  [WhatIf] Would create hermes.cmd in $shimDir to invoke the virtual environment without the uv trampoline."
         return
     }
     New-Item -ItemType Directory -Path $shimDir -Force | Out-Null
@@ -211,7 +215,7 @@ function Ensure-GrokShim {
         return
     }
     if ($WhatIf) {
-        Write-Host "  [WhatIf] Criaria o shim grok.cmd em $shimDir para evitar PATH herdado desatualizado."
+        Write-Host "  [WhatIf] Would create grok.cmd in $shimDir to avoid stale inherited PATH state."
         return
     }
     New-Item -ItemType Directory -Path $shimDir -Force | Out-Null
@@ -223,10 +227,10 @@ function Ensure-GrokShim {
 
 function Install-DesktopAppsIfMissing {
     if (Test-WingetPackage "Anthropic.Claude") {
-        Write-Host "  Claude Desktop ja esta instalado; nenhuma reinstalacao sera feita."
+        Write-Host "  Claude Desktop is already installed; no reinstall will be performed."
     }
     elseif ($WhatIf) {
-        Write-Host "  [WhatIf] Instalaria Claude Desktop via WinGet (Anthropic.Claude)."
+        Write-Host "  [WhatIf] Would install Claude Desktop with WinGet (Anthropic.Claude)."
     }
     else {
         winget install --id Anthropic.Claude -e --source winget `
@@ -236,25 +240,25 @@ function Install-DesktopAppsIfMissing {
     $codexDesktop = Get-AppxPackage -Name OpenAI.Codex -ErrorAction SilentlyContinue |
         Where-Object Status -eq "Ok" | Select-Object -First 1
     if ($codexDesktop) {
-        Write-Host "  Codex Desktop ja esta instalado e registrado; nenhuma reinstalacao sera feita."
+        Write-Host "  Codex Desktop is already installed and registered; no reinstall will be performed."
     }
     else {
-        Write-Warning "Codex Desktop nao foi detectado. Nao existe pacote oficial apropriado no catalogo WinGet; instale pelo canal oficial/Microsoft Store e execute novamente."
+        Write-Warning "Codex Desktop was not detected. No suitable official WinGet package exists; install it through the official channel/Microsoft Store and retry."
     }
 }
 
 function Install-WingetAgentIfMissing {
     param([string]$Name, [string]$Command, [string]$PackageId)
     if (Test-AgentCommand $Command) {
-        Write-Host "  $Name ja esta funcional; nenhuma reinstalacao sera feita."
+        Write-Host "  $Name is already functional; no reinstall will be performed."
         return
     }
     if (Test-WingetPackage $PackageId) {
-        Write-Warning "$Name ja esta registrado no WinGet, mas o alias ainda nao esta visivel nesta sessao. Nenhuma reinstalacao ou atualizacao sera tentada."
+        Write-Warning "$Name is registered in WinGet, but its alias is not visible in this session. No reinstall or update will be attempted."
         return
     }
     if ($WhatIf) {
-        Write-Host "  [WhatIf] Instalaria $Name via WinGet ($PackageId)."
+        Write-Host "  [WhatIf] Would install $Name with WinGet ($PackageId)."
         return
     }
     winget install --id $PackageId -e --source winget `
@@ -262,44 +266,44 @@ function Install-WingetAgentIfMissing {
     Refresh-UserEnvironment
     if (-not (Test-AgentCommand $Command)) {
         if (Test-WingetPackage $PackageId) {
-            Write-Warning "$Name esta registrado no WinGet, mas o alias ainda nao apareceu nesta sessao. A validacao final sera feita em um novo PowerShell."
+            Write-Warning "$Name is registered in WinGet, but its alias is not visible yet. Final validation will run in a new PowerShell."
             return
         }
-        throw "$Name nao ficou funcional nem registrado no WinGet."
+        throw "$Name is neither functional nor registered in WinGet."
     }
 }
 
 function Install-PiIfMissing {
     if (Test-AgentCommand "pi") {
-        Write-Host "  Pi ja esta funcional; nenhuma reinstalacao sera feita."
+        Write-Host "  Pi is already functional; no reinstall will be performed."
         return
     }
-    if (-not (Test-AgentCommand "pnpm")) { throw "pnpm nao encontrado; valide a Layer 1 primeiro." }
+    if (-not (Test-AgentCommand "pnpm")) { throw "pnpm was not found; validate Layer 1 first." }
     if ($WhatIf) {
-        Write-Host "  [WhatIf] Instalaria Pi do pacote oficial @earendil-works/pi-coding-agent via pnpm global, com scripts desabilitados."
+        Write-Host "  [WhatIf] Would install Pi from the official @earendil-works/pi-coding-agent package with pnpm global and scripts disabled."
         return
     }
     pnpm add --global --ignore-scripts @earendil-works/pi-coding-agent
     Refresh-UserEnvironment
-    if (-not (Test-AgentCommand "pi")) { throw "Pi foi instalado, mas nao foi encontrado no PATH." }
+    if (-not (Test-AgentCommand "pi")) { throw "Pi was installed but was not found on PATH." }
 }
 
 function Install-GrokIfMissing {
     Ensure-GrokShim
     if (Test-AgentCommand "grok") {
-        Write-Host "  Grok Build ja esta funcional; nenhuma reinstalacao sera feita."
+        Write-Host "  Grok Build is already functional; no reinstall will be performed."
         return
     }
     if (-not (Test-AgentCommand "pnpm")) { throw "pnpm nao encontrado; valide a Layer 1 primeiro." }
     if ($WhatIf) {
-        Write-Host "  [WhatIf] Instalaria Grok Build do pacote oficial @xai-official/grok via pnpm global."
+        Write-Host "  [WhatIf] Would install Grok Build from the official @xai-official/grok package with pnpm global."
         return
     }
-    # O pacote oficial usa postinstall para materializar o executavel; nao desabilite scripts aqui.
+    # The official package uses postinstall to materialize the executable; do not disable scripts here.
     pnpm add --global @xai-official/grok
     Refresh-UserEnvironment
     Ensure-GrokShim
-    if (-not (Test-AgentCommand "grok")) { throw "Grok Build foi instalado, mas nao foi encontrado no PATH." }
+    if (-not (Test-AgentCommand "grok")) { throw "Grok Build was installed but was not found on PATH." }
 }
 
 function Install-HermesIfMissing {
@@ -309,7 +313,7 @@ function Install-HermesIfMissing {
     Remove-HermesUserPathEntries
     if (-not $WhatIf) { Refresh-UserEnvironment }
     if (Test-AgentCommand "hermes") {
-        Write-Host "  Hermes ja esta funcional; nenhuma reinstalacao sera feita."
+        Write-Host "  Hermes is already functional; no reinstall will be performed."
         return
     }
 
@@ -317,18 +321,18 @@ function Install-HermesIfMissing {
     $installerUrl = "https://raw.githubusercontent.com/NousResearch/hermes-agent/$tag/scripts/install.ps1"
     $expectedHash = "74225bf244253bfa5bc2b1d16fa3bb8618e199a53d1c0344b37ab9930696d3ba"
     if ($WhatIf) {
-        Write-Host "  [WhatIf] Garantiria Python 3.11 pelo mise sem muda-lo para global."
+        Write-Host "  [WhatIf] Would ensure Python 3.11 through mise without making it global."
         Write-Host "  [WhatIf] Baixaria o instalador Hermes $tag, confirmaria SHA256 $expectedHash e executaria -SkipSetup -SkipComputerUse."
         return
     }
-    if (-not (Test-AgentCommand "mise")) { throw "mise nao encontrado; valide a Layer 1 primeiro." }
+    if (-not (Test-AgentCommand "mise")) { throw "mise was not found; validate Layer 1 first." }
 
     mise install "python@3.11"
     $hermesPython = (& mise where "python@3.11" | Select-Object -First 1)
-    if (-not $hermesPython) { throw "Nao foi possivel preparar Python 3.11 pelo mise para o Hermes." }
+    if (-not $hermesPython) { throw "Could not prepare Python 3.11 through mise for Hermes." }
     $hermesPythonExe = Join-Path $hermesPython "python.exe"
     if (-not (Test-Path -LiteralPath $hermesPythonExe -PathType Leaf)) {
-        throw "Python 3.11 do mise nao foi encontrado em $hermesPythonExe."
+        throw "mise Python 3.11 was not found at $hermesPythonExe."
     }
 
     $source = [string](Invoke-RestMethod -Uri $installerUrl)
@@ -339,7 +343,7 @@ function Install-HermesIfMissing {
     }
     finally { $sha.Dispose() }
     if ($actualHash -ne $expectedHash) {
-        throw "Hash inesperado para o instalador Hermes $tag. Esperado: $expectedHash; observado: $actualHash."
+        throw "Unexpected hash for Hermes installer $tag. Expected: $expectedHash; observed: $actualHash."
     }
 
     # O instalador pede Python 3.11. Exponha apenas o runtime gerido pelo mise nesta sessao.
@@ -374,14 +378,14 @@ function Install-HermesIfMissing {
     Refresh-UserEnvironment
     Ensure-HermesShim
     if (-not (Test-AgentCommand "hermes")) {
-        throw "Hermes foi instalado, mas o comando nao foi encontrado no PATH persistente. Abra um novo PowerShell e execute o verificador."
+        throw "Hermes was installed, but its command was not found on persistent PATH. Open a new PowerShell and run the verifier."
     }
 }
 
 Refresh-UserEnvironment
-if (-not (Test-AgentCommand "winget")) { throw "WinGet nao encontrado." }
+if (-not (Test-AgentCommand "winget")) { throw "WinGet was not found." }
 
-Write-Host "Instalando agentes centrais da nova Layer 2..."
+Write-Host "Installing the core Layer 2 agents..."
 Install-DesktopAppsIfMissing
 Install-WingetAgentIfMissing -Name "Claude Code" -Command "claude" -PackageId "Anthropic.ClaudeCode"
 Install-WingetAgentIfMissing -Name "Codex CLI" -Command "codex" -PackageId "OpenAI.Codex"
@@ -393,5 +397,5 @@ Install-GrokIfMissing
 Ensure-Layer2PowerShellPathProfiles
 Publish-EnvironmentChange
 
-Write-Host "`nInstalacao concluida. Nenhum login foi executado." -ForegroundColor Green
+Write-Host "`nInstallation complete. No login was performed." -ForegroundColor Green
 Write-Host "Abra um novo PowerShell e execute .\scripts\07-verify-layer2-agent-clis.ps1."

@@ -2,8 +2,8 @@ import { readFile } from "node:fs/promises";
 import { MANIFEST_VERSION, type AgentManifest } from "./contracts.js";
 
 export async function loadManifest(path: string): Promise<AgentManifest> {
-  const parsed: unknown = JSON.parse(await readFile(path, "utf8"));
-  if (!isManifest(parsed)) throw new Error(`Manifesto inválido ou incompatível: ${path}`);
+  const parsed: unknown = JSON.parse((await readFile(path, "utf8")).replace(/^\uFEFF/, ""));
+  if (!isManifest(parsed)) throw new Error(`Invalid or incompatible manifest: ${path}`);
   return parsed;
 }
 

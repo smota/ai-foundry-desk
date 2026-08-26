@@ -5,9 +5,9 @@ $root = Get-AiWorkstationBackupRoot
 $rows = @(Get-BackupPolicyReport -Root $root)
 $totalBytes = if ($rows.Count) { ($rows | Measure-Object Bytes -Sum).Sum } else { 0 }
 $totalSnapshots = if ($rows.Count) { ($rows | Measure-Object Snapshots -Sum).Sum } else { 0 }
-Write-Host "Raiz controlada: $root"
+Write-Host "Controlled root: $root"
 $rows | Format-Table -AutoSize
 if ($null -eq $totalBytes) { $totalBytes = 0 }
-Write-Host "Alvos: $($rows.Count); snapshots: $totalSnapshots; bytes: $([long]$totalBytes)"
-if (@($rows | Where-Object RetentionViolations -GT 0).Count) { throw "Retencao nao conforme." }
-Write-Host "Retencao conforme: 3 snapshots mais recentes protegidos; excedentes com mais de 30 dias ausentes."
+Write-Host "Targets: $($rows.Count); snapshots: $totalSnapshots; bytes: $([long]$totalBytes)"
+if (@($rows | Where-Object RetentionViolations -GT 0).Count) { throw "Backup retention is not compliant." }
+Write-Host "Retention compliant: the 3 newest snapshots are protected and no expired excess snapshots remain."
