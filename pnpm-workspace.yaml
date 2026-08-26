@@ -1,0 +1,5 @@
+packages:
+  - agent-manager
+
+allowBuilds:
+  esbuild: true

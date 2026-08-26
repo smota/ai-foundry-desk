@@ -1,0 +1,36 @@
+# Local setup evidence and recovery material
+backups/
+setup-logs/
+**/backups/
+**/setup-logs/
+
+# Local state and secrets
+.env
+.env.*
+!.env.example
+state/
+local/
+*.local.json
+*.local.yaml
+*.local.yml
+
+# Node/build
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+*.tgz
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Runtime installations and caches must never be vendored
+.venv/
+venv/
+.mise/
+.pnpm-store/
+.cache/

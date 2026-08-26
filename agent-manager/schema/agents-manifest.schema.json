@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/smota/ai-foundry-desk/main/agent-manager/schema/agents-manifest.schema.json",
+  "title": "AI Foundry Desk Agent Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["manifestVersion", "profile", "catalog", "targets"],
+  "properties": {
+    "manifestVersion": { "const": 1 },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source"],
+      "properties": { "source": { "type": "string", "minLength": 1 } }
+    },
+    "catalog": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "source"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "kind": { "enum": ["skill", "profile"] },
+          "source": { "type": "string", "minLength": 1 },
+          "revision": { "type": "string" },
+          "promotedBy": { "type": "string" }
+        }
+      }
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["agent", "entries", "profile"],
+        "properties": {
+          "agent": { "enum": ["claude-code", "codex", "antigravity", "pi", "hermes", "grok"] },
+          "entries": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+          "profile": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

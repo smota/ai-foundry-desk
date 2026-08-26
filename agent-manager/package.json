@@ -1,0 +1,31 @@
+{
+  "name": "@ai-foundry-desk/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI Foundry Desk — Multi-Agent Workbench CLI.",
+  "type": "module",
+  "files": [
+    "dist",
+    "schema",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src test",
+    "test": "tsx --test test/**/*.test.ts",
+    "dev": "tsx src/cli.ts",
+    "pack:dry-run": "pnpm pack --dry-run"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.35.0",
+    "@types/node": "^24.3.0",
+    "eslint": "^9.35.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.41.0"
+  }
+}

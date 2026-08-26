@@ -1,0 +1,11 @@
+{
+  "$schema": "../schema/agents-manifest.schema.json",
+  "manifestVersion": 1,
+  "profile": { "source": "profile/base.md" },
+  "catalog": [
+    { "id": "ai-workstation-principles", "kind": "skill", "source": "catalog/skills/ai-workstation-principles" }
+  ],
+  "targets": [
+    { "agent": "claude-code", "entries": ["ai-workstation-principles"], "profile": true }
+  ]
+}
