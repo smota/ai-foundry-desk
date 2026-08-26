@@ -46,7 +46,7 @@ The current versioned Windows/PowerShell bootstrap installs only `afd`; it does 
 This command downloads the bootstrap and its checksum, verifies SHA-256 locally, and only then runs it:
 
 ```powershell
-$v='0.1.1'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap.ps1" -OutFile "$d/afd-bootstrap.ps1"; Invoke-WebRequest "$u/afd-bootstrap.ps1.sha256" -OutFile "$d/afd-bootstrap.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap.ps1" -Version $v
+$v='0.1.2'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
 ```
 
 The bootstrap requires Node.js 24+ and pnpm. After installation, open a new terminal and preview:
@@ -104,6 +104,12 @@ and an isolated `--prefix`. Linux support is limited to the WSL distribution and
 recorded in [Platform support](docs/PLATFORM-SUPPORT.md). It installs only `afd` and never applies
 Layers. macOS detection is experimental and fail-closed because no real macOS host was validated.
 Never use a blind remote pipe; download the script and checksum separately before execution.
+
+Validated Linux/WSL bootstrap (downloads, verifies, then executes as separate steps):
+
+```sh
+v=0.1.2; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
+```
 
 Layer 2 preserves functional installations and does not authenticate agents. `afd sync --dry-run`
 previews shared skill/profile reconciliation; `afd sync` is always explicit.
