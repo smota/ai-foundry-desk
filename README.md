@@ -2,6 +2,12 @@
 
 **Multi-Agent Workbench**
 
+![AI Foundry Desk multi-agent workstation banner](assets/brand/ai-foundry-desk-banner.png)
+
+<p align="center">
+  <img src="assets/brand/ai-foundry-desk-logo.png" alt="AI Foundry Desk logo: a luminous multi-agent workstation" width="144">
+</p>
+
 AI Foundry Desk prepares and governs a personal Windows workstation for multiple AI coding agents.
 It is a local workbench—not a SaaS platform, team orchestrator or credential manager. The product
 combines a conservative Windows foundation, an idempotent agent bootstrap and a portable
@@ -102,3 +108,5 @@ pnpm pack:dry-run
 - [Release process](docs/RELEASING.md)
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and [LICENSE](LICENSE).
+
+Brand artwork is documented in [assets/brand/README.md](assets/brand/README.md).

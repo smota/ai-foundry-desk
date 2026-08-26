@@ -6,7 +6,7 @@
   "type": "module",
   "bin": { "afd": "agent-manager/dist/cli.js" },
   "engines": { "node": ">=24" },
-  "files": ["agent-manager/dist", "agent-manager/schema", "scripts", "docs", "setup.ps1", "README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "CHANGELOG.md"],
+  "files": ["agent-manager/dist", "agent-manager/schema", "assets/brand", "scripts", "docs", "setup.ps1", "README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "CHANGELOG.md"],
   "packageManager": "pnpm@11.23.0",
   "scripts": {
     "build": "pnpm --filter @ai-foundry-desk/cli build",
