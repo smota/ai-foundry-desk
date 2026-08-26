@@ -2,6 +2,12 @@
 
 **Multi-Agent Workbench**
 
+[![GitHub stars](https://img.shields.io/github/stars/smota/ai-foundry-desk?style=flat-square&logo=github&label=stars)](https://github.com/smota/ai-foundry-desk)
+[![GitHub watchers](https://img.shields.io/github/watchers/smota/ai-foundry-desk?style=flat-square&logo=github&label=watchers)](https://github.com/smota/ai-foundry-desk/subscription)
+[![License: MIT](https://img.shields.io/github/license/smota/ai-foundry-desk?style=flat-square&label=license)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/smota/ai-foundry-desk?style=flat-square&logo=github&label=release)](https://github.com/smota/ai-foundry-desk/releases/latest)
+[![Validated on Windows x64](https://img.shields.io/badge/validated-Windows%20x64-0078D4?style=flat-square&logo=windows11)](docs/README-LAYER-1.md)
+
 ![AI Foundry Desk multi-agent workstation banner](assets/brand/ai-foundry-desk-banner.png)
 
 <p align="center">
