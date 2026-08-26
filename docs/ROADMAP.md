@@ -4,16 +4,18 @@
 
 - One product with `afd`, Layer 1, Layer 2, toolbox, Agent Manager, doctor, controlled Layer 1 fix,
   dry-run, verification, and backups.
+- Pinned/checksummed Hermes staging updates, explicit pending-skill review, official Antigravity
+  skill mirroring, and deterministic local/internal/HTTPS recipes with scoped rollback.
+- Samuel recipe for Holoself, pinned Vibium/Tokscale, plus fail-closed local extraction.
 - Windows x64 is the only implemented, tested, and validated platform; MIT license; GitHub
   repository and release artifact allowlist.
 
 ## Next cycle
 
-1. Safe Hermes update with pin, checksum, backup, rollback, and launcher validation.
-2. Explicit review/promotion for pending and private Hermes skills.
-3. Assisted `npx skills` integration without duplicating the native workflow or implicit network use.
-4. Antigravity adapter and Grok/Hermes profiles after stable official contracts exist.
-5. Optional Tokscale observability, local and private by default.
+1. CI matrices for the validated Windows workflows and portable unit suite.
+2. Assisted `npx skills` integration without duplicating the native workflow or implicit network use.
+3. Grok/Hermes/Antigravity profiles only after stable official contracts exist.
+4. Optional local/private Tokscale reporting without credential or session capture.
 
 ## Maintainer/release decisions
 

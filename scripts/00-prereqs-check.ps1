@@ -1,19 +1,26 @@
-#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    00 — Prerequisite checks. No installs. Verifies Windows version, admin rights, winget,
-    and prints the BIOS reminder (cannot be automated).
+    00 - Prerequisite checks. No installs. Verifies Windows version, winget,
+    filesystem, architecture, and package-manager prerequisites without requiring elevation.
 #>
 param([switch]$WhatIf)
 
 $ErrorActionPreference = "Stop"
 
 Write-Host "Checking Windows version..."
-$os = Get-CimInstance Win32_OperatingSystem
-Write-Host "  $($os.Caption) build $($os.BuildNumber)"
-if ([int]$os.BuildNumber -lt 22000) {
-    Write-Warning "This blueprint targets Windows 11. Build $($os.BuildNumber) looks like Windows 10 or older — some steps (WSL2 systemd, ConPTY features psmux relies on) may not work as documented."
+$os = [Environment]::OSVersion.Version
+Write-Host "  Windows build $($os.Build)"
+if ($os.Build -lt 22000) {
+    Write-Warning "This blueprint targets Windows 11. Build $($os.Build) looks older; some steps may not work as documented."
 }
+
+$architecture=[Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
+if($architecture -ne "X64"){throw "Windows x64 is required; observed $architecture."}
+Write-Host "  Architecture OK: $architecture"
+$systemRoot=[IO.Path]::GetPathRoot($env:USERPROFILE)
+$drive=[IO.DriveInfo]::new($systemRoot)
+if($drive.DriveFormat -ne "NTFS"){throw "NTFS is required for the managed user profile; observed $($drive.DriveFormat)."}
+Write-Host "  Filesystem OK: NTFS"
 
 Write-Host "Checking for winget..."
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
@@ -31,14 +38,5 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
 } else {
     Write-Host "  git OK: $(git --version)"
 }
-
-Write-Host "`n--- BIOS reminder (cannot be automated) ---" -ForegroundColor Yellow
-Write-Host @"
-Blueprint §3, step 1: set iGPU/UMA graphics memory allocation in BIOS to Custom with a fixed
-value (never Auto — Auto causes ROCm to misreport pool size on this chip). Current scope keeps
-local inference dGPU-only (RTX 5060 Ti), so leave the BIOS UMA setting at its conservative
-default for now — you only need to raise this, deliberately, if you later engage the deferred
-cross-vendor iGPU+eGPU pooling. Nothing in this package touches BIOS settings.
-"@
 
 Write-Host "`nPrereqs check complete." -ForegroundColor Green

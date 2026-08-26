@@ -40,7 +40,7 @@ manager. Your logins, tokens, projects, conversations, and agent-native data rem
                                    │
               ┌────────────────────┼────────────────────┐
               │                    │                    │
-       Layer 1 Foundation   Layer 2 Agent Setup   Agent Manager
+       Layer 1 Foundation   Layer 2 Agent Setup   Layer 3 Recipes
        runtimes + PATH      apps + agent CLIs     skills + profiles
               │                    │                    │
               └──────────── Common Agent Toolbox ──────┘
@@ -59,6 +59,7 @@ work.
 | **Layer 2 — Agent Setup** | Make agents available consistently | Idempotent detection and installation of supported desktop apps and CLIs without handling login credentials |
 | **Common Agent Toolbox** | Give every agent dependable utilities | Fast search, file discovery, structured-data processing, readable source output and clear diffs |
 | **Agent Manager** | Keep shared guidance manageable | A canonical skill catalog, small profiles, one-way sync, drift detection, review and safe import/adopt |
+| **Layer 3 — Recipes** | Provision reviewed bundles | Uniform internal/local/HTTPS loading, mandatory plan, confirmed apply, verification and managed-only rollback |
 | **Recovery** | Keep managed changes reversible | Local backups with bounded retention before AFD changes an existing managed file |
 
 ## Quick start on Windows
@@ -113,6 +114,7 @@ afd doctor              # Explain Foundation problems without changing anything
 afd verify              # Run the compact product verification suite
 afd sync --dry-run      # Preview shared skill/profile changes
 afd sync                # Apply reviewed, one-way synchronization
+afd layer3 plan builtin:samuel # Preview a recipe; shorthand also only plans
 ```
 
 If Layer 1 needs repair, preview the exact reconciliation first:
@@ -205,6 +207,7 @@ Start with [Contributing](CONTRIBUTING.md), [Architecture](docs/ARCHITECTURE.md)
 - [Layer 1 Foundation](docs/README-LAYER-1.md)
 - [Layer 2 Agent Setup](docs/README-LAYER-2-AGENTS.md)
 - [Skills and profiles](docs/LAYER-2-SYNC.md)
+- [Layer 3 recipes](docs/LAYER-3-RECIPES.md)
 - [Platform support](docs/PLATFORM-SUPPORT.md)
 - [Security boundaries](docs/SECURITY-BOUNDARIES.md)
 - [Roadmap](docs/ROADMAP.md)

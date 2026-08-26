@@ -5,6 +5,7 @@
     Shows command, source, method, and version. Does not read credentials or authenticate agents.
 #>
 param([switch]$WhatIf)
+$env:Path = @([Environment]::GetEnvironmentVariable("Path", "Machine"), [Environment]::GetEnvironmentVariable("Path", "User")) -join ";"
 
 $desktopRows = @()
 $claudeDesktop = winget list --id Anthropic.Claude -e --accept-source-agreements 2>$null |
@@ -75,7 +76,8 @@ $hermesShim = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links\hermes.cmd"
 Write-Host "`nIntegracao PATH do Hermes:"
 Write-Host "  Shared shim: $(if (Test-Path -LiteralPath $hermesShim) { $hermesShim } else { 'MISSING' })"
 Write-Host "  PATH persistente contem WinGet Links: $((([Environment]::GetEnvironmentVariable('Path', 'User') -split ';') -contains (Split-Path -Parent $hermesShim)))"
-$hermesTargets = @(Get-ChildItem -LiteralPath (Join-Path $env:LOCALAPPDATA "Packages") -Directory -Filter "OpenAI.Codex_*" -ErrorAction SilentlyContinue |
+$hermesTargets = @((Join-Path $env:USERPROFILE ".afd\managed\hermes\hermes-agent\bin\hermes.exe")) +
+    @(Get-ChildItem -LiteralPath (Join-Path $env:LOCALAPPDATA "Packages") -Directory -Filter "OpenAI.Codex_*" -ErrorAction SilentlyContinue |
         ForEach-Object { Join-Path $_.FullName "LocalCache\Local\hermes\hermes-agent\bin\hermes.exe" }) +
     @((Join-Path $env:LOCALAPPDATA "hermes\hermes-agent\bin\hermes.exe"))
 $realHermes = $hermesTargets | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1

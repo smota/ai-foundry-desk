@@ -1,6 +1,6 @@
 {
   "name": "@ai-foundry-desk/cli",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "private": true,
   "description": "AI Foundry Desk — Multi-Agent Workbench CLI.",
   "type": "module",
@@ -16,7 +16,7 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src test",
-    "test": "tsx --test test/**/*.test.ts",
+    "test": "tsc -p tsconfig.test.json && node --test .test-dist/test/*.test.js",
     "dev": "tsx src/cli.ts",
     "pack:dry-run": "pnpm pack --dry-run"
   },

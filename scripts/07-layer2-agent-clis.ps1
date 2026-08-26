@@ -167,6 +167,8 @@ function Ensure-CodexShim {
 }
 
 function Resolve-HermesExecutable {
+    $managed = Join-Path $env:USERPROFILE ".afd\managed\hermes\hermes-agent\bin\hermes.exe"
+    if (Test-Path -LiteralPath $managed -PathType Leaf) { return $managed }
     $packagesRoot = Join-Path $env:LOCALAPPDATA "Packages"
     $virtualized = Get-ChildItem -LiteralPath $packagesRoot -Directory -Filter "OpenAI.Codex_*" -ErrorAction SilentlyContinue |
         ForEach-Object { Join-Path $_.FullName "LocalCache\Local\hermes\hermes-agent\bin\hermes.exe" } |

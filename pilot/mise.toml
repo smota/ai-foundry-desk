@@ -1,0 +1,13 @@
+[tools]
+python = "3.14"
+node = "24"
+go = "1.26"
+rust = "1.98.0"
+
+[env]
+UV_NO_MANAGED_PYTHON = "1"
+UV_PYTHON_DOWNLOADS = "0"
+
+[tasks.verify]
+description = "Verify every Layer 1 runtime without installing project dependencies"
+run = "python --version && node --version && go version && rustc --version && uv --version && pnpm --version"

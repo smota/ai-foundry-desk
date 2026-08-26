@@ -3,13 +3,13 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 function cli(...args: string[]) {
-  return spawnSync(process.execPath, ["--import", "tsx", "src/cli.ts", ...args], { cwd: process.cwd(), encoding: "utf8" });
+  return spawnSync(process.execPath, [".test-dist/src/cli.js", ...args], { cwd: process.cwd(), encoding: "utf8" });
 }
 
 test("help and version use the afd brand", () => {
   const help = cli("--help"); const version = cli("--version");
   assert.equal(help.status, 0); assert.match(help.stdout, /AI Foundry Desk/); assert.match(help.stdout, /afd layer1/);
-  assert.equal(version.status, 0); assert.equal(version.stdout.trim(), "0.1.2");
+  assert.equal(version.status, 0); assert.equal(version.stdout.trim(), "0.2.0");
 });
 
 test("init applies no layers and unknown mutating flags are rejected", () => {
@@ -23,3 +23,5 @@ test("doctor and fix expose safe argument contracts", () => {
   assert.notEqual(doctor.status, 0); assert.match(doctor.stderr, /Usage: afd doctor/);
   assert.notEqual(fix.status, 0); assert.match(fix.stderr, /exactly one option/);
 });
+
+test("Hermes update requires an explicit preview or apply mode",()=>{const missing=cli("hermes","update");const conflict=cli("hermes","update","--dry-run","--apply");assert.notEqual(missing.status,0);assert.match(missing.stderr,/exactly one/);assert.notEqual(conflict.status,0);assert.match(conflict.stderr,/exactly one/);});

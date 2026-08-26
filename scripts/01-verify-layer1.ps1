@@ -8,6 +8,7 @@
 param([switch]$WhatIf)
 
 $ErrorActionPreference = "Continue"
+$env:Path = @([Environment]::GetEnvironmentVariable("Path", "Machine"), [Environment]::GetEnvironmentVariable("Path", "User")) -join ";"
 $checks = @()
 
 function Add-Check {

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 — 2026-08-26
+
+- Validated the Windows x64 Layer 1 foundation, persistent PATH reconstruction, hardlinks, and an
+  idempotent pilot project.
+- Added strict manifests, explicit pending-skill review/promotion/rejection/recovery, official
+  Antigravity skill mirroring, and a pinned/checksummed managed Hermes update workflow.
+- Added deterministic Layer 3 recipes with plan tokens, allowlisted integrity-pinned tools,
+  verification, drift detection, scoped rollback, safe extraction, and the Samuel recipe.
+
 ## 0.1.2 — 2026-08-26
 
 - Added structured `afd doctor` and controlled `afd fix layer1` reconciliation.

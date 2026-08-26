@@ -1,0 +1,14 @@
+{
+  "recipeVersion": 1,
+  "id": "samuel",
+  "version": "1.0.0",
+  "origin": "builtin",
+  "skills": [{ "id": "holoself", "source": "samuel/holoself", "targets": ["claude-code", "codex", "antigravity", "pi", "hermes", "grok"], "localOverlay": "AFD_HOLOSELF_ROOT" }],
+  "tools": [
+    { "id": "vibium", "command": "vibium", "source": "npm:vibium", "version": "26.8.21", "checksum": "sha512-juCBbrm52Y9u4gEascBCQx9fSRQMJr8Pc8+4UmChgR1jkYgIWA8L9mwG/j4WTAOkKC3PdV+Xqy1QYZrEEztcvg==" },
+    { "id": "tokscale", "command": "tokscale", "source": "npm:tokscale", "version": "4.14.0", "checksum": "sha512-mmIvBogoIy7iu3EmAJDKVuwn/8vUx9a2OHeQj0DZXnzMc/rauxpRuMXyich0yZb11o7bNJGvrpC4+g8t/0YKMw==" }
+  ],
+  "prerequisites": ["windows-x64", "ntfs", "supported-agent-adapters"],
+  "checks": ["holoself-visible-to-all-detected-agents", "vibium-on-path", "tokscale-on-path"],
+  "rollback": { "managedOnly": true }
+}

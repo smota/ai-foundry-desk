@@ -16,6 +16,7 @@ local/
 
 # Node/build
 node_modules/
+.test-dist/
 release/
 dist/
 coverage/
