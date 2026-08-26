@@ -15,89 +15,151 @@
   <img src="assets/brand/ai-foundry-desk-logo.png" alt="AI Foundry Desk logo: a luminous multi-agent workstation" width="144">
 </p>
 
-AI Foundry Desk prepares and governs a personal Windows workstation for multiple AI coding agents.
-It is a local workbench—not a SaaS platform, team orchestrator or credential manager. The product
-combines a conservative Windows foundation, an idempotent agent bootstrap and a portable
-Node/TypeScript control plane for shared skills and small profiles.
+## Your AI tools, one clean workbench
 
-Windows x64 is the only platform implemented, tested, and validated today. macOS and Linux are
-product direction and roadmap items, not currently supported platforms. The project is licensed
-under MIT.
+AI Foundry Desk turns a personal computer into a manageable multi-agent development environment.
+It gives your agents a consistent foundation, a shared set of practical tools, and controlled ways
+to install, inspect, repair, and synchronize the environment—so you can focus on the work that
+matters instead of maintaining six different setups.
 
-Contributions that implement, test, and validate macOS or Linux adapters are warmly welcomed.
-The product will keep one portable core and place operating-system behavior behind explicit,
-reviewable adapters; see [Contributing](CONTRIBUTING.md) and the [Roadmap](docs/ROADMAP.md).
+Use AFD to:
 
-## What is included
+- prepare a predictable workstation for multiple AI coding agents;
+- keep runtimes, command-line tools, skills, and small profiles organized;
+- preview every important change before applying it;
+- detect drift and repair only the configuration AFD owns;
+- add more agents over time without turning your machine into an unmanageable stack.
 
-- **Layer 1 / Foundation:** mise, uv, pnpm, pinned runtimes, PATH and interactive guardrails.
-- **Layer 2 / bootstrap:** Claude/Codex desktop detection; Claude Code, Codex CLI, Antigravity, Pi,
-  Hermes and Grok; no login or token handling.
-- **Agent Manager:** one-way catalog sync, status, review, verify, drift protection and pending import.
-- **Common toolbox:** `rg`, `fd`, `jq`, `yq`, `bat` and `delta`; RTK is deliberately excluded.
-- **Recovery:** local backups under `%LOCALAPPDATA%\AI Foundry Desk\backups` with bounded retention.
+AFD is a local personal workbench. It is not a SaaS platform, a team orchestrator, or a credential
+manager. Your logins, tokens, projects, conversations, and agent-native data remain outside it.
 
-Canonical configuration lives under `%USERPROFILE%\.afd`; operational state lives under
-`%LOCALAPPDATA%\AI Foundry Desk`. Neither is published.
+## How the workbench fits together
 
-## Recommended Windows install
+```text
+                         afd — one daily command
+                                   │
+              ┌────────────────────┼────────────────────┐
+              │                    │                    │
+       Layer 1 Foundation   Layer 2 Agent Setup   Agent Manager
+       runtimes + PATH      apps + agent CLIs     skills + profiles
+              │                    │                    │
+              └──────────── Common Agent Toolbox ──────┘
+                    rg · fd · jq · yq · bat · delta
+                                   │
+                     Claude · Codex · Pi · Grok
+                       Hermes · Antigravity*
+```
 
-The current versioned Windows/PowerShell bootstrap installs only `afd`; it does **not** apply either layer.
-This command downloads the bootstrap and its checksum, verifies SHA-256 locally, and only then runs it:
+`*` Capabilities vary by agent. AFD reports unsupported integrations instead of pretending they
+work.
+
+| Module | Objective | What it gives you |
+| --- | --- | --- |
+| **Layer 1 — Foundation** | Build a stable base | mise-managed Python, Node.js, Go and Rust; uv, pnpm, PATH, guardrails, doctor and controlled repair |
+| **Layer 2 — Agent Setup** | Make agents available consistently | Idempotent detection and installation of supported desktop apps and CLIs without handling login credentials |
+| **Common Agent Toolbox** | Give every agent dependable utilities | Fast search, file discovery, structured-data processing, readable source output and clear diffs |
+| **Agent Manager** | Keep shared guidance manageable | A canonical skill catalog, small profiles, one-way sync, drift detection, review and safe import/adopt |
+| **Recovery** | Keep managed changes reversible | Local backups with bounded retention before AFD changes an existing managed file |
+
+## Quick start on Windows
+
+You do not need to clone the repository or understand the internal scripts.
+
+### 1. Open PowerShell
+
+Open a regular PowerShell window as your normal user. Administrator access is not required.
+
+### 2. Install the `afd` command
+
+Copy the command below, paste it into PowerShell, and press Enter. It downloads the versioned
+Windows bootstrap and checksum separately, verifies SHA-256, and installs only the AFD command.
+It does **not** configure either Layer automatically.
 
 ```powershell
 $v='0.1.2'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
 ```
 
-The bootstrap requires Node.js 24+ and pnpm. After installation, open a new terminal and preview:
+The bootstrap requires Node.js 24 or newer and pnpm. If a prerequisite is missing, it stops and
+explains what is needed; it does not silently apply a Layer.
+
+### 3. Preview, then apply
+
+Open a new PowerShell window and run:
 
 ```powershell
 afd init --dry-run
+afd doctor
 afd layer1 --dry-run
-afd layer2 --dry-run
 ```
 
-## Local development install
-
-From a clone, install the CLI from an audited local package in one command:
-
-```powershell
-.\install-local.ps1
-```
-
-This builds and installs `afd`; it does **not** apply either layer. Preview first:
-
-```powershell
-afd --help
-afd status
-afd verify
-afd init --dry-run
-afd layer1 --dry-run
-afd layer2 --dry-run
-```
-
-Apply only after reviewing the preview:
+Review the output. When you are comfortable with the plan:
 
 ```powershell
 afd layer1 --apply
+afd layer2 --dry-run
 afd layer2 --apply
 ```
 
-Diagnose Layer 1 without writing, then reconcile only AFD-managed state when explicitly approved:
+Login or OAuth remains a manual step inside each agent. AFD never asks for or stores those
+credentials.
+
+## Your everyday workflow
+
+Once the workstation is ready, these are the commands most people need:
 
 ```powershell
-afd doctor
-afd doctor --json
+afd status              # See the shared environment and pending changes
+afd doctor              # Explain Foundation problems without changing anything
+afd verify              # Run the compact product verification suite
+afd sync --dry-run      # Preview shared skill/profile changes
+afd sync                # Apply reviewed, one-way synchronization
+```
+
+If Layer 1 needs repair, preview the exact reconciliation first:
+
+```powershell
 afd fix layer1 --dry-run
 afd fix layer1 --apply
 ```
 
-`doctor` reports structured PASS/WARN/FAIL results. `fix` never resets the machine: it is limited to
-declared Layer 1 packages and mise runtimes, user environment/PATH, managed profile blocks, shims,
-and PNPM_HOME. Windows aliases, third-party runtimes, projects, credentials, and Layer 2 are reported
-but not modified.
+`fix` does not reset the computer. It only reconciles declared AFD packages and runtimes, managed
+PATH/environment entries, shims, PNPM_HOME, and marked profile blocks. Windows aliases,
+third-party runtimes, projects, credentials, services, agents, and Layer 2 remain untouched.
 
-## Linux/WSL and macOS bootstrap status
+For automation, `afd doctor --json` provides a stable schema with category, severity, code,
+sanitized evidence, and a suggested action.
+
+## Common Agent Toolbox
+
+Agents are much more effective when they can rely on the same small set of fast, composable tools.
+AFD provides a practical baseline for every supported agent without changing global Git behavior or
+adding project-specific aliases.
+
+| Command | Purpose | Typical use |
+| --- | --- | --- |
+| `rg` | Fast text search that respects ignore files | Find symbols, messages, configuration, and references across a repository |
+| `fd` | Friendly, fast file discovery | Locate source files and directories without complex search syntax |
+| `jq` | JSON inspection and transformation | Read API responses, package metadata, and machine-readable output |
+| `yq` | YAML and TOML inspection | Work with workflows, manifests, and configuration files |
+| `bat` | Read source with syntax highlighting and context | Inspect files clearly without modifying them |
+| `delta` | Readable diffs | Review code changes and understand what an agent proposes |
+
+These tools are preferences, not mandates. AFD and its agents still use native alternatives when a
+project or operating system requires them, and tool availability never authorizes a mutating action.
+
+## Platform support
+
+- **Windows x64:** complete validated workstation experience, including both Layers, doctor/fix,
+  Agent Manager, toolbox, backups, and verification.
+- **Ubuntu 26.04.1 LTS on WSL2 x86_64:** validated POSIX bootstrap and portable CLI cycle. Native
+  Linux Layer adapters are not implemented.
+- **macOS:** experimental detection only; no validated support claim.
+
+See [Platform support](docs/PLATFORM-SUPPORT.md) for the exact test boundary. Contributions for
+native Linux and macOS adapters are welcome when they preserve one portable core and document real
+validation evidence.
+
+### Linux/WSL bootstrap
 
 `scripts/afd-bootstrap-posix.sh` is a separate POSIX adapter with `--dry-run`, SHA-256 verification,
 and an isolated `--prefix`. Linux support is limited to the WSL distribution and portable CLI cycle
@@ -111,37 +173,42 @@ Validated Linux/WSL bootstrap (downloads, verifies, then executes as separate st
 v=0.1.2; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
 ```
 
-Layer 2 preserves functional installations and does not authenticate agents. `afd sync --dry-run`
-previews shared skill/profile reconciliation; `afd sync` is always explicit.
+## Safety by design
 
-## Safety boundaries
+- Important changes have a `--dry-run` or `-WhatIf` preview.
+- Doctor and all dry-runs are read-only: no logs, state, backups, PATH, profiles, or installations.
+- Drift is reported and preserved instead of silently overwritten.
+- Existing managed files are backed up before a real change.
+- Skills created by an agent are never promoted automatically.
+- Tokens, logins, history, memory, sessions, projects, and proprietary plugins are not shared.
+- Layers never run during CLI installation or `afd init`.
 
-- No tokens, logins, history, memory or proprietary plugins are shared.
-- Drift is never silently overwritten; Hermes-created skills are never auto-promoted.
-- `hermes update` is blocked interactively until a verified update workflow exists.
-- `-WhatIf`/`--dry-run` must not write logs or state.
-- Backups, logs, local state, caches, profiles and installations are excluded from releases.
+Canonical configuration lives under `%USERPROFILE%\.afd`. Operational state and bounded backups
+live under `%LOCALAPPDATA%\AI Foundry Desk`; neither is included in releases.
 
-## Development
+## For contributors
+
+Clone the repository only for development or auditing:
 
 ```powershell
 pnpm install --frozen-lockfile
 pnpm check
-pnpm afd -- --help
-pnpm pack:dry-run
+.\install-local.ps1
 ```
+
+Start with [Contributing](CONTRIBUTING.md), [Architecture](docs/ARCHITECTURE.md), and the
+[next-session handoff](docs/NEXT-SESSION.md).
 
 ## Documentation
 
-- [Next session handoff](docs/NEXT-SESSION.md)
 - [Architecture](docs/ARCHITECTURE.md)
-- [Layer 1](docs/README-LAYER-1.md)
-- [Layer 2 bootstrap](docs/README-LAYER-2-AGENTS.md)
+- [Layer 1 Foundation](docs/README-LAYER-1.md)
+- [Layer 2 Agent Setup](docs/README-LAYER-2-AGENTS.md)
 - [Skills and profiles](docs/LAYER-2-SYNC.md)
+- [Platform support](docs/PLATFORM-SUPPORT.md)
 - [Security boundaries](docs/SECURITY-BOUNDARIES.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Release process](docs/RELEASING.md)
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and [LICENSE](LICENSE).
-
-Brand artwork is documented in [assets/brand/README.md](assets/brand/README.md).
+AI Foundry Desk is available under the [MIT License](LICENSE). See [SECURITY.md](SECURITY.md) for
+responsible reporting. Brand artwork is documented in [assets/brand/README.md](assets/brand/README.md).
