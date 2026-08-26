@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 — 2026-08-26
+
+- Added structured `afd doctor` and controlled `afd fix layer1` reconciliation.
+- Made the PowerShell bootstrap explicitly Windows-specific.
+- Added a checksum-verified POSIX bootstrap with validated Linux/WSL scope and experimental macOS detection.
+
 ## 0.1.1 — 2026-08-26
 
 - Made all public product text consistently English.

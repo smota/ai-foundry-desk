@@ -1,6 +1,6 @@
 {
   "name": "ai-foundry-desk",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "AI Foundry Desk — Multi-Agent Workbench for a personal AI workstation.",
   "license": "MIT",
   "type": "module",

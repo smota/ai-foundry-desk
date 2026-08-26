@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    01 - Layer 1: base nativa, verificavel e isolada por projeto.
+    01 - Layer 1: native, verifiable, project-isolated foundation.
 .DESCRIPTION
     Installs mise, uv, and pnpm; pins Python 3.14, Node 24 LTS, Go 1.26, and Rust 1.98.0;
     adds mise shims to persistent PATH; and keeps guardrails limited to interactive commands.
@@ -39,17 +39,21 @@ function Install-WingetPackageIfMissing {
 }
 
 function Add-UserPathEntry {
-    param([string]$PathEntry)
+    param([string]$PathEntry, [switch]$Prepend)
 
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
     $entries = @($userPath -split ";" | Where-Object { $_ })
-    if ($entries -contains $PathEntry) { return }
+    $alreadyPresent = @($entries | Where-Object { $_.TrimEnd('\') -ieq $PathEntry.TrimEnd('\') }).Count -gt 0
+    if (-not $Prepend -and $alreadyPresent) { return }
+    $withoutEntry = @($entries | Where-Object { $_.TrimEnd('\') -ine $PathEntry.TrimEnd('\') })
+    $desired = if ($Prepend) { @($PathEntry) + $withoutEntry } else { $withoutEntry + @($PathEntry) }
+    if (($entries -join ';') -eq ($desired -join ';')) { return }
     if ($WhatIf) {
         Write-Host "  [WhatIf] Would add to user PATH: $PathEntry"
         return
     }
 
-    $newPath = (($entries + $PathEntry) -join ";") + ";"
+    $newPath = ($desired -join ";") + ";"
     [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
     Write-Host "  User PATH updated: $PathEntry"
 }
@@ -158,7 +162,7 @@ function fnm {
         return
     }
     if ($WhatIf) {
-        Write-Host "  [WhatIf] Atualizaria $profilePath apos criar backup."
+        Write-Host "  [WhatIf] Would update $profilePath after creating a backup."
         return
     }
 
@@ -174,7 +178,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
     throw "WinGet was not found. Install App Installer before running Layer 1."
 }
 
-Write-Host "Instalando a base da Layer 1..."
+Write-Host "Installing the Layer 1 foundation..."
 Install-WingetPackageIfMissing -WingetId "jdx.mise" -FriendlyName "mise"
 Install-WingetPackageIfMissing -WingetId "astral-sh.uv" -FriendlyName "uv"
 Install-WingetPackageIfMissing -WingetId "pnpm.pnpm" -FriendlyName "pnpm"
@@ -191,7 +195,7 @@ $profilePaths = @(
     (Join-Path $documentsDir "WindowsPowerShell\Microsoft.PowerShell_profile.ps1")
 )
 Add-UserPathEntry -PathEntry $wingetLinks
-Add-UserPathEntry -PathEntry $miseShims
+Add-UserPathEntry -PathEntry $miseShims -Prepend
 if ($uvExe) { Add-UserPathEntry -PathEntry (Split-Path -Parent $uvExe.FullName) }
 Set-UserEnvironmentVariableIfNeeded -Name "UV_NO_MANAGED_PYTHON" -Value "1"
 Set-UserEnvironmentVariableIfNeeded -Name "UV_PYTHON_DOWNLOADS" -Value "0"
@@ -208,8 +212,8 @@ if (-not (Test-Path -LiteralPath $pnpmHome)) {
 }
 
 if ($WhatIf) {
-    Write-Host "  [WhatIf] Configuraria Python 3.14, Node 24, Go 1.26 e Rust 1.98.0 no mise."
-    Write-Host "  [WhatIf] Desabilitaria instalacao automatica de ferramentas ausentes no mise."
+    Write-Host "  [WhatIf] Would configure Python 3.14, Node 24, Go 1.26, and Rust 1.98.0 in mise."
+    Write-Host "  [WhatIf] Would disable automatic installation of missing mise tools."
     $profilePaths | ForEach-Object { Update-PowerShellProfile -ProfilePath $_ }
     return
 }
@@ -223,15 +227,15 @@ if (-not $mise) {
     throw "mise is installed but was not found in $wingetLinks. Open a new terminal and try again."
 }
 
-Write-Host "`nConfigurando runtimes verificaveis..."
+Write-Host "`nConfiguring verifiable runtimes..."
 & $mise.Source settings set not_found_auto_install false
 & $mise.Source use --global "python@$($toolVersions.python)" "node@$($toolVersions.node)" "go@$($toolVersions.go)" "rust@$($toolVersions.rust)"
 & $mise.Source reshim
 
-Write-Host "`nConfigurando o PowerShell..."
+Write-Host "`nConfiguring PowerShell..."
 $profilePaths | ForEach-Object { Update-PowerShellProfile -ProfilePath $_ }
 
-Write-Host "`nVerificando hardlinks no volume temporario..."
+Write-Host "`nVerifying hardlinks on the temporary volume..."
 $testDir = Join-Path $env:TEMP "afd-layer1-hardlink"
 if (Test-Path -LiteralPath $testDir) { throw "The test directory already exists and will not be overwritten: $testDir" }
 New-Item -ItemType Directory -Path $testDir | Out-Null
@@ -240,7 +244,7 @@ $link = Join-Path $testDir "link.txt"
 try {
     Set-Content -LiteralPath $src -Value "layer1" -Encoding ascii
     New-Item -ItemType HardLink -Path $link -Target $src | Out-Null
-    Write-Host "  Hardlink OK - o volume suporta o modelo CAS de uv/pnpm." -ForegroundColor Green
+    Write-Host "  Hardlink OK - the volume supports the uv/pnpm CAS model." -ForegroundColor Green
 }
 finally {
     Remove-Item -LiteralPath $testDir -Recurse -Force

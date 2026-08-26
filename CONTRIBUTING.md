@@ -11,9 +11,10 @@ reversibility and explicit user intent. Open an issue before broad architecture 
 
 ## Platform adapters
 
-Windows x64 is currently the only implemented and validated platform. macOS and Linux support is
-an open contribution area, and contributions that implement, test, document, and validate those
-platform adapters are especially welcome.
+Windows x64 remains the only fully implemented workstation platform. The portable CLI/bootstrap
+cycle is additionally validated on the specific WSL2 environment documented in
+`docs/PLATFORM-SUPPORT.md`; native Linux Layer adapters and all macOS support remain open
+contribution areas.
 
 Keep one shared product core. Platform-specific discovery, installation, PATH handling, backup,
 and verification must live behind explicit adapters rather than forks or duplicated products. A

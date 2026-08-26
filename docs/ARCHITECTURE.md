@@ -8,7 +8,9 @@ AI Foundry Desk is one product with four internal modules:
 4. Agent Manager: portable Node.js/TypeScript catalog, adapters, review, sync, verify, and adopt.
 
 `afd` is the single user entry point. Portable inspection and catalog logic stays in Node.js.
-`afd layer1` and `afd layer2` cross an explicit bridge to an allowlist of Windows scripts. No layer
+`afd layer1`, `afd doctor`, `afd fix layer1`, and `afd layer2` cross an explicit bridge to an
+allowlist of platform scripts. Doctor is read-only; fix delegates to the idempotent Layer 1 source
+of truth and runs doctor afterward. No layer
 runs by default or during `afd init`.
 
 The user catalog is stored at `~/.afd` and operational backups remain under

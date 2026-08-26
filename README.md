@@ -7,6 +7,7 @@
 [![License: MIT](https://img.shields.io/github/license/smota/ai-foundry-desk?style=flat-square&label=license)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/smota/ai-foundry-desk?style=flat-square&logo=github&label=release)](https://github.com/smota/ai-foundry-desk/releases/latest)
 [![Validated on Windows x64](https://img.shields.io/badge/validated-Windows%20x64-0078D4?style=flat-square&logo=windows11)](docs/README-LAYER-1.md)
+[![Linux WSL validated](https://img.shields.io/badge/validated-Linux%20WSL2-FCC624?style=flat-square&logo=linux&logoColor=black)](docs/PLATFORM-SUPPORT.md)
 
 ![AI Foundry Desk multi-agent workstation banner](assets/brand/ai-foundry-desk-banner.png)
 
@@ -39,9 +40,9 @@ reviewable adapters; see [Contributing](CONTRIBUTING.md) and the [Roadmap](docs/
 Canonical configuration lives under `%USERPROFILE%\.afd`; operational state lives under
 `%LOCALAPPDATA%\AI Foundry Desk`. Neither is published.
 
-## Recommended remote install
+## Recommended Windows install
 
-The versioned GitHub Release bootstrap installs only `afd`; it does **not** apply either layer.
+The current versioned Windows/PowerShell bootstrap installs only `afd`; it does **not** apply either layer.
 This command downloads the bootstrap and its checksum, verifies SHA-256 locally, and only then runs it:
 
 ```powershell
@@ -81,6 +82,28 @@ Apply only after reviewing the preview:
 afd layer1 --apply
 afd layer2 --apply
 ```
+
+Diagnose Layer 1 without writing, then reconcile only AFD-managed state when explicitly approved:
+
+```powershell
+afd doctor
+afd doctor --json
+afd fix layer1 --dry-run
+afd fix layer1 --apply
+```
+
+`doctor` reports structured PASS/WARN/FAIL results. `fix` never resets the machine: it is limited to
+declared Layer 1 packages and mise runtimes, user environment/PATH, managed profile blocks, shims,
+and PNPM_HOME. Windows aliases, third-party runtimes, projects, credentials, and Layer 2 are reported
+but not modified.
+
+## Linux/WSL and macOS bootstrap status
+
+`scripts/afd-bootstrap-posix.sh` is a separate POSIX adapter with `--dry-run`, SHA-256 verification,
+and an isolated `--prefix`. Linux support is limited to the WSL distribution and portable CLI cycle
+recorded in [Platform support](docs/PLATFORM-SUPPORT.md). It installs only `afd` and never applies
+Layers. macOS detection is experimental and fail-closed because no real macOS host was validated.
+Never use a blind remote pipe; download the script and checksum separately before execution.
 
 Layer 2 preserves functional installations and does not authenticate agents. `afd sync --dry-run`
 previews shared skill/profile reconciliation; `afd sync` is always explicit.

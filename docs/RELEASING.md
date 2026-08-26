@@ -10,9 +10,11 @@ pnpm check
 .\scripts\build-release.ps1 -OutputDirectory .\release
 ```
 
-The builder creates an allowlisted npm tarball, `afd-bootstrap.ps1`, SHA-256 files, and release notes.
-The bootstrap downloads only the versioned tarball and checksum from the same GitHub Release,
-verifies SHA-256, installs with pnpm, and never applies Layer 1/2.
+The builder creates an allowlisted npm tarball, an explicitly Windows-specific PowerShell bootstrap,
+a separate POSIX bootstrap, SHA-256 files, and release notes. Each bootstrap downloads only the
+versioned tarball and checksum from the same GitHub Release, verifies SHA-256, installs the CLI, and
+never applies Layer 1/2. Publish POSIX assets as stable only after the documented platform fixture
+passes; macOS remains experimental until validated on real hardware.
 
 Before publishing, verify a clean tree, version/tag agreement, tests, PowerShell parse, secrets scan,
 artifact contents, checksums, bootstrap fixture, and release notes. Publish the tag and assets without

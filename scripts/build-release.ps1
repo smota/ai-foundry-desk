@@ -23,8 +23,13 @@ try {
     $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $artifact).Hash.ToLowerInvariant()
     Set-Content -LiteralPath "$artifact.sha256" -Value "$hash  $artifactName" -Encoding ascii
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot "afd-bootstrap.ps1") -Destination (Join-Path $OutputDirectory "afd-bootstrap.ps1") -Force
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot "afd-bootstrap.ps1") -Destination (Join-Path $OutputDirectory "afd-bootstrap-windows.ps1") -Force
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot "afd-bootstrap-posix.sh") -Destination (Join-Path $OutputDirectory "afd-bootstrap-posix.sh") -Force
     $bootstrapHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $OutputDirectory "afd-bootstrap.ps1")).Hash.ToLowerInvariant()
     Set-Content -LiteralPath (Join-Path $OutputDirectory "afd-bootstrap.ps1.sha256") -Value "$bootstrapHash  afd-bootstrap.ps1" -Encoding ascii
+    Set-Content -LiteralPath (Join-Path $OutputDirectory "afd-bootstrap-windows.ps1.sha256") -Value "$bootstrapHash  afd-bootstrap-windows.ps1" -Encoding ascii
+    $posixHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $OutputDirectory "afd-bootstrap-posix.sh")).Hash.ToLowerInvariant()
+    Set-Content -LiteralPath (Join-Path $OutputDirectory "afd-bootstrap-posix.sh.sha256") -Value "$posixHash  afd-bootstrap-posix.sh" -Encoding ascii
     Set-Content -LiteralPath (Join-Path $OutputDirectory "RELEASE-NOTES.md") -Value "# AI Foundry Desk v$version`r`n`r`nVerified Windows x64 bootstrap release. Installing the CLI does not apply Layer 1 or Layer 2.`r`n" -Encoding utf8
     Write-Host "Release assets created in $OutputDirectory"
 } finally { Pop-Location }

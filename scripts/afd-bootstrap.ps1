@@ -1,6 +1,6 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [string]$Version = "0.1.1",
+    [string]$Version = "0.1.2",
     [string]$Repository = "smota/ai-foundry-desk",
     [string]$LocalAssetDirectory
 )
@@ -53,7 +53,7 @@ try {
     if ($entries -notcontains $pnpmBin) {
         [Environment]::SetEnvironmentVariable("Path", (($entries + $pnpmBin) -join ';') + ';', "User")
     }
-    Write-Host "AI Foundry Desk $Version installed. Open a new terminal and run: afd init --dry-run"
+    Write-Host "AI Foundry Desk $Version installed for Windows. Open a new PowerShell or cmd and run: afd init --dry-run"
     Write-Host "No layer was applied."
 } finally {
     if (Test-Path -LiteralPath $tempRoot) { Remove-Item -LiteralPath $tempRoot -Recurse -Force }

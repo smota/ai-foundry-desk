@@ -2,7 +2,8 @@
 
 ## Ready
 
-- One product with `afd`, Layer 1, Layer 2, toolbox, Agent Manager, dry-run, verification, and backups.
+- One product with `afd`, Layer 1, Layer 2, toolbox, Agent Manager, doctor, controlled Layer 1 fix,
+  dry-run, verification, and backups.
 - Windows x64 is the only implemented, tested, and validated platform; MIT license; GitHub
   repository and release artifact allowlist.
 

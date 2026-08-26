@@ -17,6 +17,25 @@ afd layer1 --apply
 .\scripts\01-verify-layer1.ps1
 ```
 
+## Doctor and controlled repair
+
+`afd doctor` is the primary read-only troubleshooting command. It checks Windows x64, managed PATH
+precedence, no-profile shell resolution, mise/uv/pnpm, declared runtimes, uv policy, PNPM_HOME, the
+physical uv WinGet location, profile markers, and Microsoft Store Python alias conflicts.
+`afd doctor --json` emits schema version 1 with category, severity, code, sanitized evidence, and
+suggestion. Neither mode writes logs, state, backups, profiles, PATH, or installations.
+
+`afd fix layer1 --dry-run` shows the reconciliation plan. `--apply` reconciles only AFD-managed
+Layer 1 state and reruns doctor, returning non-zero while critical failures remain. Existing profiles
+are backed up only before a real change under `%LOCALAPPDATA%\AI Foundry Desk\backups`.
+
+AFD may place its mise shims entry first in user PATH so it wins over the Microsoft Store Python
+alias. It does not disable Windows App Execution Aliases. Third-party runtimes, projects,
+dependencies, credentials, services, agents, skills, and Layer 2 remain outside repair scope.
+
+`01-verify-layer1.ps1` remains the compact verifier used by `afd verify`; doctor explains and fix
+explicitly reconciles.
+
 The installer persists `UV_NO_MANAGED_PYTHON=1`, `UV_PYTHON_DOWNLOADS=0`, `PNPM_HOME`, mise shims,
 and the required command paths. It does not set persistent `UV_SYSTEM_PYTHON`, `UV_PYTHON`, weaken
 execution/TLS controls, or approve third-party scripts. Review untrusted repositories in a
