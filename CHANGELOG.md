@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-08-27
+
+- Added native Linux/WSL2 Layer 1 runtime, doctor, fix, verification, and hardlink adapters.
+- Added Docker Engine to Layer 1 as an independent host tool while explicitly prohibiting Docker
+  as the execution mechanism for Layers 1–3.
+- Added native Linux Layer 2 toolbox and integrity-pinned agent CLI adapters, plus portable Linux
+  routing and HOME isolation for Layer 3.
+
 ## 0.2.0 — 2026-08-26
 
 - Validated the Windows x64 Layer 1 foundation, persistent PATH reconstruction, hardlinks, and an

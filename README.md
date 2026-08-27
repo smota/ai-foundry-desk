@@ -62,6 +62,10 @@ work.
 | **Layer 3 — Recipes** | Provision reviewed bundles | Uniform internal/local/HTTPS loading, mandatory plan, confirmed apply, verification and managed-only rollback |
 | **Recovery** | Keep managed changes reversible | Local backups with bounded retention before AFD changes an existing managed file |
 
+For a fast, linked catalog of every tool and product, see the
+[Layer inventory](docs/LAYER-INVENTORY.md). It includes logos where available, a short description,
+the component's objective, installation ownership, and platform boundaries.
+
 ## Quick start on Windows
 
 You do not need to clone the repository or understand the internal scripts.
@@ -153,8 +157,8 @@ project or operating system requires them, and tool availability never authorize
 
 - **Windows x64:** complete validated workstation experience, including both Layers, doctor/fix,
   Agent Manager, toolbox, backups, and verification.
-- **Ubuntu 26.04.1 LTS on WSL2 x86_64:** validated POSIX bootstrap and portable CLI cycle. Native
-  Linux Layer adapters are not implemented.
+- **Ubuntu 26.04.1 LTS on WSL2 x86_64:** native Layer 1 runtime and Docker adapters, native Layer 2
+  CLI/toolbox adapters, portable Layer 3 recipes, doctor/fix, and verification are implemented.
 - **macOS:** experimental detection only; no validated support claim.
 
 See [Platform support](docs/PLATFORM-SUPPORT.md) for the exact test boundary. Contributions for
@@ -164,9 +168,18 @@ validation evidence.
 ### Linux/WSL bootstrap
 
 `scripts/afd-bootstrap-posix.sh` is a separate POSIX adapter with `--dry-run`, SHA-256 verification,
-and an isolated `--prefix`. Linux support is limited to the WSL distribution and portable CLI cycle
-recorded in [Platform support](docs/PLATFORM-SUPPORT.md). It installs only `afd` and never applies
-Layers. macOS detection is experimental and fail-closed because no real macOS host was validated.
+and an isolated `--prefix`. The bootstrap installs only `afd` and never applies Layers. On Linux,
+run `afd layer1 --dry-run`, review the native runtime and Docker plan, then use `--apply`. Layer 2
+follows the same preview/apply contract. macOS detection remains experimental and fail-closed.
+
+```sh
+afd layer1 --dry-run
+afd layer1 --apply
+afd doctor
+afd layer2 --dry-run
+afd layer2 --apply
+afd verify
+```
 Never use a blind remote pipe; download the script and checksum separately before execution.
 
 Validated Linux/WSL bootstrap (downloads, verifies, then executes as separate steps):
@@ -174,6 +187,10 @@ Validated Linux/WSL bootstrap (downloads, verifies, then executes as separate st
 ```sh
 v=0.1.2; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
 ```
+
+Docker is a Layer 1 host capability, not an AFD runtime. Layers 1–3 run directly on the host. Higher
+layers may use Docker only when explicitly requested or required by a documented dependency. AFD
+does not automatically add users to the root-equivalent `docker` group.
 
 ## Safety by design
 

@@ -11,6 +11,17 @@ afd layer2 --apply
 .\scripts\07-verify-layer2-toolbox.ps1
 ```
 
+On Linux/WSL, Layer 2 installs the toolbox through mise's attestation-aware GitHub backend and
+installs supported Node CLIs only after matching pinned npm integrity. Claude's native postinstall
+requires a separate explicit `--allow-claude-postinstall` review. Antigravity and Hermes remain
+detection-only until checksum-verifiable official Linux artifacts are available.
+
+After reviewing that third-party postinstall separately, the explicit Linux command is:
+
+```sh
+afd layer2 --apply --allow-claude-postinstall
+```
+
 WinGet is preferred when an appropriate official package exists. Pi and Grok use their official npm
 packages through pnpm. Hermes uses a pinned official installer and a canonical `hermes.cmd` launcher
 that invokes its existing Python entry point, avoiding the uv trampoline failure seen across MSIX

@@ -7,8 +7,8 @@
 - Pinned/checksummed Hermes staging updates, explicit pending-skill review, official Antigravity
   skill mirroring, and deterministic local/internal/HTTPS recipes with scoped rollback.
 - Samuel recipe for Holoself, pinned Vibium/Tokscale, plus fail-closed local extraction.
-- Windows x64 is the only implemented, tested, and validated platform; MIT license; GitHub
-  repository and release artifact allowlist.
+- Windows x64 and Ubuntu 26.04.1 WSL2 x86_64 have implemented and tested platform adapters; native
+  Linux outside WSL still needs independent validation evidence.
 
 ## Next cycle
 
@@ -26,7 +26,7 @@
 ## Platform expansion — contributions welcome
 
 - Implement, test, document, and validate macOS adapters while preserving the shared core.
-- Implement, test, document, and validate Linux adapters while preserving the shared core.
+- Validate the Linux adapters on native Ubuntu hardware/VMs in addition to the WSL2 fixture.
 - Define WSL behavior separately from native Windows and Linux after its boundaries are tested.
 - Add platform and architecture CI matrices only when representative environments are available.
 

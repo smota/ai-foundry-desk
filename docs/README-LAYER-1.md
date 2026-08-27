@@ -17,9 +17,13 @@ afd layer1 --apply
 .\scripts\01-verify-layer1.ps1
 ```
 
+On Linux/WSL, the same `afd layer1` and `afd fix layer1` commands route to native POSIX adapters.
+Runtimes remain user-scoped. Docker Engine is installed as a separate privileged host-tool step;
+AFD never runs Layers 1–3 inside Docker and does not automatically grant the `docker` group.
+
 ## Doctor and controlled repair
 
-`afd doctor` is the primary read-only troubleshooting command. It checks Windows x64, managed PATH
+`afd doctor` is the primary read-only troubleshooting command. It checks the active platform, managed PATH
 precedence, no-profile shell resolution, mise/uv/pnpm, declared runtimes, uv policy, PNPM_HOME, the
 physical uv WinGet location, profile markers, and Microsoft Store Python alias conflicts.
 `afd doctor --json` emits schema version 1 with category, severity, code, sanitized evidence, and

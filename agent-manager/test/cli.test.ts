@@ -9,7 +9,7 @@ function cli(...args: string[]) {
 test("help and version use the afd brand", () => {
   const help = cli("--help"); const version = cli("--version");
   assert.equal(help.status, 0); assert.match(help.stdout, /AI Foundry Desk/); assert.match(help.stdout, /afd layer1/);
-  assert.equal(version.status, 0); assert.equal(version.stdout.trim(), "0.2.0");
+  assert.equal(version.status, 0); assert.equal(version.stdout.trim(), "0.3.0");
 });
 
 test("init applies no layers and unknown mutating flags are rejected", () => {

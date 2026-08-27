@@ -9,7 +9,7 @@ AI Foundry Desk is one product with four internal modules:
 
 `afd` is the single user entry point. Portable inspection and catalog logic stays in Node.js.
 `afd layer1`, `afd doctor`, `afd fix layer1`, and `afd layer2` cross an explicit bridge to an
-allowlist of platform scripts. Doctor is read-only; fix delegates to the idempotent Layer 1 source
+allowlist of Windows PowerShell or Linux POSIX scripts. Doctor is read-only; fix delegates to the idempotent Layer 1 source
 of truth and runs doctor afterward. No layer
 runs by default or during `afd init`.
 
@@ -23,5 +23,6 @@ Recipe planning is read-only and produces a content-derived approval token. Appl
 missing tokens, records only paths and allowlisted package changes it manages, verifies drift, and
 rolls back only that recorded state. HTTPS recipes reject redirects and arbitrary executable adapters.
 
-Windows x64 is the only validated platform. Tokens, OAuth state, history, memory, sessions, and
-proprietary plugins are never shared.
+Windows x64 and Ubuntu 26.04.1 WSL2 x86_64 are validated within their documented scope. Docker is a
+Layer 1 host tool, not an execution substrate for Layers 1–3. Tokens, OAuth state, history, memory,
+sessions, and proprietary plugins are never shared.

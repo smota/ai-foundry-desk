@@ -27,8 +27,9 @@ tokens, sessions, credentials, environment files, or private absolute paths.
 ## Samuel
 
 `builtin:samuel` describes Holoself, Vibium, and Tokscale. Holoself uses `AFD_HOLOSELF_ROOT` for the
-private local overlay; `C:\Users\samue\work\holoself-sam` belongs in that local variable, never the
-public recipe. Broken overlay links are warnings only, and rollback never touches overlay data.
+private local overlay; its machine-specific path never enters the public recipe. Windows reads the
+persisted user variable; Linux may use the process environment or `~/.config/afd/overlays.json`.
+Broken overlay links are warnings only, and rollback never touches overlay data.
 
 Samuel pins Vibium 26.8.21 and Tokscale 4.14.0 with their registry SHA-512 integrity values. The
 allowlisted pnpm adapter verifies metadata before installation, records any prior global version,
