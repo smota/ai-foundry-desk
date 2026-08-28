@@ -29,6 +29,12 @@ physical uv WinGet location, profile markers, and Microsoft Store Python alias c
 `afd doctor --json` emits schema version 1 with category, severity, code, sanitized evidence, and
 suggestion. Neither mode writes logs, state, backups, profiles, PATH, or installations.
 
+The TypeScript doctor separately reports the Node runtime hosting AFD and the managed `node`
+resolved from the effective process PATH. Every managed command is executed with a bounded
+`--version` probe; file presence alone is not a pass. It also identifies hybrid sandbox contexts
+where the process token, declared user, and profile path disagree. `afd fix layer1` fails closed in
+that context instead of modifying the wrong HKCU or profile.
+
 `afd fix layer1 --dry-run` shows the reconciliation plan. `--apply` reconciles only AFD-managed
 Layer 1 state and reruns doctor, returning non-zero while critical failures remain. Existing profiles
 are backed up only before a real change under `%LOCALAPPDATA%\AI Foundry Desk\backups`.

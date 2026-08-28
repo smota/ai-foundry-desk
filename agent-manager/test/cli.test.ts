@@ -24,4 +24,23 @@ test("doctor and fix expose safe argument contracts", () => {
   assert.notEqual(fix.status, 0); assert.match(fix.stderr, /exactly one option/);
 });
 
+test("provenance identifies the running CLI and hybrid repair fails closed", () => {
+  const provenance = cli("provenance", "--json"); const repair = cli("fix", "layer1", "--dry-run");
+  assert.equal(provenance.status, 0); const value = JSON.parse(provenance.stdout) as { version?: string; cli?: string; identity?: { context?: string } };
+  assert.equal(value.version, "0.3.0"); assert.match(value.cli ?? "", /cli\.js$/);
+  if (value.identity?.context === "hybrid") { assert.notEqual(repair.status, 0); assert.match(repair.stderr, /identity do not match/); }
+});
+
 test("Hermes update requires an explicit preview or apply mode",()=>{const missing=cli("hermes","update");const conflict=cli("hermes","update","--dry-run","--apply");assert.notEqual(missing.status,0);assert.match(missing.stderr,/exactly one/);assert.notEqual(conflict.status,0);assert.match(conflict.stderr,/exactly one/);});
+
+test("telemetry exposes the recipe plan and rejects the removed observe contract", () => {
+  const plan = cli("telemetry", "plan"); const removed = cli("observe", "agents", "plan");
+  assert.ok(plan.status === 0 || plan.status === 2); assert.match(plan.stdout, /"id": "observability"/); assert.match(plan.stdout, /agentacct 0\.10\.1/); assert.match(plan.stdout,/"preflight"/);
+  assert.notEqual(removed.status, 0); assert.match(removed.stderr, /removed before release/);
+});
+
+test("telemetry apply uses the recipe plan token as its single consent boundary", () => {
+  const apply = cli("telemetry", "apply");
+  assert.notEqual(apply.status, 0);
+  assert.match(apply.stderr, /plan-token/);
+});

@@ -60,6 +60,7 @@ work.
 | **Common Agent Toolbox** | Give every agent dependable utilities | Fast search, file discovery, structured-data processing, readable source output and clear diffs |
 | **Agent Manager** | Keep shared guidance manageable | A canonical skill catalog, small profiles, one-way sync, drift detection, review and safe import/adopt |
 | **Layer 3 — Recipes** | Provision reviewed bundles | Uniform internal/local/HTTPS loading, mandatory plan, confirmed apply, verification and managed-only rollback |
+| **Observability** | Explain agent execution locally | Recipe-managed OTLP Collector, Phoenix traces, agentacct session intelligence, bounded correlation and explicit per-agent coverage |
 | **Recovery** | Keep managed changes reversible | Local backups with bounded retention before AFD changes an existing managed file |
 
 For a fast, linked catalog of every tool and product, see the
@@ -81,7 +82,7 @@ Windows bootstrap and checksum separately, verifies SHA-256, and installs only t
 It does **not** configure either Layer automatically.
 
 ```powershell
-$v='0.1.2'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
+$v='0.3.0'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
 ```
 
 The bootstrap requires Node.js 24 or newer and pnpm. If a prerequisite is missing, it stops and
@@ -119,7 +120,14 @@ afd verify              # Run the compact product verification suite
 afd sync --dry-run      # Preview shared skill/profile changes
 afd sync                # Apply reviewed, one-way synchronization
 afd layer3 plan builtin:samuel # Preview a recipe; shorthand also only plans
+afd telemetry status --json    # See live and session evidence per agent
+afd telemetry explain <run-id> # Explain one correlated run without exposing content
 ```
+
+Observability is activated by applying a recipe that includes it. That reviewed recipe is the
+single consent decision for Collector, Phoenix, agentacct, native integrations and autostart; there
+is no second agentacct prompt. See [Observability](docs/OBSERVABILITY.md) for current agent coverage
+and privacy boundaries.
 
 If Layer 1 needs repair, preview the exact reconciliation first:
 
@@ -185,7 +193,7 @@ Never use a blind remote pipe; download the script and checksum separately befor
 Validated Linux/WSL bootstrap (downloads, verifies, then executes as separate steps):
 
 ```sh
-v=0.1.2; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
+v=0.3.0; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
 ```
 
 Docker is a Layer 1 host capability, not an AFD runtime. Layers 1–3 run directly on the host. Higher
@@ -224,6 +232,8 @@ Start with [Contributing](CONTRIBUTING.md), [Architecture](docs/ARCHITECTURE.md)
 - [Layer 1 Foundation](docs/README-LAYER-1.md)
 - [Layer 2 Agent Setup](docs/README-LAYER-2-AGENTS.md)
 - [Skills and profiles](docs/LAYER-2-SYNC.md)
+- [Agent environment validation matrix](docs/VALIDATION-MATRIX.md)
+- [Agent sandbox toolchain repair](docs/AGENT-SANDBOX-REPAIR.md)
 - [Layer 3 recipes](docs/LAYER-3-RECIPES.md)
 - [Platform support](docs/PLATFORM-SUPPORT.md)
 - [Security boundaries](docs/SECURITY-BOUNDARIES.md)

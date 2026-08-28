@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { explainTelemetry, renderTelemetryExplanation } from "../src/telemetry-explain.js";
+import { recordTelemetryRun } from "../src/telemetry-correlation.js";
+import type { PlatformAdapter } from "../src/platform.js";
+
+function fake(){const files=new Map<string,string>();let fetches=0;const adapter:PlatformAdapter={id:"linux",stateRoot:"/state",async run(){return{status:0,stdout:"",stderr:"",timedOut:false};},async start(){return 1;},async stop(){},async isRunning(){return false;},async processFingerprint(){return undefined;},async isListening(){return false;},async writeText(file,text){files.set(file,text);},async readText(file){return files.get(file);},async remove(file){files.delete(file);},async downloadVerified(){}};return{adapter,get fetches(){return fetches;},fetchJson:async()=>{fetches+=1;return{data:[{trace_id:"b".repeat(32),spans:[{}],start_time:"2026-08-28T00:00:00.000Z",end_time:"2026-08-28T00:00:00.010Z"}]};}};}
+
+test("explain returns deterministic live-only evidence without refreshing agentacct",async()=>{const value=fake();const run={schemaVersion:2 as const,runId:"a".repeat(32),traceId:"b".repeat(32),rootSpanId:"c".repeat(16),projectId:`afd:${"d".repeat(20)}`,agent:"codex",startedAt:"2026-08-28T00:00:00.000Z",endedAt:"2026-08-28T00:00:00.010Z",outcome:"ok" as const,source:"afd-otel" as const};await recordTelemetryRun(run,30,value.adapter,Date.parse(run.endedAt));const result=await explainTelemetry(run.runId,value.adapter,{fetchJson:value.fetchJson});assert.equal(result.status,"live_only");assert.equal(result.phoenix.spanCount,1);assert.equal(result.phoenix.durationMs,10);assert.equal(result.agentacct.available,false);assert.equal(value.fetches,1);assert.match(renderTelemetryExplanation(result),/Correlation: unlinked/);assert.match(result.limitations.join(" "),/Prompt, response, transcript/);});
+
+test("explain reports not-found without inventing correlation",async()=>{const value=fake();const result=await explainTelemetry("f".repeat(32),value.adapter,{fetchJson:async()=>({data:[]})});assert.equal(result.status,"not_found");assert.equal(result.correlation.confidence,"none");assert.deepEqual(result.correlation.basis,[]);});

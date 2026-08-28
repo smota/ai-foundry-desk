@@ -5,14 +5,46 @@
   "additionalProperties": false,
   "required": ["recipeVersion", "id", "version", "origin", "skills", "tools", "prerequisites", "checks", "rollback"],
   "properties": {
-    "recipeVersion": { "const": 1 },
+    "recipeVersion": { "enum": [1, 2] },
     "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
     "version": { "type": "string", "minLength": 1 },
     "origin": { "type": "string", "minLength": 1 },
     "skills": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["id", "source", "targets"], "properties": { "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" }, "source": { "type": "string", "minLength": 1 }, "targets": { "type": "array", "uniqueItems": true, "items": { "enum": ["claude-code", "codex", "antigravity", "pi", "hermes", "grok"] } }, "localOverlay": { "type": "string" } } } },
     "tools": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["id", "command", "source", "version"], "properties": { "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" }, "command": { "type": "string", "minLength": 1 }, "source": { "type": "string", "minLength": 1 }, "version": { "type": "string", "minLength": 1 }, "checksum": { "type": "string", "pattern": "^sha512-[A-Za-z0-9+/]+={0,2}$" } } } },
+    "capabilities": {
+      "type": "array",
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "required", "collector", "phoenix", "agentacct", "retentionDays", "autostart", "nativeIntegrations"],
+        "properties": {
+          "id": { "const": "observability" },
+          "required": { "type": "boolean" },
+          "collector": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["version", "source", "sha256"],
+            "properties": {
+              "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+              "source": { "type": "string", "pattern": "^https://" },
+              "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" }
+            }
+          },
+          "phoenix": { "type": "object", "additionalProperties": false, "required": ["version", "lockSha256", "runtime"], "properties": { "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }, "lockSha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" }, "runtime": { "type": "object", "additionalProperties": false, "required": ["version", "source", "sha256"], "properties": { "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }, "source": { "type": "string", "pattern": "^https://" }, "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" } } } } },
+          "agentacct": { "type": "object", "additionalProperties": false, "required": ["version", "mode", "source", "sha256", "lockSha256"], "properties": { "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }, "mode": { "const": "observe-only" }, "source": { "type": "string", "pattern": "^https://" }, "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" }, "lockSha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" } } },
+          "retentionDays": { "type": "integer", "minimum": 1, "maximum": 365 },
+          "autostart": { "type": "boolean" },
+          "nativeIntegrations": { "type": "array", "uniqueItems": true, "items": { "enum": ["claude-code", "codex", "antigravity", "pi", "hermes", "grok"] } }
+        }
+      }
+    },
     "prerequisites": { "type": "array", "items": { "type": "string" } },
     "checks": { "type": "array", "items": { "type": "string" } },
     "rollback": { "type": "object", "additionalProperties": false, "required": ["managedOnly"], "properties": { "managedOnly": { "const": true } } }
-  }
+  },
+  "allOf": [
+    { "if": { "properties": { "recipeVersion": { "const": 2 } } }, "then": { "required": ["capabilities"] } },
+    { "if": { "properties": { "recipeVersion": { "const": 1 } } }, "then": { "not": { "required": ["capabilities"] } } }
+  ]
 }

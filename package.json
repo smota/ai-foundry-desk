@@ -6,7 +6,7 @@
   "type": "module",
   "bin": { "afd": "agent-manager/dist/cli.js" },
   "engines": { "node": ">=24" },
-  "files": ["agent-manager/dist", "agent-manager/schema", "assets/brand", "scripts", "docs", "pilot", "recipes", "setup.ps1", "README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "CHANGELOG.md"],
+  "files": ["agent-manager/dist", "agent-manager/schema", "assets/brand", "scripts", "docs", "pilot", "recipes", "requirements", "setup.ps1", "README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "CHANGELOG.md"],
   "packageManager": "pnpm@11.23.0",
   "scripts": {
     "build": "pnpm --filter @ai-foundry-desk/cli build",
@@ -19,7 +19,10 @@
     "afd:review": "pnpm --filter @ai-foundry-desk/cli dev review",
     "afd:sync": "pnpm --filter @ai-foundry-desk/cli dev sync",
     "afd:verify": "pnpm --filter @ai-foundry-desk/cli dev verify",
+    "validate:sandbox": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/12-validate-agent-environment.ps1 -RequireSandbox",
+    "validate:observability": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/14-validate-observability-pilot.ps1",
+    "sbom:telemetry": "node scripts/generate-telemetry-sbom.mjs",
     "pack:dry-run": "pnpm build && pnpm pack --dry-run",
-    "release:build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-release.ps1"
+    "release:build": "node scripts/build-release.mjs"
   }
 }

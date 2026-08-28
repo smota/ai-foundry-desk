@@ -7,6 +7,17 @@ AI Foundry Desk is one product with four internal modules:
 3. Common Agent Toolbox: rg, fd, jq, yq, bat, and delta.
 4. Agent Manager: portable Node.js/TypeScript catalog, adapters, review, sync, verify, adopt, and recipes.
 
+Observability is a recipe-managed capability available to Layer 2 rather than another sequential
+layer. It uses an existing loopback OpenTelemetry Collector for filtering/routing, Phoenix for live
+traces, agentacct for observation-only session intelligence, and an AFD-owned bounded correlation
+index. AFD does not wrap agent execution or duplicate complete third-party evidence stores. See
+[Observability](OBSERVABILITY.md) and the [Observability implementation plan](OBSERVABILITY-PLAN.md).
+
+Observability is expressed as declarative recipe desired state. Recipe planning expands every
+managed effect; confirmation of that content-derived plan authorizes installation, configuration,
+startup, native integrations, and autostart declared by the recipe. Components do not request a
+second activation confirmation during apply.
+
 `afd` is the single user entry point. Portable inspection and catalog logic stays in Node.js.
 `afd layer1`, `afd doctor`, `afd fix layer1`, and `afd layer2` cross an explicit bridge to an
 allowlist of Windows PowerShell or Linux POSIX scripts. Doctor is read-only; fix delegates to the idempotent Layer 1 source

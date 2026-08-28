@@ -5,6 +5,12 @@ recipes (`builtin:<id>`), local files/directories, and HTTPS JSON use the same s
 redirect, unavailable response, invalid schema, unsafe relative path, duplicate ID, unverified tool
 adapter, or unsupported agent blocks application without writing.
 
+Recipe schema version 2 adds a typed capability section rather than disguising long-running
+components as tools. Version 1 remains valid for skill/tool-only recipes.
+For a recipe containing Observability, its expanded plan and content-derived confirmation token are
+the complete activation decision for Collector, Phoenix, agentacct, declared native integrations,
+policies, and lifecycle. Apply must not request a second component-specific confirmation.
+
 ```text
 afd layer3 recipes
 afd layer3 show builtin:samuel
@@ -16,6 +22,9 @@ afd layer3 rollback builtin:samuel --confirm
 afd layer3 extract --output recipe.json
 afd layer3 extract --output recipe.json --include skill-a,vibium
 ```
+
+`builtin:observability` is the telemetry-v2 recipe. `afd telemetry plan` and `apply` use it by
+default; the expanded plan token is the single activation decision for all declared effects.
 
 The shorthand is plan-only. Plan emits a deterministic approval token; apply requires that exact
 token, so a stale or skipped preview cannot install. Rollback requires confirmation. Apply records exact paths and

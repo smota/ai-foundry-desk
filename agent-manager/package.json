@@ -16,7 +16,7 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src test",
-    "test": "tsc -p tsconfig.test.json && node --test .test-dist/test/*.test.js",
+    "test": "node -e \"require('fs').rmSync('.test-dist',{recursive:true,force:true})\" && tsc -p tsconfig.test.json && node --test .test-dist/test/*.test.js",
     "dev": "tsx src/cli.ts",
     "pack:dry-run": "pnpm pack --dry-run"
   },

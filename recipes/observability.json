@@ -1,0 +1,41 @@
+{
+  "recipeVersion": 2,
+  "id": "observability",
+  "version": "1.3.0",
+  "origin": "builtin",
+  "skills": [],
+  "tools": [],
+  "capabilities": [
+    {
+      "id": "observability",
+      "required": true,
+      "collector": {
+        "version": "0.159.0",
+        "source": "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.159.0/otelcol-contrib_0.159.0_windows_amd64.tar.gz",
+        "sha256": "86434cf172aa91a5fc148978dad9bfaacd25a80bd2df93f19015814e7c5359bb"
+      },
+      "phoenix": {
+        "version": "20.4.0",
+        "lockSha256": "b2da7e0d3ea17e0cd399127fa63231a99f1415807accfb8fb564449095d7ec3c",
+        "runtime": {
+          "version": "3.10.21",
+          "source": "https://github.com/astral-sh/python-build-standalone/releases/download/20260825/cpython-3.10.21%2B20260825-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+          "sha256": "82e4954bee9ad856c3df06bd45048c7e615a209bb181977df53f5052cfdf021d"
+        }
+      },
+      "agentacct": {
+        "version": "0.10.1",
+        "mode": "observe-only",
+        "source": "https://files.pythonhosted.org/packages/ec/f0/710333cf743ef868e6c2282fb1bf7e766f0dfb22034b514ade47adc375cd/agentacct-0.10.1-py3-none-any.whl",
+        "sha256": "944a8f474bdef40e88b3d3bb001b4f8b872df7903b3e73144c8b242a4c5d4eb3",
+        "lockSha256": "86f83621d868f9759263c861fde70732d85c0c8821d24b12e6d01ff99558f3ea"
+      },
+      "retentionDays": 30,
+      "autostart": true,
+      "nativeIntegrations": ["codex", "claude-code"]
+    }
+  ],
+  "prerequisites": ["windows-x64", "uvx", "wsl-agentacct", "loopback-ports-available"],
+  "checks": ["collector-config-valid", "phoenix-ready", "agentacct-contract-compatible", "loopback-only", "synthetic-trace-visible"],
+  "rollback": { "managedOnly": true }
+}
