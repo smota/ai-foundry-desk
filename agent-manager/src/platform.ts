@@ -105,7 +105,10 @@ export class NodePlatformAdapter implements PlatformAdapter {
       const timer = setTimeout(() => {
         timedOut = true;
         void this.stop(child.pid ?? 0).finally(() => finish(124));
-      }, timeoutMs + (this.id === "win32" ? 5_000 : 0));
+      // The Windows job runner compiles its native Job Object bridge before it
+      // starts the command. Its own timeout governs the command; this outer
+      // guard only covers a runner that fails to initialize or return.
+      }, timeoutMs + (this.id === "win32" ? 30_000 : 0));
     });
   }
   async start(command: HostCommand): Promise<number> {
