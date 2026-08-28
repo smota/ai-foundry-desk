@@ -16,7 +16,7 @@ const licenses = new Map([["agentacct", "MIT"], ["arize-phoenix", "Elastic-2.0"]
 for (const lockName of lockNames) {
   const relative = `requirements/pylock.${lockName}.toml`;
   const text = await readFile(path.join(root, relative), "utf8");
-  lockProperties.push({ name: `afd:lock:${lockName}:sha256`, value: createHash("sha256").update(text).digest("hex") });
+  lockProperties.push({ name: `afd:lock:${lockName}:sha256`, value: createHash("sha256").update(text.replace(/\r\n/g, "\n")).digest("hex") });
   for (const block of text.split("[[packages]]").slice(1)) {
     const name = block.match(/^\s*name = "([^"]+)"/m)?.[1];
     const version = block.match(/^\s*version = "([^"]+)"/m)?.[1];

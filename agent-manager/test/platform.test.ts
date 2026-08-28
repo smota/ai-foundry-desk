@@ -37,7 +37,7 @@ test("platform adapter times out and reaps a command process tree", async () => 
   try {
     const grandchild = "setInterval(() => {}, 1000)";
     const parent = `const {spawn}=require("node:child_process");const {writeFileSync}=require("node:fs");const child=spawn(process.execPath,["-e",${JSON.stringify(grandchild)}],{stdio:"ignore"});writeFileSync(${JSON.stringify(pidFile)},String(child.pid));setInterval(()=>{},1000);`;
-    const result = await adapter.run({ executable: process.execPath, args: ["-e", parent], timeoutMs: 500 });
+    const result = await adapter.run({ executable: process.execPath, args: ["-e", parent], timeoutMs: 2_000 });
     assert.equal(result.timedOut, true); assert.equal(result.status, 124);
     const childPid = Number(await readFile(pidFile, "utf8")); assert.ok(Number.isSafeInteger(childPid) && childPid > 0);
     await new Promise((resolve) => setTimeout(resolve, 250));

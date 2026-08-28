@@ -21,6 +21,7 @@ export type AgentacctSessionLookup =
   | { readonly status: "ambiguous"; readonly matchCount: number }
   | { readonly status: "unlinked"; readonly matchCount: 0 };
 export interface AgentacctInstallSource { readonly source: string; readonly sha256: string; readonly lockSha256: string; readonly verifiedArtifact?: string }
+export interface AgentacctAdapterOptions { readonly windowsPathToWsl?: (value: string) => string }
 
 const SAFE_VERSION = /^\d+\.\d+\.\d+$/;
 const WINDOWS_CODEX_READ_ONLY_NAMESPACE = `
@@ -82,12 +83,13 @@ function dependencyLockPath(): string { const current=path.dirname(fileURLToPath
 
 export class AgentacctAdapter {
   private wslManagedRootCache?: Promise<string>;
-  constructor(private readonly adapter: PlatformAdapter, private readonly expectedVersion: string) { if (!SAFE_VERSION.test(expectedVersion)) throw new Error("An exact agentacct version is required."); }
+  private readonly pathToWsl: (value: string) => string;
+  constructor(private readonly adapter: PlatformAdapter, private readonly expectedVersion: string, options: AgentacctAdapterOptions = {}) { if (!SAFE_VERSION.test(expectedVersion)) throw new Error("An exact agentacct version is required.");this.pathToWsl=options.windowsPathToWsl??windowsPathToWsl; }
 
   private managedRoot(): string { return path.join(this.adapter.stateRoot, "telemetry-v2", "agentacct"); }
   private async wslManagedRoot():Promise<string>{this.wslManagedRootCache??=(async()=>{const result=await this.adapter.run({executable:"wsl.exe",args:["--","sh","-lc",'printf %s "$HOME"'],timeoutMs:10_000});const home=result.stdout.trim();if(result.status!==0||!/^\/home\/[A-Za-z0-9._-]+$/.test(home))throw new Error("Could not resolve a safe WSL home for the agentacct runtime.");return `${home}/.local/share/afd/telemetry-v2/agentacct`;})();return this.wslManagedRootCache;}
   private async toWsl(value: string): Promise<string> {
-    return windowsPathToWsl(value);
+    return this.pathToWsl(value);
   }
   private async wslExecutable(name:string):Promise<string>{if(!/^[a-z0-9._-]+$/i.test(name))throw new Error("Invalid WSL command name.");const result=await this.adapter.run({executable:"wsl.exe",args:["--","sh","-lc",`command -v ${name}`],timeoutMs:10_000});const value=result.stdout.trim();if(result.status!==0||!value.startsWith("/"))throw new Error(`Required WSL command is unavailable: ${name}.`);return value;}
   private sourceHomes(): Readonly<{ CODEX_HOME: string; CLAUDE_CONFIG_DIR: string; HERMES_HOME: string }> {
@@ -129,7 +131,7 @@ export class AgentacctAdapter {
 
   async install(input: AgentacctInstallSource): Promise<void> {
     const lockFile = dependencyLockPath();
-    const actualLockSha256 = createHash("sha256").update(await readFile(lockFile)).digest("hex");
+    const actualLockSha256 = createHash("sha256").update((await readFile(lockFile,"utf8")).replace(/\r\n/g,"\n")).digest("hex");
     if (!/^[a-f0-9]{64}$/.test(input.lockSha256) || actualLockSha256 !== input.lockSha256.toLowerCase()) throw new Error("The agentacct dependency lock does not match the reviewed recipe.");
     let artifact = input.verifiedArtifact; let managed = this.managedRoot(); let stagedArtifact: string | undefined;
     if (this.adapter.id === "win32") {
@@ -148,7 +150,7 @@ export class AgentacctAdapter {
     if (!artifact) throw new Error("A locally verified agentacct artifact is required on this platform.");
     if(this.adapter.id!=="win32")await this.adapter.writeText(path.join(managed,"store",".afd-root"),"managed\n");
     const install: HostCommand = this.adapter.id === "win32"
-      ? { executable: "wsl.exe", args: ["--", "env", `UV_TOOL_DIR=${managed}/tools`, `UV_TOOL_BIN_DIR=${managed}/bin`, await this.wslExecutable("uv"), "tool", "install", "--force", "--link-mode", "copy", "--with-requirements", windowsPathToWsl(lockFile), artifact], timeoutMs: 300_000 }
+      ? { executable: "wsl.exe", args: ["--", "env", `UV_TOOL_DIR=${managed}/tools`, `UV_TOOL_BIN_DIR=${managed}/bin`, await this.wslExecutable("uv"), "tool", "install", "--force", "--link-mode", "copy", "--with-requirements", await this.toWsl(lockFile), artifact], timeoutMs: 300_000 }
       : { executable: "uv", args: ["tool", "install", "--force", "--link-mode", "copy", "--with-requirements", lockFile, artifact], env: { UV_TOOL_DIR: path.join(managed, "tools"), UV_TOOL_BIN_DIR: path.join(managed, "bin") }, timeoutMs: 300_000 };
     try {
       const result = await this.adapter.run(install);
@@ -202,7 +204,7 @@ export class AgentacctAdapter {
   async findBySessionHash(agent: string, sessionHash: string, identityKeyFile: string): Promise<AgentacctSessionLookup> {
     if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(agent) || !/^[a-f0-9]{20}$/.test(sessionHash)) throw new Error("Invalid exact-session correlation input.");
     let helper=helperPath();let keyFile=identityKeyFile;
-    if(this.adapter.id==="win32"){helper=windowsPathToWsl(helper);keyFile=windowsPathToWsl(keyFile);}
+    if(this.adapter.id==="win32"){helper=await this.toWsl(helper);keyFile=await this.toWsl(keyFile);}
     const invocation:HostCommand=this.adapter.id==="win32"?{executable:"wsl.exe",args:["--","python3",helper,"session-hash",agent,sessionHash,keyFile],env:{AGENTACCT_PRICING_AUTO_REFRESH:"0"},timeoutMs:15_000}:{executable:"python3",args:[helper,"session-hash",agent,sessionHash,keyFile],env:{AGENTACCT_PRICING_AUTO_REFRESH:"0"},timeoutMs:15_000};
     const result=await this.adapter.run(invocation);if((result.status!==0&&result.status!==3)||result.timedOut)throw new Error("agentacct exact-session query failed without exposing private identifiers.");const raw=parseJson(result.stdout,"session query");if(!raw||typeof raw!=="object")throw new Error("agentacct exact-session response is incompatible.");const object=raw as Record<string,unknown>;if(object.status==="unlinked")return{status:"unlinked",matchCount:0};if(object.status==="ambiguous"){const count=boundedNumber(object.matchCount);if(count===undefined||!Number.isSafeInteger(count)||count<2)throw new Error("agentacct ambiguity response is invalid.");return{status:"ambiguous",matchCount:count};}if(object.status!=="exact_session"||!object.evidence||typeof object.evidence!=="object")throw new Error("agentacct exact-session response is incompatible.");const evidence=object.evidence as Record<string,unknown>;if(evidence.source!=="agentacct-v1-session"||evidence.version!==this.expectedVersion)throw new Error("agentacct exact-session contract version is incompatible.");const workItemCount=boundedNumber(evidence.workItemCount);const machineCheckCount=boundedNumber(evidence.machineCheckCount);if(workItemCount===undefined||machineCheckCount===undefined)throw new Error("agentacct exact-session counts are invalid.");const models=Array.isArray(evidence.models)?evidence.models.filter((item):item is string=>typeof item==="string"&&item.length<=120&&/^[A-Za-z0-9._:/-]+$/.test(item)).slice(0,20):[];return{status:"exact_session",evidence:{source:"agentacct-v1-session",version:this.expectedVersion,...(boundedString(evidence.status)&&/^[a-z0-9._-]+$/i.test(boundedString(evidence.status)!)?{status:boundedString(evidence.status)!}:{}),...(boundedString(evidence.lastActivityAt)&&Number.isFinite(Date.parse(boundedString(evidence.lastActivityAt)!))?{lastActivityAt:boundedString(evidence.lastActivityAt)!}:{}),...(boundedString(evidence.instrumentationState)&&/^[a-z0-9._-]+$/i.test(boundedString(evidence.instrumentationState)!)?{instrumentationState:boundedString(evidence.instrumentationState)!}:{}),...(boundedNumber(evidence.usageTokens)!==undefined?{usageTokens:boundedNumber(evidence.usageTokens)!}:{}),...(boundedString(evidence.usageConfidence)&&/^[a-z0-9._-]+$/i.test(boundedString(evidence.usageConfidence)!)?{usageConfidence:boundedString(evidence.usageConfidence)!}:{}),...(boundedNumber(evidence.estimatedCost)!==undefined?{estimatedCost:boundedNumber(evidence.estimatedCost)!}:{}),...(boundedString(evidence.costConfidence)&&/^[a-z0-9._-]+$/i.test(boundedString(evidence.costConfidence)!)?{costConfidence:boundedString(evidence.costConfidence)!}:{}),workItemCount,machineCheckCount,models}};
   }

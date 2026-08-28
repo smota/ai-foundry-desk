@@ -3,6 +3,9 @@ import test from "node:test";
 import { AgentacctAdapter } from "../src/agentacct-adapter.js";
 import type { HostCommand, PlatformAdapter } from "../src/platform.js";
 
+function fakeWindowsPathToWsl(value:string):string{const normalized=value.replace(/\\/g,"/");const drive=normalized.match(/^([A-Za-z]):\/(.*)$/);return drive?`/mnt/${drive[1]!.toLowerCase()}/${drive[2]}`:`/mnt/c/${normalized.replace(/^\/+/,"")}`;}
+function agentacct(adapter:PlatformAdapter):AgentacctAdapter{return new AgentacctAdapter(adapter,"0.10.1",{windowsPathToWsl:fakeWindowsPathToWsl});}
+
 function fake(sessionResult?: string, healthResult='{"status":"healthy"}', importSucceeds = false): { adapter: PlatformAdapter; calls: HostCommand[] } {
   const calls: HostCommand[] = [];
   const adapter: PlatformAdapter = {
@@ -29,7 +32,7 @@ function fake(sessionResult?: string, healthResult='{"status":"healthy"}', impor
 }
 
 test("agentacct contract is versioned, capability-scoped, isolated and disables pricing egress", async () => {
-  const value=fake();const adapter=new AgentacctAdapter(value.adapter,"0.10.1");const status=await adapter.status();
+  const value=fake();const adapter=agentacct(value.adapter);const status=await adapter.status();
   assert.equal(status.state,"healthy");assert.equal(value.calls.at(-1)?.executable,"wsl.exe");
   assert.ok(value.calls.some((call)=>call.args.some((arg)=>arg==="AGENTACCT_PRICING_AUTO_REFRESH=0")));
   assert.ok(value.calls.some((call)=>call.args.some((arg)=>arg==="AGENTACCT_EVIDENCE_V2=0")));
@@ -40,29 +43,29 @@ test("agentacct contract is versioned, capability-scoped, isolated and disables 
 
 test("agentacct reports degraded ingestion without hiding the public contract", async () => {
   const value=fake(undefined,'{"state":"degraded","sources":[{"source":"codex","state":"degraded"}]}');
-  const status=await new AgentacctAdapter(value.adapter,"0.10.1").status();
+  const status=await agentacct(value.adapter).status();
   assert.equal(status.state,"degraded");assert.equal(status.detail,"ingestion is degraded");
 });
 
 test("agentacct tolerates only the exact fail-closed Codex inventory rotation while the runtime remains healthy", async () => {
   const rotation=(lastSuccess:unknown,extra:Record<string,unknown>={})=>JSON.stringify({schema_version:"agent-chronicle.ingestion-health.v1",state:"degraded",issues:[{source:"codex",code:"source_scan_failed"}],sources:[{source:"claude-code",state:"healthy"},{source:"codex",state:"degraded",error_code:"codex_rollout_inventory_changed",error_codes:["codex_rollout_inventory_changed"],consecutive_failures:1,last_success_at:lastSuccess,...extra}]});
   const health=rotation(Date.now()/1_000);
-  const status=await new AgentacctAdapter(fake(undefined,health).adapter,"0.10.1").status();
+  const status=await agentacct(fake(undefined,health).adapter).status();
   assert.equal(status.state,"healthy");assert.match(status.detail,/retry/);
   const repeated=rotation(new Date(Date.now()-86_400_000).toISOString(),{consecutive_failures:2});
-  assert.equal((await new AgentacctAdapter(fake(undefined,repeated).adapter,"0.10.1").status()).state,"healthy");
+  assert.equal((await agentacct(fake(undefined,repeated).adapter).status()).state,"healthy");
   const wrongIssue=JSON.stringify({schema_version:"agent-chronicle.ingestion-health.v1",state:"degraded",issues:[{source:"codex",code:"different_failure"}],sources:[{source:"codex",state:"degraded",error_code:"codex_rollout_inventory_changed",error_codes:["codex_rollout_inventory_changed"],last_success_at:Date.now()/1_000}]});
-  assert.equal((await new AgentacctAdapter(fake(undefined,wrongIssue).adapter,"0.10.1").status()).state,"degraded");
+  assert.equal((await agentacct(fake(undefined,wrongIssue).adapter).status()).state,"degraded");
 });
 
 test("agentacct status remains available when its supported runtime cannot be probed", async () => {
   const value=fake();value.adapter.run=async(command)=>command.args.join(" ").includes("printf %s")?{status:1,stdout:"",stderr:"unavailable",timedOut:false}:{status:1,stdout:"",stderr:"unexpected",timedOut:false};
-  const status=await new AgentacctAdapter(value.adapter,"0.10.1").status();
+  const status=await agentacct(value.adapter).status();
   assert.equal(status.state,"unavailable");assert.match(status.detail,/could not be probed/);
 });
 
 test("agentacct downloads and verifies the reviewed wheel on WSL ext4 before installation", async () => {
-  const value=fake();const adapter=new AgentacctAdapter(value.adapter,"0.10.1");
+  const value=fake();const adapter=agentacct(value.adapter);
   await assert.rejects(adapter.install({source:"https://example.invalid/agentacct.whl",sha256:"a".repeat(64),lockSha256:"86f83621d868f9759263c861fde70732d85c0c8821d24b12e6d01ff99558f3ea"}),/Pinned agentacct installation failed/);
   assert.ok(value.calls.some((call)=>call.args.includes("/usr/bin/curl")&&call.args.includes("https://example.invalid/agentacct.whl")));
   assert.ok(value.calls.some((call)=>call.args.includes("/usr/bin/sha256sum")));
@@ -73,7 +76,7 @@ test("agentacct downloads and verifies the reviewed wheel on WSL ext4 before ins
 
 test("agentacct imports Codex through an isolated read-only WSL namespace without a copied transcript tree", async () => {
   const value=fake(undefined, '{"status":"healthy"}', true);
-  await new AgentacctAdapter(value.adapter,"0.10.1").refresh();
+  await agentacct(value.adapter).refresh();
   const command=value.calls.find((call)=>call.args.includes("unshare"));
   assert.ok(command);
   assert.deepEqual(command.args.slice(0,7),["--exec","unshare","--user","--map-root-user","--mount","sh","-c"]);
@@ -96,7 +99,7 @@ test("agentacct managed runtime inherits a persistent private Codex namespace on
     }
     return originalRun(command);
   };
-  await new AgentacctAdapter(value.adapter,"0.10.1").start();
+  await agentacct(value.adapter).start();
   const command=value.calls.find((call)=>call.args.includes("unshare")&&call.args.includes("start"));
   assert.ok(command);
   assert.ok(command.args.includes("/home/test/.local/share/afd/telemetry-v2/agentacct/codex-home"));
@@ -104,13 +107,13 @@ test("agentacct managed runtime inherits a persistent private Codex namespace on
 
 test("agentacct session lookup uses only the bounded authenticated helper result", async () => {
   const payload=JSON.stringify({status:"exact_session",evidence:{source:"agentacct-v1-session",version:"0.10.1",usageTokens:12,usageConfidence:"client_reported",workItemCount:1,machineCheckCount:0,models:["gpt-test"]}});
-  const value=fake(payload);const adapter=new AgentacctAdapter(value.adapter,"0.10.1");const result=await adapter.findBySessionHash("codex","a".repeat(20),"C:\\state\\identity.key");
+  const value=fake(payload);const adapter=agentacct(value.adapter);const result=await adapter.findBySessionHash("codex","a".repeat(20),"C:\\state\\identity.key");
   assert.equal(result.status,"exact_session");if(result.status==="exact_session")assert.equal(result.evidence.usageConfidence,"client_reported");
   assert.ok(value.calls.some((call)=>call.args.includes("python3")));assert.ok(value.calls.every((call)=>!call.args.join(" ").includes("/tasks?")));
 });
 
 test("agentacct rollback removes only its exact WSL managed root", async () => {
   const value=fake();
-  await new AgentacctAdapter(value.adapter,"0.10.1").uninstallManagedRuntime();
+  await agentacct(value.adapter).uninstallManagedRuntime();
   assert.ok(value.calls.some((call)=>call.args.join(" ").includes("/usr/bin/rm -rf -- /home/test/.local/share/afd/telemetry-v2/agentacct")));
 });
