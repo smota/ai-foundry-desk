@@ -27,7 +27,7 @@ inventory. Upstream licenses are Apache-2.0 for Collector Contrib, Elastic-2.0 f
 for agentacct. The current SBOM inventories 179 components.
 
 The recipe declares ports `4318` (OTLP), `6006` (Phoenix), `8765` (agentacct local dashboard),
-`9464` (host metrics), and `13133` (Collector health). AFD correlation and Phoenix retention are 30
+`9464` (host metrics), `13133` (Collector health), and `13134` (authenticated AFD user broker). AFD correlation and Phoenix retention are 30
 days. agentacct 0.10.1 has no supported bounded-retention contract, so status and plan report
 `upstream_unbounded` rather than implying automatic cleanup.
 
@@ -68,9 +68,13 @@ Collector. It persists only the rejected category names, verification time, trac
 Phoenix query latency. `status --json` exposes these bounded diagnostics without the rejected data.
 
 On Windows, one current-user `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` entry starts the
-AFD supervisor after sign-in. The supervisor reconciles Collector, Phoenix, and agentacct; AFD does
+AFD broker after sign-in. The broker reconciles Collector, Phoenix, and agentacct; AFD does
 not install a Windows service or one launcher per component. Linux uses `systemd --user` and macOS
 uses `launchd` when those platforms become validated for this recipe.
+
+The broker binds only to loopback, accepts a fixed set of typed telemetry operations, and requires a
+random local capability token. The dedicated Codex sandbox group receives read-only access only to
+that token. WSL and user-owned session stores remain inaccessible to the sandbox identity itself.
 
 The Windows bootstrap replaces only the generated `afd` package-manager shims with AFD launchers
 that invoke the exact managed Node runtime and installed CLI. A normal PowerShell therefore does

@@ -13,12 +13,12 @@ policies, and lifecycle. Apply must not request a second component-specific conf
 
 ```text
 afd layer3 recipes
-afd layer3 show builtin:samuel
-afd layer3 plan builtin:samuel
-afd layer3 builtin:samuel
-afd layer3 apply builtin:samuel --confirm <plan-token>
-afd layer3 verify builtin:samuel
-afd layer3 rollback builtin:samuel --confirm
+afd layer3 show builtin:smota-foundations
+afd layer3 plan builtin:smota-foundations
+afd layer3 builtin:smota-foundations
+afd layer3 apply builtin:smota-foundations --confirm <plan-token>
+afd layer3 verify builtin:smota-foundations
+afd layer3 rollback builtin:smota-foundations --confirm
 afd layer3 extract --output recipe.json
 afd layer3 extract --output recipe.json --include skill-a,vibium
 ```
@@ -33,14 +33,14 @@ External recipes never execute embedded scripts. Extraction first prints a sanit
 requires a second invocation naming what to include; it emits IDs and portable placeholders, never
 tokens, sessions, credentials, environment files, or private absolute paths.
 
-## Samuel
+## smota-foundations
 
-`builtin:samuel` describes Holoself, Vibium, and Tokscale. Holoself uses `AFD_HOLOSELF_ROOT` for the
+`builtin:smota-foundations` describes Holoself, Vibium, and Tokscale. Holoself uses `AFD_HOLOSELF_ROOT` for the
 private local overlay; its machine-specific path never enters the public recipe. Windows reads the
 persisted user variable; Linux may use the process environment or `~/.config/afd/overlays.json`.
 Broken overlay links are warnings only, and rollback never touches overlay data.
 
-Samuel pins Vibium 26.8.21 and Tokscale 4.14.0 with their registry SHA-512 integrity values. The
+smota-foundations pins Vibium 26.8.21 and Tokscale 4.14.0 with their registry SHA-512 integrity values. The
 allowlisted pnpm adapter verifies metadata before installation, records any prior global version,
 validates each command, and restores the prior version (or removes only a newly managed package) on
 rollback. Antigravity CLI uses its documented global `~/.gemini/antigravity-cli/skills/` adapter.

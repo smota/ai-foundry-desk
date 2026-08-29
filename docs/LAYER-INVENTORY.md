@@ -69,9 +69,9 @@ and verified. Rollback is limited to files and links recorded as AFD-managed.
 | | Component / product | Description | Objective in the layer | AFD treatment |
 | --- | --- | --- | --- | --- |
 | <img src="../assets/brand/ai-foundry-desk-logo.png" alt="AFD" width="22"> | [AFD recipe engine](LAYER-3-RECIPES.md) | Planner and transactional installer for reviewed bundles. | Turn personal workstation extensions into visible, repeatable changes. | **Managed component**; plan and confirmation are mandatory. |
-|  | [Holoself](https://github.com/smota/holoself) | Portable, reviewable personal context distributed as an agent skill. | Give detected agents the same user-owned context without duplicating its source. | **Integrated** by the built-in Samuel recipe through an explicit local overlay. |
-|  | [Vibium](https://www.npmjs.com/package/vibium) | Browser automation CLI and library. | Add the browser-control tool declared by the Samuel bundle. | **Managed by recipe**; pinned package and integrity hash. |
-|  | [Tokscale](https://www.npmjs.com/package/tokscale) | Local token-usage analysis CLI. | Add the usage-analysis tool declared by the Samuel bundle. | **Managed by recipe**; pinned package and integrity hash. |
+|  | [Holoself](https://github.com/smota/holoself) | Portable, reviewable personal context distributed as an agent skill. | Give detected agents the same user-owned context without duplicating its source. | **Integrated** by the built-in smota-foundations recipe through an explicit local overlay. |
+|  | [Vibium](https://www.npmjs.com/package/vibium) | Browser automation CLI and library. | Add the browser-control tool declared by the smota-foundations bundle. | **Managed by recipe**; pinned package and integrity hash. |
+|  | [Tokscale](https://www.npmjs.com/package/tokscale) | Local token-usage analysis CLI. | Add the usage-analysis tool declared by the smota-foundations bundle. | **Managed by recipe**; pinned package and integrity hash. |
 
 ## Reading the inventory safely
 

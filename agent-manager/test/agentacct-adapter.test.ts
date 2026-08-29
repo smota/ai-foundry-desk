@@ -64,6 +64,12 @@ test("agentacct status remains available when its supported runtime cannot be pr
   assert.equal(status.state,"unavailable");assert.match(status.detail,/could not be probed/);
 });
 
+test("agentacct identifies the Windows sandbox to WSL access boundary", async () => {
+  const value=fake();value.adapter.run=async()=>({status:1,stdout:"",stderr:"Wsl/Service/CreateInstance/E_ACCESSDENIED Access is denied.",timedOut:false});
+  const status=await agentacct(value.adapter).status();
+  assert.equal(status.state,"unavailable");assert.match(status.detail,/sandbox identity cannot access/);
+});
+
 test("agentacct downloads and verifies the reviewed wheel on WSL ext4 before installation", async () => {
   const value=fake();const adapter=agentacct(value.adapter);
   await assert.rejects(adapter.install({source:"https://example.invalid/agentacct.whl",sha256:"a".repeat(64),lockSha256:"86f83621d868f9759263c861fde70732d85c0c8821d24b12e6d01ff99558f3ea"}),/Pinned agentacct installation failed/);

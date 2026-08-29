@@ -66,7 +66,9 @@ $commands = @(
     @{ Name = "cargo"; Pattern = '^cargo 1\.98\.' }
 )
 foreach ($command in $commands) {
-    $resolved = if ($command.Name -in @("node", "python", "go", "rustc", "cargo")) { Resolve-ManagedApplication $command.Name } else { Resolve-Application $command.Name }
+    # The shell command itself is the contract. Resolve-ManagedApplication is reserved for
+    # running the verifier and must not hide a broken shim or missing inherited configuration.
+    $resolved = Resolve-Application $command.Name
     if (-not $resolved) { $toolPass[$command.Name] = $false; Add-Result "command.$($command.Name)" $false "not resolvable"; continue }
     $toolPaths[$command.Name] = $resolved
     $versionArguments = if ($command.Name -eq "go") { @("version") } else { @("--version") }
@@ -131,6 +133,19 @@ if ($node -and (Test-Path -LiteralPath $cli)) {
     Add-Result "telemetry.plan" (($telemetryPlan.Status -eq 0 -or $telemetryPlan.Status -eq 2) -and $telemetryPlan.Output -match '"id":\s*"observability"' -and $telemetryPlan.Output -match 'agentacct 0\.10\.1') "exit=$($telemetryPlan.Status)"
     $telemetryStatus = Invoke-Bounded $node @($cli, "telemetry", "status", "--json") 60000
     Add-Result "telemetry.status-contract" (($telemetryStatus.Status -eq 0 -or $telemetryStatus.Status -eq 2) -and $telemetryStatus.Output -match '"schemaVersion":\s*2' -and $telemetryStatus.Output -match '"collector"' -and $telemetryStatus.Output -match '"agentacct"' -and $telemetryStatus.Output -match '"capabilities"') "exit=$($telemetryStatus.Status)"
+    $telemetryHealthy = $false
+    $telemetryEvidence = "invalid status JSON"
+    try {
+        $telemetryValue = $telemetryStatus.Output | ConvertFrom-Json
+        $telemetryHealthy = $telemetryValue.state -eq "disabled" -or (
+            $telemetryValue.state -eq "healthy" -and
+            $telemetryValue.collector.state -eq "healthy" -and
+            $telemetryValue.phoenix.state -eq "healthy" -and
+            $telemetryValue.agentacct.state -eq "healthy"
+        )
+        $telemetryEvidence = "overall=$($telemetryValue.state) collector=$($telemetryValue.collector.state) phoenix=$($telemetryValue.phoenix.state) agentacct=$($telemetryValue.agentacct.state)"
+    } catch { $telemetryHealthy = $false }
+    Add-Result "telemetry.live-health" $telemetryHealthy $telemetryEvidence
 } else {
     Add-Result "afd.provenance" $false "built CLI or managed node missing"
     Add-Result "afd.doctor" $false "built CLI or managed node missing"

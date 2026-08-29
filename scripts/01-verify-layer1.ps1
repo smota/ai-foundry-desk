@@ -50,8 +50,25 @@ Add-Check "mise not_found_auto_install" ($autoInstall -eq "false") $autoInstall 
 
 $uvNoManaged = [Environment]::GetEnvironmentVariable("UV_NO_MANAGED_PYTHON", "User")
 $uvDownloads = [Environment]::GetEnvironmentVariable("UV_PYTHON_DOWNLOADS", "User")
+$miseGlobalConfig = [Environment]::GetEnvironmentVariable("MISE_GLOBAL_CONFIG_FILE", "User")
+$miseState = [Environment]::GetEnvironmentVariable("MISE_STATE_DIR", "User")
+$miseIgnored = [Environment]::GetEnvironmentVariable("MISE_IGNORED_CONFIG_PATHS", "User")
+$rustupHome = [Environment]::GetEnvironmentVariable("RUSTUP_HOME", "User")
+$cargoHome = [Environment]::GetEnvironmentVariable("CARGO_HOME", "User")
+$expectedMiseGlobalConfig = Join-Path $env:LOCALAPPDATA "mise\afd-global-config.toml"
+$expectedMiseState = Join-Path $env:TEMP "afd-mise-state"
+$expectedMiseIgnored = Join-Path $env:USERPROFILE ".config\mise\config.toml"
+$expectedRustupHome = Join-Path $env:USERPROFILE ".rustup"
+$expectedCargoHome = Join-Path $env:USERPROFILE ".cargo"
 Add-Check "UV_NO_MANAGED_PYTHON" ($uvNoManaged -eq "1") $uvNoManaged "1"
 Add-Check "UV_PYTHON_DOWNLOADS" ($uvDownloads -eq "0") $uvDownloads "0"
+Add-Check "MISE_GLOBAL_CONFIG_FILE" ($miseGlobalConfig -eq $expectedMiseGlobalConfig) $miseGlobalConfig $expectedMiseGlobalConfig
+Add-Check "MISE_STATE_DIR" ($miseState -eq $expectedMiseState) $miseState $expectedMiseState
+Add-Check "MISE_IGNORED_CONFIG_PATHS" ($miseIgnored -eq $expectedMiseIgnored) $miseIgnored $expectedMiseIgnored
+Add-Check "RUSTUP_HOME" ($rustupHome -eq $expectedRustupHome) $rustupHome $expectedRustupHome
+Add-Check "CARGO_HOME" ($cargoHome -eq $expectedCargoHome) $cargoHome $expectedCargoHome
+Add-Check "mise global config file" (Test-Path -LiteralPath $expectedMiseGlobalConfig -PathType Leaf) `
+    $(if (Test-Path -LiteralPath $expectedMiseGlobalConfig) { "present" } else { "missing" }) "present"
 
 $uvPython = Get-FirstLine { uv python find --no-python-downloads }
 $misePythonRoot = Join-Path $env:LOCALAPPDATA "mise\installs\python"

@@ -24,7 +24,7 @@ afd layer1 --dry-run
 afd layer2 --dry-run
 afd sync --dry-run
 afd recipes
-afd plan builtin:samuel
+afd plan builtin:smota-foundations
 .\scripts\10-verify-backups.ps1
 pnpm check
 ```

@@ -185,6 +185,11 @@ Install-WingetPackageIfMissing -WingetId "pnpm.pnpm" -FriendlyName "pnpm"
 
 $wingetLinks = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links"
 $miseShims = Join-Path $env:LOCALAPPDATA "mise\shims"
+$miseGlobalConfig = Join-Path $env:LOCALAPPDATA "mise\afd-global-config.toml"
+$miseState = Join-Path $env:TEMP "afd-mise-state"
+$legacyMiseGlobalConfig = Join-Path $env:USERPROFILE ".config\mise\config.toml"
+$rustupHome = Join-Path $env:USERPROFILE ".rustup"
+$cargoHome = Join-Path $env:USERPROFILE ".cargo"
 $pnpmHome = Join-Path $env:LOCALAPPDATA "pnpm"
 $pnpmBin = Join-Path $pnpmHome "bin"
 $uvExe = Get-ChildItem (Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Packages") -Filter "uv.exe" -File -Recurse -ErrorAction SilentlyContinue |
@@ -199,6 +204,11 @@ Add-UserPathEntry -PathEntry $miseShims -Prepend
 if ($uvExe) { Add-UserPathEntry -PathEntry (Split-Path -Parent $uvExe.FullName) }
 Set-UserEnvironmentVariableIfNeeded -Name "UV_NO_MANAGED_PYTHON" -Value "1"
 Set-UserEnvironmentVariableIfNeeded -Name "UV_PYTHON_DOWNLOADS" -Value "0"
+Set-UserEnvironmentVariableIfNeeded -Name "MISE_GLOBAL_CONFIG_FILE" -Value $miseGlobalConfig
+Set-UserEnvironmentVariableIfNeeded -Name "MISE_STATE_DIR" -Value $miseState
+Set-UserEnvironmentVariableIfNeeded -Name "MISE_IGNORED_CONFIG_PATHS" -Value $legacyMiseGlobalConfig
+Set-UserEnvironmentVariableIfNeeded -Name "RUSTUP_HOME" -Value $rustupHome
+Set-UserEnvironmentVariableIfNeeded -Name "CARGO_HOME" -Value $cargoHome
 Set-UserEnvironmentVariableIfNeeded -Name "PNPM_HOME" -Value $pnpmHome
 Add-UserPathEntry -PathEntry $pnpmBin
 
@@ -212,7 +222,8 @@ if (-not (Test-Path -LiteralPath $pnpmHome)) {
 }
 
 if ($WhatIf) {
-    Write-Host "  [WhatIf] Would configure Python 3.14, Node 24, Go 1.26, and Rust 1.98.0 in mise."
+    Write-Host "  [WhatIf] Would configure Python 3.14, Node 24, Go 1.26, and Rust 1.98.0 in $miseGlobalConfig with writable runtime state in $miseState."
+    Write-Host "  [WhatIf] Would retain but ignore the superseded global config at $legacyMiseGlobalConfig; project-local configs remain enabled."
     Write-Host "  [WhatIf] Would disable automatic installation of missing mise tools."
     $profilePaths | ForEach-Object { Update-PowerShellProfile -ProfilePath $_ }
     return
@@ -220,6 +231,11 @@ if ($WhatIf) {
 
 $env:UV_NO_MANAGED_PYTHON = "1"
 $env:UV_PYTHON_DOWNLOADS = "0"
+$env:MISE_GLOBAL_CONFIG_FILE = $miseGlobalConfig
+$env:MISE_STATE_DIR = $miseState
+$env:MISE_IGNORED_CONFIG_PATHS = $legacyMiseGlobalConfig
+$env:RUSTUP_HOME = $rustupHome
+$env:CARGO_HOME = $cargoHome
 $env:PNPM_HOME = $pnpmHome
 $env:Path = "$wingetLinks;$miseShims;$pnpmBin;$env:Path"
 $mise = Get-Command mise -CommandType Application -ErrorAction SilentlyContinue

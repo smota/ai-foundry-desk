@@ -87,7 +87,7 @@ export class AgentacctAdapter {
   constructor(private readonly adapter: PlatformAdapter, private readonly expectedVersion: string, options: AgentacctAdapterOptions = {}) { if (!SAFE_VERSION.test(expectedVersion)) throw new Error("An exact agentacct version is required.");this.pathToWsl=options.windowsPathToWsl??windowsPathToWsl; }
 
   private managedRoot(): string { return path.join(this.adapter.stateRoot, "telemetry-v2", "agentacct"); }
-  private async wslManagedRoot():Promise<string>{this.wslManagedRootCache??=(async()=>{const result=await this.adapter.run({executable:"wsl.exe",args:["--","sh","-lc",'printf %s "$HOME"'],timeoutMs:10_000});const home=result.stdout.trim();if(result.status!==0||!/^\/home\/[A-Za-z0-9._-]+$/.test(home))throw new Error("Could not resolve a safe WSL home for the agentacct runtime.");return `${home}/.local/share/afd/telemetry-v2/agentacct`;})();return this.wslManagedRootCache;}
+  private async wslManagedRoot():Promise<string>{this.wslManagedRootCache??=(async()=>{const result=await this.adapter.run({executable:"wsl.exe",args:["--","sh","-lc",'printf %s "$HOME"'],timeoutMs:10_000});const home=result.stdout.trim();if(result.status!==0||!/^\/home\/[A-Za-z0-9._-]+$/.test(home)){const evidence=(result.stderr+result.stdout).trim();if(/E_ACCESSDENIED|access is denied/i.test(evidence))throw new Error("WSL E_ACCESSDENIED: sandbox identity cannot access the user-owned runtime.");throw new Error("Could not resolve a safe WSL home for the agentacct runtime.");}return `${home}/.local/share/afd/telemetry-v2/agentacct`;})();return this.wslManagedRootCache;}
   private async toWsl(value: string): Promise<string> {
     return this.pathToWsl(value);
   }
@@ -184,7 +184,13 @@ export class AgentacctAdapter {
   async status(): Promise<AgentacctStatus> {
     try {
     const version = await this.adapter.run(await this.command(["--version"], 10_000));
-    if (version.status !== 0 || version.timedOut) return { state: "unavailable", detail: "agentacct is not executable in its supported environment" };
+    if (version.status !== 0 || version.timedOut) {
+      const evidence=version.stderr+version.stdout;
+      const detail=/E_ACCESSDENIED|access is denied/i.test(evidence)
+        ? "sandbox identity cannot access the user-owned WSL runtime"
+        : "agentacct is not executable in its supported environment";
+      return { state: "unavailable", detail };
+    }
     const match = version.stdout.match(/(\d+\.\d+\.\d+)/); const actual = match?.[1];
     if (actual !== this.expectedVersion) return { state: "incompatible", ...(actual ? { version: actual } : {}), detail: `expected ${this.expectedVersion}` };
     const [capabilities,health,runtime] = await Promise.all([
@@ -196,8 +202,9 @@ export class AgentacctAdapter {
     if (health.status !== 0) return { state: "degraded", version: actual, capabilities: parseJson(capabilities.stdout, "capabilities"), detail: "ingestion health probe failed" };
     if (runtime.status !== 0) return { state: "degraded", version: actual, capabilities: parseJson(capabilities.stdout, "capabilities"), ingestion: parseJson(health.stdout, "health"), detail: "runtime health probe failed" };
     const capabilityValue=parseJson(capabilities.stdout,"capabilities");const healthValue=parseJson(health.stdout,"health");const runtimeValue=parseJson(runtime.stdout,"runtime");if(!capabilityValue||typeof capabilityValue!=="object"||!healthValue||typeof healthValue!=="object"||!runtimeValue||typeof runtimeValue!=="object")return{state:"incompatible",version:actual,detail:"public CLI JSON contract is incompatible"};const runtimeObject=runtimeValue as Record<string,unknown>;if(runtimeObject.schema_version!=="agent-chronicle.activation-runtime.v1")return{state:"incompatible",version:actual,detail:"public runtime schema is incompatible"};const runtimeStatus={state:boundedString(runtimeObject.state)??"unknown",dashboardHealth:boundedString(runtimeObject.dashboard_health)??"unknown",dashboardUrl:boundedString(runtimeObject.dashboard_url)??"unknown",watcher:boundedString(runtimeObject.watcher)??"unknown"};if(runtimeStatus.dashboardUrl!=="http://127.0.0.1:8765/")return{state:"incompatible",version:actual,detail:"agentacct dashboard is not bound to the declared loopback endpoint"};const healthObject=healthValue as Record<string,unknown>;const ingestionState=boundedString(healthObject.state??healthObject.status);const transientRotation=ingestionState?.toLowerCase()==="degraded"&&isRecoverableCodexRotation(healthObject);if(ingestionState&&["degraded","error","failed","unhealthy","stale"].includes(ingestionState.toLowerCase())&&!transientRotation)return{state:"degraded",version:actual,capabilities:capabilityValue,ingestion:healthValue,runtime:runtimeStatus,detail:`ingestion is ${ingestionState}`};if(runtimeStatus.state!=="running"||runtimeStatus.dashboardHealth!=="healthy"||runtimeStatus.watcher!=="running")return{state:"degraded",version:actual,capabilities:capabilityValue,ingestion:healthValue,runtime:runtimeStatus,detail:"agentacct local runtime is not healthy"};return { state: "healthy", version: actual, capabilities: capabilityValue, ingestion: healthValue, runtime:runtimeStatus, detail: transientRotation?"public CLI contract is healthy; active Codex rollout scans are fail-closed and retry":"public CLI contract is healthy" };
-    } catch {
-      return { state: "unavailable", detail: "agentacct runtime could not be probed in its supported environment" };
+    } catch (error) {
+      const evidence=error instanceof Error?error.message:String(error);
+      return { state: "unavailable", detail: /E_ACCESSDENIED|access is denied/i.test(evidence)?"sandbox identity cannot access the user-owned WSL runtime":"agentacct runtime could not be probed in its supported environment" };
     }
   }
 

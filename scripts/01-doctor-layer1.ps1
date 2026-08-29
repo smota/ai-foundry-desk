@@ -29,6 +29,11 @@ Add-Diagnostic platform $(if($isWindows -and $arch -eq 'X64'){'PASS'}else{'FAIL'
     "Validated platform" "$($env:OS)/$arch" "Use Windows x64; other platforms remain roadmap targets."
 
 $miseShims = Join-Path $env:LOCALAPPDATA "mise\shims"
+$miseGlobalConfig = Join-Path $env:LOCALAPPDATA "mise\afd-global-config.toml"
+$miseState = Join-Path $env:TEMP "afd-mise-state"
+$legacyMiseGlobalConfig = Join-Path $env:USERPROFILE ".config\mise\config.toml"
+$rustupHome = Join-Path $env:USERPROFILE ".rustup"
+$cargoHome = Join-Path $env:USERPROFILE ".cargo"
 $wingetLinks = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links"
 $pnpmHome = Join-Path $env:LOCALAPPDATA "pnpm"
 $pnpmBin = Join-Path $pnpmHome "bin"
@@ -42,11 +47,13 @@ foreach($entry in @(@{Code='path.winget-links';Path=$wingetLinks},@{Code='path.p
     Add-Diagnostic path $(if($present){'PASS'}else{'FAIL'}) $entry.Code "Managed PATH entry" $(if($present){'present'}else{'missing'}) "Run 'afd fix layer1 --dry-run'."
 }
 
-foreach($variable in @(@{Name='UV_NO_MANAGED_PYTHON';Value='1'},@{Name='UV_PYTHON_DOWNLOADS';Value='0'},@{Name='PNPM_HOME';Value=$pnpmHome})) {
+foreach($variable in @(@{Name='UV_NO_MANAGED_PYTHON';Value='1'},@{Name='UV_PYTHON_DOWNLOADS';Value='0'},@{Name='MISE_GLOBAL_CONFIG_FILE';Value=$miseGlobalConfig},@{Name='MISE_STATE_DIR';Value=$miseState},@{Name='MISE_IGNORED_CONFIG_PATHS';Value=$legacyMiseGlobalConfig},@{Name='RUSTUP_HOME';Value=$rustupHome},@{Name='CARGO_HOME';Value=$cargoHome},@{Name='PNPM_HOME';Value=$pnpmHome})) {
     $observed=[Environment]::GetEnvironmentVariable($variable.Name,'User'); $ok=$observed -eq $variable.Value
     Add-Diagnostic environment $(if($ok){'PASS'}else{'FAIL'}) "env.$($variable.Name.ToLowerInvariant())" $variable.Name `
         $(if($ok){'expected value'}elseif($observed){'unexpected value'}else{'missing'}) "Run 'afd fix layer1 --dry-run'."
 }
+Add-Diagnostic environment $(if(Test-Path -LiteralPath $miseGlobalConfig -PathType Leaf){'PASS'}else{'FAIL'}) "mise.global-config" `
+    "Sandbox-readable mise global config" $(if(Test-Path -LiteralPath $miseGlobalConfig){$miseGlobalConfig}else{'missing'}) "Run 'afd fix layer1 --dry-run'."
 Add-Diagnostic environment $(if(Test-Path -LiteralPath $pnpmHome -PathType Container){'PASS'}else{'FAIL'}) "pnpm.home-directory" `
     "PNPM_HOME directory" $(if(Test-Path -LiteralPath $pnpmHome){'present'}else{'missing'}) "Run 'afd fix layer1 --dry-run'."
 

@@ -12,12 +12,25 @@ Run the read-only plan from a normal PowerShell session for the intended user:
 .\scripts\13-reconcile-sandbox-toolchain-access.ps1 -Mode Plan
 ```
 
-The fixed target set is `%LOCALAPPDATA%\mise`, WinGet Links, and the official WinGet package roots
-for `jdx.mise`, `astral-sh.uv`, and `pnpm.pnpm`. These receive an inheritable `ReadAndExecute` allow
+The fixed target set is `%LOCALAPPDATA%\mise`, the user's `.rustup` and `.cargo` roots, WinGet Links,
+and the official WinGet package roots for `jdx.mise`, `astral-sh.uv`, and `pnpm.pnpm`. These receive an inheritable `ReadAndExecute` allow
 rule for the local `CodexSandboxUsers` group. The WinGet `Packages` parent receives a non-inheritable
 `ReadAndExecute` rule because Node's executable realpath lookup must inspect that parent; it does not
 grant access to the contents of unrelated package directories. The workflow grants no write or
 modify rights.
+
+AFD stores its global runtime pins in `%LOCALAPPDATA%\mise\afd-global-config.toml` and persists
+`MISE_GLOBAL_CONFIG_FILE` to that exact location. This keeps project-local mise configuration
+available while avoiding any sandbox grant to the user's personal `.config` tree. `MISE_STATE_DIR`
+uses the sandbox-writable user temp area because mise records trust/tracking state even for a
+read-only global config; no executable or package content is stored there. The superseded default
+global config is retained but listed in `MISE_IGNORED_CONFIG_PATHS`, preventing duplicate overrides
+without disabling repository-local `mise.toml` files.
+
+Layer 1 also persists `RUSTUP_HOME` and `CARGO_HOME` to the user's existing `.rustup` and `.cargo`
+directories. This prevents a restricted process whose conventional home discovery is unavailable
+from falling back to `C:\.rustup`; the sandbox receives read-and-execute access only through the
+reviewed toolchain ACL reconciliation.
 
 ## Apply and rollback
 

@@ -22,6 +22,9 @@
   hybrid-sandbox matrix.
 - Made the Windows `afd` launcher use the exact managed Node runtime instead of a session-dependent
   mise shim, and made `telemetry resume` reconcile its declared current-user autostart entry.
+- Made mise's global runtime pins explicit under its reviewed LocalAppData root, strengthened the
+  fresh-agent gate to exercise raw shell commands and live telemetry health, and added an
+  authenticated current-user broker so elevated Windows sandboxes do not invoke user-owned WSL.
 
 ## 0.3.0 — 2026-08-27
 
@@ -44,7 +47,7 @@
 - Added strict manifests, explicit pending-skill review/promotion/rejection/recovery, official
   Antigravity skill mirroring, and a pinned/checksummed managed Hermes update workflow.
 - Added deterministic Layer 3 recipes with plan tokens, allowlisted integrity-pinned tools,
-  verification, drift detection, scoped rollback, safe extraction, and the Samuel recipe.
+  verification, drift detection, scoped rollback, safe extraction, and the smota-foundations recipe.
 
 ## 0.1.2 — 2026-08-26
 

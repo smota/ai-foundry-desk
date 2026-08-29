@@ -119,7 +119,7 @@ afd doctor              # Explain Foundation problems without changing anything
 afd verify              # Run the compact product verification suite
 afd sync --dry-run      # Preview shared skill/profile changes
 afd sync                # Apply reviewed, one-way synchronization
-afd layer3 plan builtin:samuel # Preview a recipe; shorthand also only plans
+afd layer3 plan builtin:smota-foundations # Preview a recipe; shorthand also only plans
 afd telemetry status --json    # See live and session evidence per agent
 afd telemetry explain <run-id> # Explain one correlated run without exposing content
 ```

@@ -6,7 +6,7 @@
   dry-run, verification, and backups.
 - Pinned/checksummed Hermes staging updates, explicit pending-skill review, official Antigravity
   skill mirroring, and deterministic local/internal/HTTPS recipes with scoped rollback.
-- Samuel recipe for Holoself, pinned Vibium/Tokscale, plus fail-closed local extraction.
+- smota-foundations recipe for Holoself, pinned Vibium/Tokscale, plus fail-closed local extraction.
 - Recipe-managed telemetry-v2 with a checksummed upstream Collector, Phoenix, observe-only
   agentacct, native Codex/Claude OTLP configuration, one consent boundary, bounded correlation, and
   `afd telemetry explain <run-id>`.

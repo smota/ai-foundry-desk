@@ -12,6 +12,8 @@ $group = "$env:COMPUTERNAME\CodexSandboxUsers"
 $inherited = [Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [Security.AccessControl.InheritanceFlags]::ObjectInherit
 $targets = @(
     [pscustomobject]@{ path = (Join-Path $env:LOCALAPPDATA "mise"); inheritance = $inherited; grant = "(OI)(CI)(RX)" },
+    [pscustomobject]@{ path = (Join-Path $env:USERPROFILE ".rustup"); inheritance = $inherited; grant = "(OI)(CI)(RX)" },
+    [pscustomobject]@{ path = (Join-Path $env:USERPROFILE ".cargo"); inheritance = $inherited; grant = "(OI)(CI)(RX)" },
     [pscustomobject]@{ path = (Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links"); inheritance = $inherited; grant = "(OI)(CI)(RX)" },
     [pscustomobject]@{ path = (Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Packages"); inheritance = [Security.AccessControl.InheritanceFlags]::None; grant = "(RX)" },
     [pscustomobject]@{ path = (Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Packages\jdx.mise_Microsoft.Winget.Source_8wekyb3d8bbwe"); inheritance = $inherited; grant = "(OI)(CI)(RX)" },
