@@ -6,9 +6,10 @@
 
 - Added one scope-aware MCP workflow for discovering, adopting, synchronizing, enabling, disabling,
   and moving server definitions between user and project configuration.
-- Added native user/project adapters for Claude Code, Codex, and Grok, plus a verified user adapter
-  for Hermes; AFD now reports per-scope MCP capabilities and blocks all-target operations whenever
-  an agent cannot safely represent the requested scope.
+- Added native user/project adapters for Claude Code, Codex, Antigravity, and Grok, a verified
+  user adapter for Hermes, and explicit opt-in Pi support through pinned `pi-mcp-adapter` 2.31.0;
+  AFD reports per-scope capabilities and blocks all-target operations whenever an agent cannot
+  safely represent the requested scope or its third-party adapter has not been consented to.
 - Added canonical user/project registries, whole-entry project precedence, project tombstones,
   deterministic fingerprints, redacted plans, and content-derived confirmation tokens.
 - Preserved unrelated JSON, TOML, and YAML settings while refusing divergent unmanaged entries,

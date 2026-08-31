@@ -3,7 +3,7 @@ import type { AgentId } from "./contracts.js";
 export const MCP_SCHEMA_VERSION = 1 as const;
 export type McpScope = "user" | "project";
 export type McpTransport = "stdio" | "http";
-export type McpScopeCapability = "native" | "unsupported" | "unverified";
+export type McpScopeCapability = "native" | "extension" | "unsupported" | "unverified";
 
 export interface McpValueLiteral { readonly literal: string }
 export interface McpValueEnvironment { readonly fromEnv: string }
@@ -96,13 +96,14 @@ export interface McpManagerOptions {
   readonly backupRoot?: string;
   readonly project?: string;
   readonly targets?: readonly AgentId[];
+  readonly enablePiAdapter?: boolean;
 }
 
 export const mcpCapabilities: Readonly<Record<AgentId, McpAdapterCapability>> = {
   "claude-code": { user: "native", project: "native", transports: ["stdio", "http"], canPersistDisabled: true, activation: "next-session" },
   codex: { user: "native", project: "native", transports: ["stdio", "http"], canPersistDisabled: true, activation: "restart" },
-  antigravity: { user: "unverified", project: "unverified", transports: ["stdio", "http"], canPersistDisabled: true, activation: "restart", detail: "The actual agy client contract is not validated." },
-  pi: { user: "unverified", project: "unverified", transports: ["stdio", "http"], canPersistDisabled: true, activation: "restart", detail: "MCP requires a separately installed Pi adapter." },
+  antigravity: { user: "native", project: "native", transports: ["stdio", "http"], canPersistDisabled: true, activation: "restart", detail: "Official Antigravity mcp_config.json contract; fixture-tested because agy is not installed on this host." },
+  pi: { user: "extension", project: "extension", transports: ["stdio", "http"], canPersistDisabled: true, activation: "restart", detail: "Requires explicit declaration of pinned pi-mcp-adapter 2.31.0; Pi core has no MCP client." },
   hermes: { user: "native", project: "unsupported", transports: ["stdio", "http"], canPersistDisabled: true, activation: "live", detail: "Hermes has no stable project-scoped MCP registry." },
   grok: { user: "native", project: "native", transports: ["stdio", "http"], canPersistDisabled: true, activation: "restart" },
 };

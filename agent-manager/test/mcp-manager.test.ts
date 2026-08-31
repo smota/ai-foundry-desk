@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import type { AgentId } from "../src/contracts.js";
 import { applyMcpPlan, planMcpAdopt, planMcpMove, planMcpSync, planMcpToggle } from "../src/mcp-manager.js";
-import { nativeMcpPath } from "../src/mcp-formats.js";
+import { nativeMcpPath, piSettingsPath } from "../src/mcp-formats.js";
 import { loadMcpRegistry, registryPath, serializeMcpRegistry, writeAtomic } from "../src/mcp-registry.js";
 import type { McpManagerOptions, McpRegistry } from "../src/mcp-contracts.js";
 
@@ -38,15 +38,22 @@ test("moving between scopes updates canonical and native ownership in one plan",
   const userCodex = await readFile(nativeMcpPath("codex", "user", options), "utf8"); const projectCodex = await readFile(nativeMcpPath("codex", "project", options), "utf8"); assert.doesNotMatch(userCodex, /mcp_servers\.demo/); assert.match(projectCodex, /mcp_servers\.demo/);
 });
 
-test("all-target project plans fail closed on unverified and unsupported adapters before writes", async () => {
+test("all-target project plans fail closed on Pi dependency and unsupported Hermes project scope before writes", async () => {
   const options = await fixture(); const allOptions: McpManagerOptions = { home: options.home!, afdRoot: options.afdRoot!, backupRoot: options.backupRoot!, project: options.project! }; await registry("user", allOptions, { schemaVersion: 1, servers: {} }); await registry("project", allOptions, { schemaVersion: 1, servers: {} });
-  const plan = await planMcpSync("project", allOptions); assert.equal(plan.blocked, true); assert.ok(plan.blockers.some((item) => item.includes("antigravity") && item.includes("unverified"))); assert.ok(plan.blockers.some((item) => item.includes("pi") && item.includes("unverified"))); assert.ok(plan.blockers.some((item) => item.includes("hermes") && item.includes("unsupported")));
+  const plan = await planMcpSync("project", allOptions); assert.equal(plan.blocked, true); assert.ok(!plan.blockers.some((item) => item.includes("antigravity"))); assert.ok(plan.blockers.some((item) => item.includes("pi") && item.includes("--enable-pi-adapter"))); assert.ok(plan.blockers.some((item) => item.includes("hermes") && item.includes("unsupported")));
   await assert.rejects(applyMcpPlan(plan, plan.approvalToken, allOptions), /blocked/);
 });
 
-test("adoption refuses an unverified native-source guess", async () => {
+test("adoption refuses an unverified extension source", async () => {
   const options = await fixture();
-  await assert.rejects(planMcpAdopt("antigravity", "demo", "user", "user", options), /requires a verified native adapter/);
+  await assert.rejects(planMcpAdopt("pi", "demo", "user", "user", options), /requires a verified native adapter/);
+});
+
+test("Pi opt-in is pinned, transactional, and then idempotent", async () => {
+  const options = await fixture(); const piOptions: McpManagerOptions = { ...options, targets: ["pi"], enablePiAdapter: true }; const piServer = { ...server, targets: ["pi"] as readonly AgentId[] }; await registry("user", piOptions, { schemaVersion: 1, servers: { demo: piServer } });
+  const plan = await planMcpSync("user", piOptions); assert.equal(plan.blocked, false, plan.blockers.join("; ")); assert.ok(plan.actions.some((item) => item.path === piSettingsPath("user", piOptions) && item.afterSha256)); await applyMcpPlan(plan, plan.approvalToken, piOptions);
+  assert.match(await readFile(piSettingsPath("user", piOptions), "utf8"), /npm:pi-mcp-adapter@2\.31\.0/); assert.match(await readFile(nativeMcpPath("pi", "user", piOptions), "utf8"), /"demo"/);
+  const again = await planMcpSync("user", { ...piOptions, enablePiAdapter: false }); assert.equal(again.blocked, false, again.blockers.join("; ")); assert.ok(again.actions.every((item) => item.kind === "in-sync"));
 });
 
 test("stale native content rejects apply without overwriting concurrent edits", async () => {

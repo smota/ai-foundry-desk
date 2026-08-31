@@ -3,7 +3,7 @@ import path from "node:path";
 import { agentTargets } from "./catalog.js";
 import type { AgentId } from "./contracts.js";
 import { mcpCapabilities, isMcpOverride, type McpApplyResult, type McpFileAction, type McpManagerOptions, type McpPlan, type McpPlanKind, type McpRegistry, type McpScope, type McpServer } from "./mcp-contracts.js";
-import { discoverNativeMcp, nativeMcpPath, renderClaudeProjectDisabled, renderNativeMcpContent } from "./mcp-formats.js";
+import { discoverNativeMcp, hasPiMcpAdapter, nativeMcpPath, piSettingsPath, renderClaudeProjectDisabled, renderNativeMcpContent, renderPiMcpAdapter } from "./mcp-formats.js";
 import { emptyMcpRegistry, loadMcpRegistry, registryPath, resolveEffectiveMcp, serializeMcpRegistry, sha256, withServer, writeAtomic } from "./mcp-registry.js";
 
 interface ManagedState { readonly stateVersion: 1; readonly paths: Readonly<Record<string, readonly string[]>>; readonly claudeProjectDisabled: Readonly<Record<string, readonly string[]>> }
@@ -35,7 +35,15 @@ async function buildPlan(kind: McpPlanKind, scope: McpScope | "effective", serve
     const registry = itemScope === "user" ? desiredUser : desiredProject ?? emptyMcpRegistry();
     for (const agent of targets) {
       const capability = mcpCapabilities[agent][itemScope];
-      if (capability !== "native") { blockers.push(`${agent} ${itemScope} MCP scope is ${capability}: ${mcpCapabilities[agent].detail ?? "no verified adapter"}`); continue; }
+      if (capability === "extension" && agent === "pi") {
+        const settingsFile = piSettingsPath(itemScope, options); const settingsItem = await getFile("pi", itemScope, settingsFile); let configured = false;
+        try { configured = hasPiMcpAdapter(settingsItem.after ?? ""); } catch (error) { blockers.push(`pi ${itemScope} settings discovery failed: ${error instanceof Error ? error.message : String(error)}`); continue; }
+        if (!configured) {
+          if (!options.enablePiAdapter) { blockers.push(`pi ${itemScope} MCP requires ${mcpCapabilities.pi.detail} Preview again with --enable-pi-adapter to declare it explicitly.`); continue; }
+          try { settingsItem.after = renderPiMcpAdapter(settingsItem.after ?? ""); settingsItem.details.add("declare pinned pi-mcp-adapter 2.31.0"); }
+          catch (error) { blockers.push(`pi ${itemScope} extension declaration failed: ${error instanceof Error ? error.message : String(error)}`); continue; }
+        }
+      } else if (capability !== "native") { blockers.push(`${agent} ${itemScope} MCP scope is ${capability}: ${mcpCapabilities[agent].detail ?? "no verified adapter"}`); continue; }
       let file: string; try { file = nativeMcpPath(agent, itemScope, options); } catch (error) { blockers.push(error instanceof Error ? error.message : String(error)); continue; }
       const fileItem = await getFile(agent, itemScope, file); let content = fileItem.after ?? ""; const priorManaged = new Set(managed.paths[file] ?? []); const desired = new Map<string, McpServer>();
       for (const [id, entry] of Object.entries(registry.servers)) {
@@ -76,7 +84,7 @@ async function buildPlan(kind: McpPlanKind, scope: McpScope | "effective", serve
 
 export async function planMcpSync(scope: McpScope | "effective", options: McpManagerOptions): Promise<McpPlan> { const user = await loadMcpRegistry("user", options); const projectRegistry = scope === "user" || !options.project ? null : await loadMcpRegistry("project", options); return buildPlan("sync", scope, null, user, projectRegistry, options); }
 export async function planMcpAdopt(agent: AgentId, id: string, fromScope: McpScope, toScope: McpScope, options: McpManagerOptions): Promise<McpPlan> {
-  if (mcpCapabilities[agent][fromScope] !== "native") throw new Error(`${agent} ${fromScope} MCP discovery is ${mcpCapabilities[agent][fromScope]}; adoption requires a verified native adapter.`);
+  const capability = mcpCapabilities[agent][fromScope]; if (capability !== "native" && !(agent === "pi" && capability === "extension" && hasPiMcpAdapter(await currentText(piSettingsPath(fromScope, options)) ?? ""))) throw new Error(`${agent} ${fromScope} MCP discovery is ${capability}; adoption requires a verified native adapter or declared pinned extension.`);
   const targets = allTargets(options); const entries = await discoverNativeMcp(agent, fromScope, options, targets); const found = entries.find((entry) => entry.id === id); if (!found) throw new Error(`MCP server not found: ${agent}/${fromScope}/${id}.`);
   const user = await loadMcpRegistry("user", options); const projectRegistry = options.project ? await loadMcpRegistry("project", options) : null;
   const desiredUser = toScope === "user" ? withServer(user, "user", id, found.server) : user; const desiredProject = toScope === "project" ? withServer(projectRegistry ?? emptyMcpRegistry(), "project", id, found.server) : projectRegistry;
@@ -112,7 +120,7 @@ export async function applyMcpPlan(plan: McpPlan, confirm: string, options: McpM
   return { schemaVersion: 1, status: "applied", kind: plan.kind, approvalToken: plan.approvalToken, changed: changed.map((action) => action.path), attention: targetsAttention(plan, options) };
 }
 
-function targetsAttention(plan: McpPlan, options: McpManagerOptions): readonly string[] { const notes: string[] = []; const targets = allTargets(options); if (plan.scope !== "user" && targets.includes("claude-code")) notes.push("Claude Code may require project trust and MCP approval in a new session."); if (plan.scope !== "user" && targets.includes("codex")) notes.push("Codex project MCP configuration requires a trusted project and client restart."); return notes; }
+function targetsAttention(plan: McpPlan, options: McpManagerOptions): readonly string[] { const notes: string[] = []; const targets = allTargets(options); if (plan.scope !== "user" && targets.includes("claude-code")) notes.push("Claude Code may require project trust and MCP approval in a new session."); if (plan.scope !== "user" && targets.includes("codex")) notes.push("Codex project MCP configuration requires a trusted project and client restart."); if (targets.includes("pi") && options.enablePiAdapter) notes.push("Pi will install and execute pinned pi-mcp-adapter 2.31.0 on its next trusted startup; review the third-party package before confirmation."); return notes; }
 
 export function publicMcpPlan(plan: McpPlan): Omit<McpPlan, "desiredUser" | "desiredProject"> { return { schemaVersion: plan.schemaVersion, kind: plan.kind, scope: plan.scope, project: plan.project, serverId: plan.serverId, actions: plan.actions.map(withoutContent), blocked: plan.blocked, blockers: plan.blockers, approvalToken: plan.approvalToken }; }
 

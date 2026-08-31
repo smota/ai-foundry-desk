@@ -56,11 +56,13 @@ afd mcp disable context7 --scope project --project . --agents claude-code,codex,
 afd mcp move context7 --from user --to project --project . --agents claude-code,codex,grok --dry-run
 ```
 
-Claude Code, Codex, and Grok have verified user and project adapters. Hermes has a verified user
-adapter but no stable project-scoped surface. The installed Antigravity and Pi contracts are not
-verified. A default all-agent plan therefore blocks when any selected scope cannot be represented;
-use `afd catalog` to inspect the current per-scope capability and `--agents` only when deliberately
-targeting a supported subset.
+Claude Code, Codex, Antigravity, and Grok have user and project adapters. Antigravity follows the
+current official `mcp_config.json` contract and is fixture-tested because `agy` is not installed on
+this host. Hermes has a verified user adapter but no stable project-scoped surface. Pi core has no
+MCP support; AFD can explicitly declare pinned `pi-mcp-adapter` 2.31.0 with
+`--enable-pi-adapter`, then manage its global and project override files. A default all-agent plan
+therefore blocks when any selected scope cannot be represented; use `afd catalog` to inspect current
+capabilities and `--agents` only when deliberately targeting a supported subset.
 
 AFD never reads or copies native OAuth/login state. Secret-like environment and header values must
 be environment references, plans never contain rendered configuration values, unmanaged native

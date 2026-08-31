@@ -18,16 +18,17 @@
 - Windows x64 and Ubuntu 26.04.1 WSL2 x86_64 have implemented and tested platform adapters; native
   Linux outside WSL still needs independent validation evidence.
 - Scope-aware MCP registries, redacted discovery, hash-bound transactions, enable/disable, atomic
-  scope moves, and verified Claude Code/Codex/Grok plus Hermes-user adapters are implemented. Plans
-  fail closed for the unverified Antigravity/Pi and unsupported Hermes project surfaces.
+  scope moves, and Claude Code/Codex/Antigravity/Grok plus Hermes-user adapters are implemented.
+  Pi is available through an explicitly consented, pinned adapter declaration; plans fail closed
+  without that declaration and for unsupported Hermes project scope.
 - Project harness audit, hash-bound staging, and disposable multi-agent smoke tests are implemented
   without claiming that file presence proves an agent loaded the policy.
 
 ## Next cycle
 
-1. Close the remaining MCP adapter evidence gaps in
-   [MCP-CONFIGURATION-DESIGN.md](MCP-CONFIGURATION-DESIGN.md): validate Antigravity and Pi contracts
-   and establish genuine Hermes project scoping before enabling default all-target project apply.
+1. Close the remaining MCP adapter evidence gap in
+   [MCP-CONFIGURATION-DESIGN.md](MCP-CONFIGURATION-DESIGN.md): establish genuine Hermes project
+   scoping before enabling default all-target project apply.
 2. Reduce the measured `status`/`explain` p95 baseline of about 10.3 seconds without weakening
    fail-closed source checks, privacy, or process isolation.
 3. Add Hermes native operational OTLP only after its recipe effects and content-free vocabulary are

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import type { AgentId } from "../src/contracts.js";
-import { discoverNativeMcp, nativeMcpPath, renderNativeMcp } from "../src/mcp-formats.js";
+import { discoverNativeMcp, hasPiMcpAdapter, nativeMcpPath, piSettingsPath, renderNativeMcp, renderPiMcpAdapter } from "../src/mcp-formats.js";
 import { writeAtomic } from "../src/mcp-registry.js";
 
 const targets: readonly AgentId[] = ["claude-code", "codex", "grok"];
@@ -19,6 +19,28 @@ test("Claude JSON rendering preserves unrelated settings and round-trips portabl
   const rendered = await renderNativeMcp("claude-code", "user", "demo", stdio, options); await writeAtomic(rendered.path, rendered.after);
   const parsed = JSON.parse(await readFile(file, "utf8")) as { theme?: string }; assert.equal(parsed.theme, "dark");
   const [entry] = await discoverNativeMcp("claude-code", "user", options, targets); assert.equal(entry?.id, "demo"); assert.deepEqual(entry?.server, stdio);
+});
+
+test("Antigravity uses its documented global/workspace paths and serverUrl schema", async () => {
+  const { options } = await fixture(); const file = nativeMcpPath("antigravity", "project", options); assert.equal(file, path.join(options.project, ".agents", "mcp_config.json"));
+  const portableHttp = { transport: "http", url: "https://example.test/mcp", headers: { "x-mode": { literal: "safe" } }, enabled: false, targets } as const;
+  const rendered = await renderNativeMcp("antigravity", "project", "docs", portableHttp, options); await writeAtomic(rendered.path, rendered.after);
+  assert.match(rendered.after, /"serverUrl": "https:\/\/example\.test\/mcp"/); assert.match(rendered.after, /"disabled": true/); assert.doesNotMatch(rendered.after, /"url":/);
+  const [entry] = await discoverNativeMcp("antigravity", "project", options, targets); assert.deepEqual(entry?.server, portableHttp);
+  assert.equal(nativeMcpPath("antigravity", "user", options), path.join(options.home, ".gemini", "config", "mcp_config.json"));
+  await assert.rejects(renderNativeMcp("antigravity", "user", "stdio", stdio, options), /does not document environment-reference interpolation/);
+});
+
+test("Pi declares a pinned adapter without replacing unrelated settings", async () => {
+  const { options } = await fixture(); assert.equal(piSettingsPath("user", options), path.join(options.home, ".pi", "agent", "settings.json")); assert.equal(piSettingsPath("project", options), path.join(options.project, ".pi", "settings.json"));
+  const rendered = renderPiMcpAdapter('{"theme":"dark","packages":["npm:other@1.0.0"]}\n'); assert.equal(hasPiMcpAdapter(rendered), true); assert.match(rendered, /npm:other@1\.0\.0/); assert.match(rendered, /npm:pi-mcp-adapter@2\.31\.0/);
+  assert.throws(() => renderPiMcpAdapter('{"packages":["npm:pi-mcp-adapter@2.30.0"]}'), /divergent/);
+});
+
+test("Pi adapter rendering round-trips HTTP headers and persistent disabled state", async () => {
+  const { options } = await fixture(); const piTargets: readonly AgentId[] = ["pi"]; const portable = { transport: "http", url: "https://example.test/mcp", headers: { authorization: { fromEnv: "MCP_AUTHORIZATION" } }, enabled: false, targets: piTargets } as const;
+  const rendered = await renderNativeMcp("pi", "project", "docs", portable, options); await writeAtomic(rendered.path, rendered.after); assert.doesNotMatch(rendered.after, /"type"/); assert.match(rendered.after, /"disabled": true/);
+  const [entry] = await discoverNativeMcp("pi", "project", options, piTargets); assert.deepEqual(entry?.server, portable);
 });
 
 test("Codex TOML uses replaceable managed blocks while preserving comments", async () => {

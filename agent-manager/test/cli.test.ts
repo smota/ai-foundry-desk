@@ -61,7 +61,7 @@ test("MCP CLI exposes redacted plans and requires an exact mutation mode", () =>
   const missing=isolatedCli(root,"mcp","sync","--scope","user","--agents","codex,grok");assert.notEqual(missing.status,0);assert.match(missing.stderr,/exactly one/);
   const typo=isolatedCli(root,"mcp","sync","--scope","user","--agents","codex,grok","--dry-run","--typo");assert.notEqual(typo.status,0);assert.match(typo.stderr,/Unknown MCP option/);
   const missingValue=isolatedCli(root,"mcp","sync","--scope","--dry-run");assert.notEqual(missingValue.status,0);assert.match(missingValue.stderr,/requires a value/);
-  const unverified=isolatedCli(root,"mcp","discover","antigravity","--scope","user","--json");assert.notEqual(unverified.status,0);assert.match(unverified.stderr,/no verified native adapter/);
+  const unverified=isolatedCli(root,"mcp","discover","pi","--scope","user","--json");assert.notEqual(unverified.status,0);assert.match(unverified.stderr,/no verified native adapter/);
 });
 
-test("MCP catalog exposes per-scope capability instead of silently claiming all-agent support",()=>{const result=cli("catalog");assert.equal(result.status,0);assert.match(result.stdout,/hermes.*mcp-project=unsupported/);assert.match(result.stdout,/antigravity.*mcp-project=unverified/);});
+test("MCP catalog exposes per-scope capability instead of silently claiming all-agent support",()=>{const result=cli("catalog");assert.equal(result.status,0);assert.match(result.stdout,/hermes.*mcp-project=unsupported/);assert.match(result.stdout,/antigravity.*mcp-project=native/);assert.match(result.stdout,/pi.*mcp-project=extension/);});

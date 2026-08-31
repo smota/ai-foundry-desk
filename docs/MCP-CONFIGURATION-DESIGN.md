@@ -187,7 +187,7 @@ Recommended exit codes:
 MCP support is separate from the existing skill/profile capability flags:
 
 ```ts
-type McpScopeCapability = "native" | "overlay" | "unsupported" | "unverified";
+type McpScopeCapability = "native" | "extension" | "unsupported" | "unverified";
 
 interface McpAdapterCapability {
   readonly user: McpScopeCapability;
@@ -211,16 +211,16 @@ This table records the implemented and verified support boundary:
 |---|---|---|---|---|
 | Claude Code | `~/.claude.json` | `<project>/.mcp.json` plus per-project state | per-project `disabledMcpServers` | implemented and fixture-tested |
 | Codex | `~/.codex/config.toml` | `<project>/.codex/config.toml` in trusted projects | `enabled = false` | implemented and fixture-tested |
-| Antigravity | candidate Gemini settings adapter | candidate project `.gemini/settings.json` | allow/exclude policy | unverified for the actual `agy` client; blocks all-target release |
-| Pi | shared/user and Pi-owned `mcp.json` surfaces when an MCP adapter is installed | `.mcp.json` and `.pi/mcp.json` | project override | optional extension dependency; must be declared and verified before support |
+| Antigravity | `~/.gemini/config/mcp_config.json` | `<project>/.agents/mcp_config.json` | native `disabled` | official contract implemented and fixture-tested; `agy` absent on validation host |
+| Pi | `~/.pi/agent/mcp.json` | `<project>/.pi/mcp.json` | native `disabled`, including project override | pinned `pi-mcp-adapter` 2.31.0 is declared only with explicit `--enable-pi-adapter` consent |
 | Hermes | `~/.hermes/config.yaml` `mcp_servers` | no stable project-native contract established | native `enabled` exists | user implemented; project remains unsupported |
 | Grok | `~/.grok/config.toml` | `<project>/.grok/config.toml` | native `enabled` state | implemented and fixture-tested |
 
-The release gate is intentionally strict: `afd catalog` may show per-scope MCP capability, and an
-all-target plan fails while Antigravity or Hermes project behavior remains unverified. A future
-overlay is acceptable only if launching the normal configured agent deterministically selects the
-project configuration; a special one-off wrapper that leaves the server globally active does not
-satisfy project scope.
+The release gate is intentionally strict: `afd catalog` shows per-scope MCP capability, and an
+all-target plan still fails while Pi lacks its explicitly consented adapter declaration or Hermes
+lacks genuine project scoping. A future overlay is acceptable only if launching the normal configured agent
+deterministically selects the project configuration; a special one-off wrapper that leaves the
+server globally active does not satisfy project scope.
 
 ## Native rendering rules
 
@@ -315,8 +315,8 @@ fixture, with native-host validation where the agent exists:
    `afd catalog`.
 3. Implement plan/token/transaction/rollback infrastructure with fixture adapters.
 4. Implement and native-test Claude, Codex, and Grok adapters.
-5. Validate and implement Antigravity and Pi dependency contracts; do not infer Gemini/Pi support
-   from adjacent directories or optional packages.
+5. Keep the implemented Antigravity adapter aligned with its official dedicated JSON contract and
+   keep the explicitly pinned Pi adapter contract covered by fixtures and dependency review.
 6. Establish a genuine Hermes project-scope contract or keep all-target project operations blocked.
 7. Add enable/disable and move transactions, then the acceptance matrix and documentation.
 
@@ -326,7 +326,9 @@ No implementation slice may silently narrow `all agents` to the agents that were
 
 - [OpenAI Codex MCP documentation](https://developers.openai.com/codex/mcp/)
 - [Claude Code MCP scopes and management](https://code.claude.com/docs/en/mcp)
-- [Gemini CLI MCP server configuration](https://google-gemini.github.io/gemini-cli/docs/tools/mcp-server.html)
+- [Google Antigravity MCP configuration](https://www.antigravity.google/docs/cli/mcp/)
+- [Pi package configuration](https://pi.dev/docs/latest/packages)
+- [`pi-mcp-adapter` configuration](https://github.com/nicobailon/pi-mcp-adapter#config)
 
 Installed CLI help and package source were also inspected for the current Pi, Hermes, and Grok
 clients without reading credential values. Those observations must be revalidated during
