@@ -59,6 +59,7 @@ work.
 | **Layer 2 — Agent Setup** | Make agents available consistently | Idempotent detection and installation of supported desktop apps and CLIs without handling login credentials |
 | **Common Agent Toolbox** | Give every agent dependable utilities | Fast search, file discovery, structured-data processing, readable source output and clear diffs |
 | **Agent Manager** | Keep shared guidance manageable | A canonical skill catalog, small profiles, one-way sync, drift detection, review and safe import/adopt |
+| **Project Harnesses** | Keep repository agents consistent | One canonical policy, minimal adapters, external staging, disposable cross-agent smoke tests, confirmed apply and exact rollback |
 | **Layer 3 — Recipes** | Provision reviewed bundles | Uniform internal/local/HTTPS loading, mandatory plan, confirmed apply, verification and managed-only rollback |
 | **Observability** | Explain agent execution locally | Recipe-managed OTLP Collector, Phoenix traces, agentacct session intelligence, bounded correlation and explicit per-agent coverage |
 | **Recovery** | Keep managed changes reversible | Local backups with bounded retention before AFD changes an existing managed file |
@@ -66,6 +67,8 @@ work.
 For a fast, linked catalog of every tool and product, see the
 [Layer inventory](docs/LAYER-INVENTORY.md). It includes logos where available, a short description,
 the component's objective, installation ownership, and platform boundaries.
+
+For repository instruction consolidation, see [Project harnesses](docs/PROJECT-HARNESSES.md).
 
 ## Quick start on Windows
 

@@ -16,6 +16,9 @@ afd harness plan <project> --agents codex,claude-code,pi --remove-legacy
 afd harness stage <project> --output <outside-project-directory> --agents codex,claude-code,pi
 afd harness test <project> --agents codex,claude-code,pi
 afd harness test <project> --agents codex,claude-code,pi --live --evidence <outside-project-file>
+afd harness apply <project> --agents codex,claude-code,pi --evidence <passing-live-report> --confirm <plan-token>
+afd harness verify <project> --receipt <apply-receipt>
+afd harness rollback <project> --receipt <apply-receipt> --confirm <plan-token>
 ```
 
 The audit is strictly read-only. It identifies canonical instructions, agent-specific adapter
@@ -31,3 +34,8 @@ and adapters into a disposable local workspace, then starts fresh, bounded, read
 compares independently returned canonical-policy facts. Every selected agent
 must pass with one policy fingerprint. Missing commands, unsupported safety contracts, malformed
 output, inconsistent policy, timeout, or canonical-file drift make the evidence fail closed.
+
+`apply` recomputes the plan, requires its exact approval token and matching passing live evidence,
+and stores a private receipt outside the project. It is transactional. `verify` checks every applied
+artifact plus the complete Git-visible workspace fingerprint. `rollback` requires the
+same token, refuses drift, restores the exact prior bytes, and emits a separate private receipt.

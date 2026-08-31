@@ -31,9 +31,14 @@ async function currentText(project: string, relative: string): Promise<string | 
   if (!(await exists(target))) return null; if (!(await regularFile(target))) throw new Error(`Harness path is not a regular file: ${relative}`);
   return readFile(target, "utf8");
 }
-async function revision(project: string): Promise<string | null> {
-  try { const result = await execFileAsync("git", ["-c", `safe.directory=${slash(project)}`, "-C", project, "rev-parse", "HEAD"], { encoding: "utf8", windowsHide: true, timeout: 10_000 }); return result.stdout.trim() || null; }
-  catch { return null; }
+export async function harnessGitState(project: string): Promise<{ readonly revision: string | null; readonly workspaceFingerprint: string | null }> {
+  try {
+    const revisionResult = await execFileAsync("git", ["-c", `safe.directory=${slash(project)}`, "-C", project, "rev-parse", "HEAD"], { encoding: "utf8", windowsHide: true, timeout: 10_000 });
+    const revision = revisionResult.stdout.trim(); if (!revision) return { revision: null, workspaceFingerprint: null };
+    const status = await execFileAsync("git", ["-c", `safe.directory=${slash(project)}`, "-C", project, "status", "--porcelain=v1", "-z", "--untracked-files=all"], { encoding: "utf8", windowsHide: true, timeout: 10_000 });
+    return { revision, workspaceFingerprint: hash(`${revision}\0${status.stdout}`) };
+  }
+  catch { return { revision: null, workspaceFingerprint: null }; }
 }
 function managed(value: string): boolean { return value.includes(START) && value.includes(END); }
 function pointerContent(target: HarnessTargetContract, canonicalPath: string, canonicalSha256: string): string {
@@ -74,23 +79,24 @@ export async function planHarness(projectInput: string, options: { readonly agen
     if (before === null) actions.push(action("create", "adapters", id, relative, `Create the minimal ${target.displayName} adapter.`, null, content));
     else if (before === content) { /* already desired */ }
     else if (managed(before)) actions.push(action("update-managed", "adapters", id, relative, `Refresh the AFD-managed ${target.displayName} adapter.`, before, content));
-    else actions.push(action("preserve", "adapters", id, relative, `Preserve divergent project-owned ${target.displayName} instructions for human reconciliation.`, before, before));
+    else { actions.push(action("preserve", "adapters", id, relative, `Preserve divergent project-owned ${target.displayName} instructions for human reconciliation.`, before, before)); blockers.push(`${id}: ${relative} contains project-owned instructions that must be reconciled with ${audit.canonical.path} before apply`); }
   }
   if (options.removeLegacy) for (const candidate of legacyCandidates(audit, selected)) {
     const before = await currentText(project, candidate.path); if (before !== null && !actions.some((item) => item.path === candidate.path)) actions.push(action("remove-legacy", "legacy-cleanup", candidate.agent, candidate.path, candidate.reason, before, null));
   }
   actions.sort((left, right) => left.group.localeCompare(right.group) || left.path.localeCompare(right.path));
-  const base: Omit<HarnessPlan, "approvalToken"> = {
-    schemaVersion: 1, project: slash(project), baseRevision: await revision(project), canonicalPath: audit.canonical.path,
+  const git = await harnessGitState(project); const base: Omit<HarnessPlan, "approvalToken"> = {
+    schemaVersion: 1, project: slash(project), baseRevision: git.revision, workspaceFingerprint: git.workspaceFingerprint, canonicalPath: audit.canonical.path,
     canonicalSha256: audit.canonical.sha256, selectedAgents, removeLegacy: options.removeLegacy ?? false, actions,
     blocked: blockers.length > 0, blockers,
   };
   return { ...base, approvalToken: planDigest(base) };
 }
 
-async function assertPlanCurrent(plan: HarnessPlan): Promise<void> {
+export async function assertHarnessPlanCurrent(plan: HarnessPlan): Promise<void> {
   const canonical = await currentText(plan.project, plan.canonicalPath); if (canonical === null || hash(canonical) !== plan.canonicalSha256) throw new Error("Harness plan is stale: canonical instructions changed.");
-  const currentRevision = await revision(plan.project); if (plan.baseRevision !== currentRevision) throw new Error("Harness plan is stale: repository revision changed.");
+  const git = await harnessGitState(plan.project); if (plan.baseRevision !== git.revision) throw new Error("Harness plan is stale: repository revision changed.");
+  if (plan.workspaceFingerprint !== git.workspaceFingerprint) throw new Error("Harness plan is stale: repository workspace changed.");
   for (const item of plan.actions) { const value = await currentText(plan.project, item.path); const currentHash = value === null ? null : hash(value); if (currentHash !== item.beforeSha256) throw new Error(`Harness plan is stale: ${item.path} changed.`); }
 }
 async function ensureStageOutput(output: string, plan: HarnessPlan): Promise<"created" | "unchanged"> {
@@ -104,8 +110,7 @@ async function ensureStageOutput(output: string, plan: HarnessPlan): Promise<"cr
 }
 
 export async function stageHarness(plan: HarnessPlan, outputInput: string): Promise<HarnessStageResult> {
-  if (plan.blocked) throw new Error(`Harness plan is blocked: ${plan.blockers.join("; ")}`);
-  await assertPlanCurrent(plan); const output = path.resolve(outputInput); const project = path.resolve(plan.project);
+  await assertHarnessPlanCurrent(plan); const output = path.resolve(outputInput); const project = path.resolve(plan.project);
   if (contained(project, output)) throw new Error("Harness stage output must be outside the target project.");
   const status = await ensureStageOutput(output, plan); const rendered: string[] = []; const removals: string[] = [];
   for (const item of plan.actions) {
@@ -132,7 +137,7 @@ export function parseHarnessAgents(value: string | undefined): readonly HarnessA
 }
 
 export function renderHarnessPlan(plan: HarnessPlan): string {
-  const groups = ["canonical", "adapters", "legacy-cleanup"] as const; const rows = ["AFD project harness plan", `Project: ${plan.project}`, `Base revision: ${plan.baseRevision ?? "not a Git repository"}`, `Selected agents: ${plan.selectedAgents.join(", ")}`, `Approval token: ${plan.approvalToken}`, `Status: ${plan.blocked ? "BLOCKED" : "ready"}`];
+  const groups = ["canonical", "adapters", "legacy-cleanup"] as const; const rows = ["AFD project harness plan", `Project: ${plan.project}`, `Base revision: ${plan.baseRevision ?? "not a Git repository"}`, `Workspace fingerprint: ${plan.workspaceFingerprint ?? "not available"}`, `Selected agents: ${plan.selectedAgents.join(", ")}`, `Approval token: ${plan.approvalToken}`, `Status: ${plan.blocked ? "BLOCKED" : "ready"}`];
   for (const group of groups) { const items = plan.actions.filter((item) => item.group === group); if (!items.length) continue; rows.push("", `${group}:`, ...items.map((item) => `- ${item.kind.toUpperCase()} ${item.path}: ${item.reason}`)); }
   if (plan.blockers.length) rows.push("", "Blockers:", ...plan.blockers.map((item) => `- ${item}`));
   return `${rows.join("\n")}\n`;

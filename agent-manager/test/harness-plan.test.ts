@@ -28,7 +28,7 @@ test("plan is read-only, hash-bound, and generates only selected minimal adapter
 test("plan preserves divergent project-owned adapters", async () => {
   const root = await fixture(); await writeFile(path.join(root, "CLAUDE.md"), "# Claude role\n\nPerform a distinct review role.\n");
   const plan = await planHarness(root, { agents: ["claude-code"] });
-  assert.ok(plan.actions.some((item) => item.kind === "preserve" && item.path === "CLAUDE.md"));
+  assert.equal(plan.blocked, true); assert.ok(plan.actions.some((item) => item.kind === "preserve" && item.path === "CLAUDE.md"));
 });
 
 test("plan token changes with canonical content", async () => {
