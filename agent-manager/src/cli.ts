@@ -22,6 +22,7 @@ import { doctor, executionIdentity } from "./doctor.js";
 import { foundationPlan, layer2Plan } from "./foundation.js";
 import { NodePlatformAdapter, writePrivateText } from "./platform.js";
 import { sandboxAccessDiagnostic } from "./sandbox-access.js";
+import { auditHarness, renderHarnessAudit } from "./harness-audit.js";
 
 const VERSION = "0.3.1";
 const productRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -49,6 +50,7 @@ Usage:
   afd provenance [--json]
   afd layer1|layer2 --dry-run|--apply [--allow-claude-postinstall]
   afd catalog | help | --version
+  afd harness audit <project> [--json]
 
 No layer is applied automatically. Use --dry-run before --apply.`;
 
@@ -87,6 +89,12 @@ async function main(args: readonly string[]): Promise<number> {
     throw new Error("Layer automation is not implemented for macOS.");
   }
   if (command === "catalog") { if (args.length !== 1) throw new Error("Usage: afd catalog"); for (const target of agentTargets) console.log(`${target.id}\tskills=${target.skills}\tprofile=${target.profile}\t${target.reason ?? ""}`); return 0; }
+  if (command === "harness") {
+    const subcommand = args[1]; const project = args[2];
+    if (subcommand !== "audit" || !project || args.slice(3).some((arg) => arg !== "--json")) throw new Error("Usage: afd harness audit <project> [--json]");
+    const report = await auditHarness(project); console.log(args.includes("--json") ? JSON.stringify(report, null, 2) : renderHarnessAudit(report));
+    return report.summary.blockers ? 2 : 0;
+  }
   if (command === "observe") throw new Error("afd observe was removed before release; use afd telemetry.");
   if (command === "telemetry") {
     const sub = args[1] ?? "status"; const json = args.includes("--json"); const recipeIndex = args.indexOf("--recipe"); const source = recipeIndex >= 0 ? args[recipeIndex + 1] : "builtin:observability"; if (!source || source.startsWith("--")) throw new Error("--recipe requires a value.");

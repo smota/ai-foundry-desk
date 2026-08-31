@@ -45,3 +45,8 @@ test("telemetry apply uses the recipe plan token as its single consent boundary"
   assert.notEqual(apply.status, 0);
   assert.match(apply.stderr, /plan-token/);
 });
+
+test("harness audit rejects incomplete arguments without entering a mutating path", () => {
+  const audit = cli("harness", "audit");
+  assert.notEqual(audit.status, 0); assert.match(audit.stderr, /Usage: afd harness audit/);
+});
