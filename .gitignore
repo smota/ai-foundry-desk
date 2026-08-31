@@ -36,3 +36,5 @@ venv/
 .mise/
 .pnpm-store/
 .cache/
+__pycache__/
+*.py[cod]

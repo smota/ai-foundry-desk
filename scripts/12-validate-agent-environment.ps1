@@ -26,6 +26,19 @@ function Invoke-Bounded([string]$Executable, [string[]]$Arguments, [int]$Timeout
     return [pscustomobject]@{ Status = $status; Output = $output.Trim() }
 }
 
+function Invoke-BoundedStable([string]$Executable, [string[]]$Arguments, [int]$TimeoutMs) {
+    $first = Invoke-Bounded $Executable $Arguments $TimeoutMs
+    if ($first.Status -eq 0) { return [pscustomobject]@{ Status = 0; Output = $first.Output; Attempts = 1 } }
+    $second = Invoke-Bounded $Executable $Arguments $TimeoutMs
+    return [pscustomobject]@{ Status = $second.Status; Output = $second.Output; Attempts = 2 }
+}
+
+function Failure-Summary([string]$Output) {
+    $singleLine = ($Output -replace '\s+', ' ').Trim()
+    if ($singleLine.Length -gt 500) { return $singleLine.Substring(0, 500) + "..." }
+    return $singleLine
+}
+
 function Resolve-Application([string]$Name) {
     return Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source
 }
@@ -63,7 +76,8 @@ $commands = @(
     @{ Name = "python"; Pattern = '^Python 3\.14\.' },
     @{ Name = "go"; Pattern = '^go version go1\.26\.' },
     @{ Name = "rustc"; Pattern = '^rustc 1\.98\.' },
-    @{ Name = "cargo"; Pattern = '^cargo 1\.98\.' }
+    @{ Name = "cargo"; Pattern = '^cargo 1\.98\.' },
+    @{ Name = "codex"; Pattern = '^codex-cli \d+\.' }
 )
 foreach ($command in $commands) {
     # The shell command itself is the contract. Resolve-ManagedApplication is reserved for
@@ -117,8 +131,10 @@ if ($pnpm -and $toolPass.pnpm) {
     $managedNode = Resolve-ManagedApplication "node"
     if ($managedNode) { $env:Path = (Split-Path -Parent $managedNode) + ";" + $env:Path }
     $pnpmInvocation = if ($pnpm -match '(?i)\.(cmd|bat)$') { @{ Executable = "cmd.exe"; Prefix = @("/d", "/s", "/c", "call", $pnpm) } } else { @{ Executable = $pnpm; Prefix = @() } }
-    $check = Invoke-Bounded $pnpmInvocation.Executable @($pnpmInvocation.Prefix + "check") 300000
-    Add-Result "project.pnpm-check" ($check.Status -eq 0) "exit=$($check.Status)"
+    $check = Invoke-BoundedStable $pnpmInvocation.Executable @($pnpmInvocation.Prefix + "check") 300000
+    $checkEvidence = "exit=$($check.Status) attempts=$($check.Attempts)"
+    if ($check.Status -ne 0) { $checkEvidence += " output=$(Failure-Summary $check.Output)" }
+    Add-Result "project.pnpm-check" ($check.Status -eq 0) $checkEvidence
 } else {
     Add-Result "project.pnpm-check" $false "pnpm not resolvable"
 }
@@ -126,9 +142,12 @@ if ($pnpm -and $toolPass.pnpm) {
 $cli = Join-Path $ProjectRoot "agent-manager\dist\cli.js"
 if ($node -and (Test-Path -LiteralPath $cli)) {
     $provenance = Invoke-Bounded $node @($cli, "provenance", "--json")
-    Add-Result "afd.provenance" ($provenance.Status -eq 0 -and $provenance.Output -match '"version":\s*"0\.3\.0"') "exit=$($provenance.Status)"
-    $doctor = Invoke-Bounded $node @($cli, "doctor", "--json") 60000
-    Add-Result "afd.doctor" (($doctor.Status -eq 0 -or $doctor.Status -eq 2) -and $doctor.Output -notmatch '"status":\s*"FAIL"') "exit=$($doctor.Status)"
+    Add-Result "afd.provenance" ($provenance.Status -eq 0 -and $provenance.Output -match '"version":\s*"0\.3\.1"') "exit=$($provenance.Status)"
+    $doctor = Invoke-BoundedStable $node @($cli, "doctor", "--json") 60000
+    $doctorPassed = ($doctor.Status -eq 0 -or $doctor.Status -eq 2) -and $doctor.Output -notmatch '"status":\s*"FAIL"'
+    $doctorEvidence = "exit=$($doctor.Status) attempts=$($doctor.Attempts)"
+    if (-not $doctorPassed) { $doctorEvidence += " output=$(Failure-Summary $doctor.Output)" }
+    Add-Result "afd.doctor" $doctorPassed $doctorEvidence
     $telemetryPlan = Invoke-Bounded $node @($cli, "telemetry", "plan") 60000
     Add-Result "telemetry.plan" (($telemetryPlan.Status -eq 0 -or $telemetryPlan.Status -eq 2) -and $telemetryPlan.Output -match '"id":\s*"observability"' -and $telemetryPlan.Output -match 'agentacct 0\.10\.1') "exit=$($telemetryPlan.Status)"
     $telemetryStatus = Invoke-Bounded $node @($cli, "telemetry", "status", "--json") 60000
@@ -158,13 +177,13 @@ if ($node -and (Test-Path -LiteralPath $cli)) {
 $globalAfd = Resolve-Application "afd"
 if ($globalAfd) {
     $global = if ($globalAfd -match '(?i)\.(cmd|bat)$') { Invoke-Bounded "cmd.exe" @("/d", "/s", "/c", "call", $globalAfd, "--version") } else { Invoke-Bounded $globalAfd @("--version") }
-    Add-Result "afd.global-version" ($global.Status -eq 0 -and ($global.Output -split "\r?\n" | Select-Object -First 1) -eq "0.3.0") "path=$globalAfd version=$($global.Output)"
+    Add-Result "afd.global-version" ($global.Status -eq 0 -and ($global.Output -split "\r?\n" | Select-Object -First 1) -eq "0.3.1") "path=$globalAfd version=$($global.Output)"
     $globalProvenance = if ($globalAfd -match '(?i)\.(cmd|bat)$') { Invoke-Bounded "cmd.exe" @("/d", "/s", "/c", "call", $globalAfd, "provenance", "--json") } else { Invoke-Bounded $globalAfd @("provenance", "--json") }
     $globalProvenancePass = $false
     if ($globalProvenance.Status -eq 0) {
         try {
             $globalDetails = $globalProvenance.Output | ConvertFrom-Json
-            $globalProvenancePass = $globalDetails.version -eq "0.3.0" -and -not [string]::IsNullOrWhiteSpace($globalDetails.cli) -and -not [string]::IsNullOrWhiteSpace($globalDetails.runtime.executable)
+        $globalProvenancePass = $globalDetails.version -eq "0.3.1" -and -not [string]::IsNullOrWhiteSpace($globalDetails.cli) -and -not [string]::IsNullOrWhiteSpace($globalDetails.runtime.executable)
         } catch { $globalProvenancePass = $false }
     }
     Add-Result "afd.global-provenance" $globalProvenancePass "exit=$($globalProvenance.Status)"

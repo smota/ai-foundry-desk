@@ -55,9 +55,10 @@ async function resolveCommand(adapter: PlatformAdapter, command: string): Promis
 async function probeCommand(adapter: PlatformAdapter, command: string): Promise<Diagnostic> {
   const resolved = await resolveCommand(adapter, command);
   if (!resolved) return { status: "FAIL", id: "command." + command, detail: "Not resolvable from the effective process PATH.", remedy: "Expose the reviewed managed toolchain to this execution identity." };
+  const versionArgs = command === "go" ? ["version"] : ["--version"];
   const invocation = adapter.id === "win32" && /\.(?:cmd|bat)$/i.test(resolved)
-    ? { executable: "cmd.exe", args: ["/d", "/s", "/c", "call", resolved, "--version"], timeoutMs: 5_000 }
-    : { executable: resolved, args: ["--version"], timeoutMs: 5_000 };
+    ? { executable: "cmd.exe", args: ["/d", "/s", "/c", "call", resolved, ...versionArgs], timeoutMs: 5_000 }
+    : { executable: resolved, args: versionArgs, timeoutMs: 5_000 };
   const result = await adapter.run(invocation);
   if (result.timedOut) return { status: "FAIL", id: "command." + command, detail: `Resolved to ${resolved}, but the version probe timed out.`, remedy: "Repair executable access and child-process cleanup before using this command." };
   if (result.status !== 0) {
@@ -80,7 +81,7 @@ export async function doctor(adapter: PlatformAdapter = new NodePlatformAdapter(
   });
   const hostMajor = Number(process.versions.node.split(".")[0]);
   rows.push({ status: hostMajor >= 24 ? "PASS" : "FAIL", id: "runtime.host-node", detail: `Node ${process.versions.node} via ${path.resolve(process.execPath)}`, remedy: "Run AFD with Node 24 or newer." });
-  for (const command of ["node", "pnpm", "mise", "uv", "uvx"]) rows.push(await probeCommand(adapter, command));
+  for (const command of ["node", "pnpm", "mise", "uv", "uvx", "python", "go", "rustc", "cargo", "codex"]) rows.push(await probeCommand(adapter, command));
   rows.push({ status: adapter.id === "darwin" ? "INFO" : "PASS", id: "platform.validation", detail: adapter.id === "darwin" ? "macOS adapter requires clean-host validation." : "Platform adapter available.", remedy: adapter.id === "darwin" ? "Validate on a clean macOS host before relying on apply." : "No action." });
   return rows;
 }

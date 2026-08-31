@@ -28,6 +28,33 @@ $arch = [Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
 Add-Diagnostic platform $(if($isWindows -and $arch -eq 'X64'){'PASS'}else{'FAIL'}) "platform.windows-x64" `
     "Validated platform" "$($env:OS)/$arch" "Use Windows x64; other platforms remain roadmap targets."
 
+$account = [string](& whoami.exe 2>$null)
+$sandboxIdentity = $account -match '(?i)\\codexsandbox'
+Add-Diagnostic identity $(if($sandboxIdentity){'WARN'}else{'PASS'}) "identity.execution-context" `
+    "Execution context authority" $(if($sandboxIdentity){"sandbox account $account"}else{"normal user account $account"}) `
+    $(if($sandboxIdentity){"Persistent HKCU, user PATH, and known-folder checks are not authoritative here; run this doctor from a normal user shell."}else{"No action."})
+
+if ($sandboxIdentity) {
+    foreach($name in @('mise','uv','pnpm','python','node','go','rustc','cargo')) {
+        $info = Command-Info $name
+        Add-Diagnostic commands $(if($info){'PASS'}else{'FAIL'}) "command.$name" "$name resolves in the effective sandbox process" `
+            $(if($info){$info.Source}else{'missing'}) "Repair the reviewed sandbox toolchain path or ACL, then start a fresh task."
+    }
+    Add-Diagnostic scope 'WARN' 'scope.persistent-state-skipped' "Persistent user-state checks skipped" `
+        "dedicated Codex sandbox identities have a separate HKCU and known-folder view" `
+        "Run this doctor from a normal user shell for persistent-state evidence; use scripts/12-validate-agent-environment.ps1 for sandbox evidence."
+    if($Json){
+        [PSCustomObject]@{schemaVersion=1;product='AI Foundry Desk';command='doctor';platform='windows-x64';results=@($results)} | ConvertTo-Json -Depth 5
+    } else {
+        foreach($category in @($results.category | Select-Object -Unique)){
+            Write-Host "`n[$category]"
+            foreach($item in @($results | Where-Object category -eq $category)){Write-Host ("{0,-4} {1} - {2}`n     Evidence: {3}`n     Next: {4}" -f $item.severity,$item.code,$item.summary,$item.evidence,$item.suggestion)}
+        }
+    }
+    if(@($results | Where-Object severity -eq 'FAIL').Count -gt 0){exit 2}
+    exit 0
+}
+
 $miseShims = Join-Path $env:LOCALAPPDATA "mise\shims"
 $miseGlobalConfig = Join-Path $env:LOCALAPPDATA "mise\afd-global-config.toml"
 $miseState = Join-Path $env:TEMP "afd-mise-state"

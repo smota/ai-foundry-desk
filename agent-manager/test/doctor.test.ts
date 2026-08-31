@@ -3,10 +3,11 @@ import test from "node:test";
 import { doctor, executionIdentity } from "../src/doctor.js";
 import type { HostCommand, PlatformAdapter } from "../src/platform.js";
 
-function adapter(options: { readonly timeout?: string } = {}): PlatformAdapter {
+function adapter(options: { readonly timeout?: string; readonly calls?: HostCommand[] } = {}): PlatformAdapter {
   return {
     id: "win32", stateRoot: "C:\\state",
     async run(command: HostCommand) {
+      options.calls?.push(command);
       if (command.executable === "whoami.exe") return { status: 0, stdout: "host\\codexsandboxoffline\n", stderr: "", timedOut: false };
       if (command.executable === "where.exe") return { status: 0, stdout: `C:\\tools\\${command.args[0]}.exe\n`, stderr: "", timedOut: false };
       if (command.executable.endsWith((options.timeout ?? "") + ".exe") && options.timeout) return { status: 124, stdout: "", stderr: "", timedOut: true };
@@ -30,4 +31,11 @@ test("doctor treats a resolved command timeout as failure", async () => {
   const rows = await doctor(adapter({ timeout: "pnpm" }));
   const pnpm = rows.find((row) => row.id === "command.pnpm");
   assert.equal(pnpm?.status, "FAIL"); assert.match(pnpm?.detail ?? "", /timed out/);
+});
+
+test("doctor uses the native Go version contract", async () => {
+  const calls: HostCommand[] = [];
+  await doctor(adapter({ calls }));
+  const go = calls.find((command) => command.executable.endsWith("go.exe"));
+  assert.deepEqual(go?.args, ["version"]);
 });

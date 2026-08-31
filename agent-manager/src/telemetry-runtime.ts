@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { readFile, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { homedir } from "node:os";
 import type { ObservabilityRecipeCapability } from "./contracts.js";
 import type { HostCommand, PlatformAdapter } from "./platform.js";
 import { NodePlatformAdapter, fileExists, windowsPathToWsl, writePrivateText } from "./platform.js";
@@ -66,13 +67,13 @@ export function telemetryPlan(capability: ObservabilityRecipeCapability, adapter
       `Configure loopback OTLP/HTTP 127.0.0.1:4318 and route traces to Phoenix 127.0.0.1:6006.`,
       `Start Arize Phoenix ${capability.phoenix.version} with ${capability.retentionDays}-day retention.`,
       `Download and verify CPython ${capability.phoenix.runtime.version} with SHA-256 ${capability.phoenix.runtime.sha256} for the isolated Phoenix runtime.`,
-      `Install agentacct ${capability.agentacct.version} in an AFD-isolated environment, keep its unstable Evidence v2 shadow disabled, and import supported local stores read-only.`,
-      "Start the agentacct watcher and local dashboard on 127.0.0.1:8765.",
-      "Start the authenticated current-user telemetry broker on 127.0.0.1:13134 so sandbox identities never invoke WSL directly.",
+      `Install agentacct ${capability.agentacct.version} in an AFD-isolated native environment, keep its unstable Evidence v2 shadow disabled, and import supported local stores read-only.`,
+      "Start the native agentacct watcher and local API on 127.0.0.1:8765.",
+      "Start the authenticated current-user telemetry broker on 127.0.0.1:13134 for bounded sandbox control.",
       `Probe capabilities independently for ${capability.nativeIntegrations.join(", ") || "no agents"}.`,
       capability.autostart ? "Install declared current-user autostart entries." : "Leave autostart disabled.",
     ],
-    effects: [root(adapter), path.join(adapter.stateRoot,"broker-access"), `AFD-managed WSL CPython ${capability.phoenix.runtime.version} for Phoenix`, ...nativeIntegrationEffects(capability), "read-only access to supported local agent session stores", "agentacct local evidence store", "agentacct loopback dashboard 127.0.0.1:8765", "authenticated telemetry broker 127.0.0.1:13134", ...(capability.autostart ? ["current-user AFD telemetry broker autostart entry"] : [])],
+    effects: [root(adapter), path.join(adapter.stateRoot,"broker-access"), `AFD-managed WSL CPython ${capability.phoenix.runtime.version} for Phoenix`, adapter.id==="win32"?path.join(homedir(),".afd","managed","telemetry-v2","agentacct"):"AFD-managed native agentacct runtime", ...nativeIntegrationEffects(capability), "read-only access to supported local agent session stores", "agentacct local evidence store", "agentacct loopback API 127.0.0.1:8765", "authenticated telemetry broker 127.0.0.1:13134", ...(capability.autostart ? ["current-user AFD telemetry broker autostart entry"] : [])],
     dataBoundary: ["loopback listeners only", "broker accepts only typed telemetry operations with a random local capability token", "sandbox identities receive read-only access only to the broker token", "no remote exporters", "no prompt/response/file/argv/stdout/stderr in AFD telemetry", "agentacct source evidence remains in its own local v1 store", "agentacct Evidence v2 shadow disabled", "agentacct retention is upstream_unbounded", "pricing auto-refresh disabled"],
   };
 }
@@ -81,7 +82,12 @@ export async function telemetryPreflight(capability: ObservabilityRecipeCapabili
   const issues:string[]=[]; try { telemetryPlan(capability,adapter); } catch(error) { issues.push(error instanceof Error?error.message:String(error)); }
   for(const verify of [verifyPhoenixLock,verifyAgentacctLock])try{await verify(capability);}catch(error){issues.push(error instanceof Error?error.message:String(error));}
   if(adapter.id!=="win32")issues.push("The built-in Observability recipe currently pins a Windows x64 Collector artifact.");
-  if(adapter.id==="win32"){const wsl=await adapter.run({executable:"wsl.exe",args:["--status"],timeoutMs:10_000});if(wsl.status!==0||wsl.timedOut)issues.push("WSL is unavailable to host the supported agentacct runtime.");else{const uv=await adapter.run({executable:"wsl.exe",args:["--","sh","-lc","command -v uv >/dev/null && python3 -c 'import sys; raise SystemExit(sys.version_info < (3,11))'"],timeoutMs:10_000});if(uv.status!==0||uv.timedOut)issues.push("WSL requires uv and Python 3.11 or newer for agentacct.");const namespace=await adapter.run({executable:"wsl.exe",args:["--exec","unshare","--user","--map-root-user","--mount","/usr/bin/true"],timeoutMs:10_000});if(namespace.status!==0||namespace.timedOut)issues.push("WSL must allow an unprivileged read-only mount namespace for Codex session import.");}}
+  if(adapter.id==="win32"){
+    const wsl=await adapter.run({executable:"wsl.exe",args:["--status"],timeoutMs:10_000});if(wsl.status!==0||wsl.timedOut)issues.push("WSL is unavailable to host the pinned Phoenix runtime.");
+    else{const wslUv=await adapter.run({executable:"wsl.exe",args:["--","sh","-lc","command -v uv >/dev/null"],timeoutMs:10_000});if(wslUv.status!==0||wslUv.timedOut)issues.push("WSL requires uv for the pinned Phoenix runtime.");}
+    const nativeUv=await adapter.run({executable:"uv",args:["--version"],timeoutMs:10_000});if(nativeUv.status!==0||nativeUv.timedOut)issues.push("Native uv is unavailable for the isolated agentacct runtime.");
+    const nativePython=await adapter.run({executable:"python",args:["-c","import sqlite3,sys; raise SystemExit(sys.version_info < (3,11))"],timeoutMs:10_000});if(nativePython.status!==0||nativePython.timedOut)issues.push("Native mise-managed Python 3.11 or newer with SQLite is required for agentacct.");
+  }
   for(const component of ["phoenix","collector"] as const){const state=await processState(adapter,component);if(state.state==="external"||state.state==="starting")issues.push(`${component}: ${state.detail}`);}
   for(const port of [13133,9464,8765])if(await adapter.isListening("127.0.0.1",port))issues.push(`loopback port ${port} is already in use.`);
   issues.push(...await nativeIntegrationPreflight(capability,adapter));
@@ -165,12 +171,12 @@ export async function applyTelemetry(capability: ObservabilityRecipeCapability, 
   const preflight=await telemetryPreflight(capability,adapter);if(!preflight.ok)throw new Error("Telemetry preflight failed before writes: "+preflight.issues.join("; ")); const phoenixVersion = exactVersion(capability.phoenix.version, "Phoenix"); const componentRoot = root(adapter); const collector = await collectorExecutable(adapter, capability); await adapter.writeText(collectorConfigFile(adapter), collectorYaml(adapter)); const validated = await adapter.run({ executable: collector, args: ["validate", "--config", collectorConfigFile(adapter)], timeoutMs: 15_000 }); if (validated.status !== 0) throw new Error("Collector configuration validation failed: " + (validated.stderr || validated.stdout).trim());
   const convertPath=dependencies.windowsPathToWsl??windowsPathToWsl;const phoenixData=await wslPath(adapter,path.join(componentRoot,"phoenix","data"),convertPath);const wslUv=await wslExecutable(adapter,"uv");const phoenixLock=convertPath(await verifyPhoenixLock(capability));const phoenixPython=await installPhoenixPython(adapter,capability);const phoenixCommand: HostCommand = { executable:"wsl.exe",args:["--","env",`PHOENIX_WORKING_DIR=${phoenixData}`,"PHOENIX_TELEMETRY_ENABLED=false","PHOENIX_ALLOW_EXTERNAL_RESOURCES=false",`PHOENIX_DEFAULT_RETENTION_POLICY_DAYS=${capability.retentionDays}`,"PHOENIX_ALLOWED_PROVIDERS=NONE","PHOENIX_ALLOWED_SANDBOX_PROVIDERS=NONE",wslUv,"tool","run","--python",phoenixPython,"--no-python-downloads","--from",`arize-phoenix==${phoenixVersion}`,"--with-requirements",phoenixLock,"phoenix","serve","--host","127.0.0.1","--port","6006"] };
   const collectorCommand: HostCommand = { executable: collector, args: ["--config", collectorConfigFile(adapter)], cwd: path.join(componentRoot, "collector") };
-  const agentacct = dependencies.agentacct ?? new AgentacctAdapter(adapter, capability.agentacct.version); const agentacctArtifact = path.join(path.dirname(adapter.stateRoot), "afd-telemetry-downloads", `agentacct-${capability.agentacct.version}-py3-none-any.whl`); if(adapter.id!=="win32")await adapter.downloadVerified(capability.agentacct.source, agentacctArtifact, capability.agentacct.sha256);
+  const agentacct = dependencies.agentacct ?? new AgentacctAdapter(adapter, capability.agentacct.version); const agentacctArtifact = path.join(path.dirname(adapter.stateRoot), "afd-telemetry-downloads", `agentacct-${capability.agentacct.version}-py3-none-any.whl`); await adapter.downloadVerified(capability.agentacct.source, agentacctArtifact, capability.agentacct.sha256);
   const hadConfig=Boolean(await readConfig(adapter));
   try {
     await ensureIdentityKey(adapter);
     await startManaged(adapter, "phoenix", phoenixCommand); await startManaged(adapter, "collector", collectorCommand);
-    await agentacct.install({source:capability.agentacct.source,sha256:capability.agentacct.sha256,lockSha256:capability.agentacct.lockSha256,...(adapter.id!=="win32"?{verifiedArtifact:agentacctArtifact}:{})});await adapter.remove(agentacctArtifact); await agentacct.refresh(); await agentacct.start();
+    await agentacct.install({source:capability.agentacct.source,sha256:capability.agentacct.sha256,lockSha256:capability.agentacct.lockSha256,verifiedArtifact:agentacctArtifact});await adapter.remove(agentacctArtifact); await agentacct.refresh(); await agentacct.start();
     await adapter.writeText(configFile(adapter), JSON.stringify({ schemaVersion: 2, capability, appliedAt: new Date().toISOString() } satisfies TelemetryConfig, null, 2) + "\n");
     if (capability.autostart && dependencies.reconcileAutostart !== false) { const cli=fileURLToPath(new URL("./cli.js",import.meta.url));await installAutostart(adapter,"telemetry-v2-supervisor",{executable:process.execPath,args:[cli,"telemetry","broker"]}); }
     await waitForHealthyTelemetry(adapter,agentacct);const verified=await verifyTelemetry(adapter,{...dependencies,agentacct});await applyNativeIntegrations(capability,adapter);return verified;

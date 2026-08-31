@@ -15,18 +15,19 @@ the user's activation decision. It combines:
 The product has not been released, so this plan replaces the current `afd observe` contract. No
 compatibility alias or migration layer is required.
 
-## Current gate status — 2026-08-28
+## Current gate status — 2026-08-31
 
-- Effective for daily Layer 2 use: recipe `1.3.0`, single plan-token consent, Collector `0.159.0`,
-  Phoenix `20.4.0` on isolated CPython `3.10.21`, agentacct `0.10.1` observe-only, transactional
+- Native migration target: recipe `1.4.0`, single plan-token consent, Collector `0.159.0`,
+  Phoenix `20.4.0` on isolated WSL CPython `3.10.21`, native agentacct `0.10.1` observe-only on
+  mise-managed Python with uv isolation, transactional
   lifecycle, native Codex/Claude OTLP, current-user autostart, schema-v2 correlation, `trace`, and
   `explain`.
-- Verified: 50 portable tests plus lint, typecheck and build; all five loopback listeners; exact
+- Verified: 51 portable tests plus lint, typecheck and build; all five loopback listeners; exact
   Codex/Claude configuration; synthetic privacy canaries; a disposable `live_only` explanation;
   stop with no remaining listener; and healthy resume in 50.42 seconds.
-- Codex session import reads the original rollout tree through a stable private read-only WSL mount
-  namespace and does not copy the Windows SQLite carrier or transcript tree. Live health observed
-  49 Codex, three Claude, and one Hermes sessions with usage.
+- Native Codex session import reads the declared Windows store through agentacct's public importer.
+  AFD neither parses the Windows SQLite carrier nor copies the transcript tree. The earlier live
+  health baseline observed 49 Codex, three Claude, and one Hermes sessions with usage.
 - Supply chain: recipe-bound PEP 751 locks and artifact hashes cover Phoenix and agentacct; the
   CycloneDX 1.6 SBOM inventories 179 components and the three upstream licenses.
 - Environment acceptance complete: the authorized managed-state rollback/reapply passed; privacy
@@ -174,11 +175,12 @@ observability path.
   local/remote network behavior.
 - Validate agentacct against sanitized fixtures for every claimed agent and against real disposable
   Codex and Claude sessions.
-- Treat the upstream Windows-via-WSL support boundary as a no-go for native Windows claims until AFD
-  proves path translation, controlled access to Windows-side stores, lifecycle, and performance.
-- For Codex on Windows, use one stable private read-only WSL mount namespace over the original
-  session roots. Never copy the transcript tree, snapshot or rewrite the private SQLite schema, or
-  parse it in AFD.
+- Treat the upstream POSIX-only guard as a no-go for native Windows claims until AFD proves its
+  bounded file-lock and no-link path-traversal compatibility surface, native package import, controlled process lifecycle,
+  direct client-store discovery, and performance.
+- For Codex on Windows, use agentacct's public native importer over the original declared session
+  roots. Never copy the transcript tree, snapshot or rewrite the private SQLite schema, or parse it
+  in AFD.
 - Prove exact or explicitly confidence-labelled correlation between AFD run, native session,
   Phoenix trace, and agentacct evidence.
 - Prove fail-closed behavior for unknown schema, partial/corrupt/rotating logs, symlinks, concurrent

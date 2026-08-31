@@ -11,11 +11,16 @@ AFD does not wrap agent execution and does not maintain a proprietary Collector 
 - Arize Phoenix `20.4.0` stores and displays local traces on `127.0.0.1:6006` with upstream
   telemetry and external resources disabled. It runs on an isolated, exact CPython `3.10.21`
   runtime because the supported Phoenix release is incompatible with Python 3.11.
-- agentacct `0.10.1` runs observe-only in an isolated WSL environment, reads only its declared local
-  agent stores, and keeps summarized evidence in an AFD-managed store. On Windows, Codex sessions
-  are exposed through a private read-only mount namespace with one stable virtual home; neither the
-  SQLite carrier nor the transcript tree is copied. Its upstream watcher and dashboard use
+- agentacct `0.10.1` runs observe-only in an isolated native environment, reads only its declared
+  local agent stores, and keeps summarized evidence in an AFD-managed store. On Windows, AFD uses
+  mise-managed Python, an uv-isolated tool environment, bounded file-lock and no-link path-traversal
+  compatibility for the pinned upstream version, and
+  AFD-owned process lifecycle. Neither the SQLite carrier nor the transcript tree is copied. Its watcher and local API use
   `127.0.0.1:8765` and are included in the recipe plan and health contract.
+  This Windows contract covers imports, watcher, capabilities/health probes, and the loopback API;
+  agentacct runner, wrapper, and activation process controls remain unsupported on Windows.
+  Its managed root is `%USERPROFILE%\.afd\managed\telemetry-v2\agentacct`, avoiding packaged-app
+  `%LOCALAPPDATA%` virtualization so interactive, broker, and sign-in identities share one store.
 - A bounded AFD index correlates public run identifiers with trace identifiers. It stores no prompt,
   response, transcript, file content, command arguments, stdout, stderr, or credential material.
 
@@ -26,7 +31,7 @@ versions and artifact hashes. `requirements/sbom.telemetry.cdx.json` is the corr
 inventory. Upstream licenses are Apache-2.0 for Collector Contrib, Elastic-2.0 for Phoenix, and MIT
 for agentacct. The current SBOM inventories 179 components.
 
-The recipe declares ports `4318` (OTLP), `6006` (Phoenix), `8765` (agentacct local dashboard),
+The recipe declares ports `4318` (OTLP), `6006` (Phoenix), `8765` (agentacct local API),
 `9464` (host metrics), `13133` (Collector health), and `13134` (authenticated AFD user broker). AFD correlation and Phoenix retention are 30
 days. agentacct 0.10.1 has no supported bounded-retention contract, so status and plan report
 `upstream_unbounded` rather than implying automatic cleanup.
@@ -42,7 +47,7 @@ degraded and is retried. Every other error degrades the AFD capability.
 | --- | --- | --- |
 | Collector Contrib | Downloads the exact GitHub release artifact and verifies its recipe SHA-256. | Loopback OTLP, Phoenix export, health, and metrics only. No remote exporter. |
 | Phoenix | uv resolves only the recipe-bound PEP 751 lock from the Python package index; subsequent resume is offline. | Loopback UI/API only; Phoenix telemetry, external resources, and sandbox/provider access are disabled. |
-| agentacct | Downloads the exact wheel, verifies its recipe SHA-256, and installs its locked dependency graph. | Reads declared local sources and serves its loopback watcher/dashboard; provider calls and pricing refresh are disabled. |
+| agentacct | Downloads the exact wheel, verifies its recipe SHA-256, and installs its locked dependency graph into the native managed environment. | Reads declared local sources and serves its loopback watcher/API; provider calls and pricing refresh are disabled. |
 
 ## Daily commands
 
@@ -100,14 +105,14 @@ Capabilities are independent, not inferred from product logos:
 | Agent | Native live trace | agentacct session import | Current boundary |
 | --- | --- | --- | --- |
 | Claude Code | Supported | Supported | New sessions load the managed OTLP settings. |
-| Codex | Supported | Supported | agentacct imports rollout JSONL directly through a private read-only WSL namespace and does not depend on the Windows SQLite carrier. Concurrent writes are retried by the upstream watcher. |
+| Codex | Supported | Supported | Native agentacct reads the declared Windows Codex store directly through its public importer. AFD does not parse the SQLite carrier or copy rollout files. Concurrent writes are retried by the upstream watcher. |
 | Hermes | Unsupported | Supported | agentacct imports local usage; native Hermes gateway OTLP is not yet recipe-managed or a detailed-run plane. |
 | Pi | Unsupported | Unsupported | A native extension requires its own implementation and live acceptance. |
 | AGY/Antigravity | Unsupported | Unsupported | No stable native telemetry contract has passed validation. |
 
-Recipe `1.3.0` is applied on the validated workstation and is the normal day-to-day Layer 2
-telemetry path. Collector, Phoenix, agentacct, native Codex/Claude integration, current-user
-autostart, privacy verification, stop/resume, and rollback/reapply acceptance are healthy. Full
+Recipe `1.4.0` is the native-agentacct desired state for the normal day-to-day Layer 2 telemetry
+path. Collector, Phoenix, agentacct, native Codex/Claude integration, current-user autostart,
+privacy verification, stop/resume, and rollback/reapply remain release gates. Full
 five-agent default telemetry is not claimed: Pi and AGY remain unsupported, and Hermes currently
 provides session import but not native live tracing.
 

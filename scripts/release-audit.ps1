@@ -33,6 +33,7 @@ try {
         "agent-manager/dist/telemetry-runtime.js", "agent-manager/dist/telemetry-correlation.js",
         "agent-manager/dist/telemetry-explain.js", "agent-manager/dist/agentacct-adapter.js",
         "agent-manager/dist/platform.js", "recipes/observability.json", "scripts/agentacct-query.py",
+        "scripts/agentacct-native/afd_agentacct_windows.py", "scripts/agentacct-native/fcntl.py", "scripts/agentacct-native/sitecustomize.py",
         "requirements/agentacct.in", "requirements/phoenix.in",
         "requirements/pylock.agentacct.toml", "requirements/pylock.phoenix.toml",
         "requirements/sbom.telemetry.cdx.json", "scripts/generate-telemetry-sbom.mjs",
@@ -41,7 +42,8 @@ try {
         "scripts/13-reconcile-sandbox-toolchain-access.ps1", "scripts/14-validate-observability-pilot.ps1",
         "scripts/afd-bootstrap.mjs", "scripts/afd-bootstrap.ps1", "scripts/afd-bootstrap-posix.sh",
         "scripts/build-release.mjs", "scripts/build-release.ps1",
-        "docs/OBSERVABILITY.md", "docs/VALIDATION-MATRIX.md", "docs/AGENT-SANDBOX-REPAIR.md"
+        "docs/OBSERVABILITY.md", "docs/VALIDATION-MATRIX.md", "docs/AGENT-SANDBOX-REPAIR.md",
+        "docs/ENVIRONMENT-OWNERSHIP.md"
     )
     foreach ($item in $required) { if ($files -notcontains $item) { throw "Artifact is missing required file: $item" } }
     $forbidden = @($files | Where-Object { $_ -match '(^|/)(backups|setup-logs|state|local|node_modules|\.env)(/|$)' })

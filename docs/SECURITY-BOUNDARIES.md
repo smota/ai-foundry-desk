@@ -5,8 +5,13 @@
 - Preserve drift and require human review before promoting pending or Hermes-created skills.
 - Back up existing managed files under `%LOCALAPPDATA%\AI Foundry Desk\backups` before replacement.
 - Keep `afd doctor` and `afd fix layer1 --dry-run` strictly read-only, including logs and state.
+- Keep `afd fix sandbox --dry-run` read-only. `afd doctor` may inspect the fixed sandbox-access
+  target set but must never repair it implicitly.
 - Limit `afd fix layer1 --apply` to declared AFD packages, runtimes, environment, PATH, shims,
   PNPM_HOME, and marked profile blocks; never normalize unrelated machine state.
+- Leave third-party installation and updates with their normal package managers. Sandbox repair may
+  grant only reviewed `ReadAndExecute` entries, after an explicit apply, with snapshot and rollback;
+  it must not replace tools or broaden access to the entire portable-package root.
 - Treat Docker as a Layer 1 host capability only. Never use it to execute Layers 1–3; higher layers
   may use it only after explicit user request or a documented technical necessity.
 - Never add a user to the root-equivalent `docker` group automatically.

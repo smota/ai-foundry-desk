@@ -55,7 +55,7 @@ const sbom = {
   specVersion: "1.6",
   version: 1,
   metadata: {
-    component: { type: "application", name: "ai-foundry-desk-observability", version: "1.3.0" },
+    component: { type: "application", name: "ai-foundry-desk-observability", version: recipe.version },
     properties: lockProperties,
   },
   components: [...components.values()].sort((left, right) => left.purl.localeCompare(right.purl)),

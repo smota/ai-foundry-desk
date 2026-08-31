@@ -82,7 +82,7 @@ Windows bootstrap and checksum separately, verifies SHA-256, and installs only t
 It does **not** configure either Layer automatically.
 
 ```powershell
-$v='0.3.0'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
+$v='0.3.1'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
 ```
 
 The bootstrap requires Node.js 24 or newer and pnpm. If a prerequisite is missing, it stops and
@@ -140,6 +140,27 @@ afd fix layer1 --apply
 PATH/environment entries, shims, PNPM_HOME, and marked profile blocks. Windows aliases,
 third-party runtimes, projects, credentials, services, agents, and Layer 2 remain untouched.
 
+AFD does not replace WinGet or take ownership of third-party updates. Portable-package upgrades can
+replace an executable file and therefore invalidate sandbox-access metadata attached to the old file.
+After normal updates—including `winget upgrade --all`—run the read-only doctor:
+
+```powershell
+winget upgrade --all
+afd doctor
+```
+
+If `sandbox.toolchain-access` reports drift, review and apply only the declared RX-only repair:
+
+```powershell
+afd fix sandbox --dry-run
+afd fix sandbox --apply
+```
+
+The repair never installs, downgrades, pins, or updates the tools themselves. It refuses sandbox or
+hybrid identities, snapshots the prior ACL state, and verifies the postcondition after apply. Start a
+fresh Codex task after a tool or Codex upgrade. See [Environment ownership](docs/ENVIRONMENT-OWNERSHIP.md)
+and [Agent sandbox toolchain repair](docs/AGENT-SANDBOX-REPAIR.md).
+
 For automation, `afd doctor --json` provides a stable schema with category, severity, code,
 sanitized evidence, and a suggested action.
 
@@ -193,7 +214,7 @@ Never use a blind remote pipe; download the script and checksum separately befor
 Validated Linux/WSL bootstrap (downloads, verifies, then executes as separate steps):
 
 ```sh
-v=0.3.0; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
+v=0.3.1; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
 ```
 
 Docker is a Layer 1 host capability, not an AFD runtime. Layers 1–3 run directly on the host. Higher
@@ -205,6 +226,8 @@ does not automatically add users to the root-equivalent `docker` group.
 - Important changes have a `--dry-run` or `-WhatIf` preview.
 - Doctor and all dry-runs are read-only: no logs, state, backups, PATH, profiles, or installations.
 - Drift is reported and preserved instead of silently overwritten.
+- Normal package-manager updates remain supported; AFD validates their declared interoperability
+  postconditions instead of intercepting or replacing the update operation.
 - Existing managed files are backed up before a real change.
 - Skills created by an agent are never promoted automatically.
 - Tokens, logins, history, memory, sessions, projects, and proprietary plugins are not shared.

@@ -1,7 +1,7 @@
 {
   "recipeVersion": 2,
   "id": "observability",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "origin": "builtin",
   "skills": [],
   "tools": [],
@@ -35,7 +35,7 @@
       "nativeIntegrations": ["codex", "claude-code"]
     }
   ],
-  "prerequisites": ["windows-x64", "uvx", "wsl-agentacct", "loopback-ports-available"],
+  "prerequisites": ["windows-x64", "uvx", "native-python-agentacct", "wsl-phoenix", "loopback-ports-available"],
   "checks": ["collector-config-valid", "phoenix-ready", "agentacct-contract-compatible", "loopback-only", "synthetic-trace-visible"],
   "rollback": { "managedOnly": true }
 }

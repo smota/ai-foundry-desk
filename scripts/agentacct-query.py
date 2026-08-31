@@ -23,7 +23,12 @@ def fail(message: str, code: int = 2) -> None:
 
 def discovery_candidates() -> list[Path]:
     state = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state"))
-    return [state / "agentacct" / "state" / "local-api.json", Path.home() / ".agent-sentinel-global" / "state" / "local-api.json"]
+    managed_store = os.environ.get("AGENTACCT_STORE_DIR")
+    return [
+        *([Path(managed_store) / "local-api.json"] if managed_store else []),
+        state / "agentacct" / "state" / "local-api.json",
+        Path.home() / ".agent-sentinel-global" / "state" / "local-api.json",
+    ]
 
 
 def load_discovery() -> dict[str, Any]:

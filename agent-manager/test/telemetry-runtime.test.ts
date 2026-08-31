@@ -10,9 +10,9 @@ import { applyTelemetry, resumeTelemetry, stopTelemetry, telemetryPlan, telemetr
 
 const capability:ObservabilityRecipeCapability={id:"observability",required:true,collector:{version:"0.159.0",source:"https://example.test/collector.tar.gz",sha256:"a".repeat(64)},phoenix:{version:"20.4.0",lockSha256:"b2da7e0d3ea17e0cd399127fa63231a99f1415807accfb8fb564449095d7ec3c",runtime:{version:"3.10.21",source:"https://example.test/python.tar.gz",sha256:"e".repeat(64)}},agentacct:{version:"0.10.1",mode:"observe-only",source:"https://example.test/agentacct.whl",sha256:"b".repeat(64),lockSha256:"86f83621d868f9759263c861fde70732d85c0c8821d24b12e6d01ff99558f3ea"},retentionDays:30,autostart:true,nativeIntegrations:[]};
 const fakeWindowsPathToWsl=(value:string):string=>{const normalized=value.replace(/\\/g,"/");const drive=normalized.match(/^([A-Za-z]):\/(.*)$/);return drive?`/mnt/${drive[1]!.toLowerCase()}/${drive[2]}`:`/mnt/c/${normalized.replace(/^\/+/,"")}`;};
-const makeAgentacct=(adapter:PlatformAdapter):AgentacctAdapter=>new AgentacctAdapter(adapter,"0.10.1",{windowsPathToWsl:fakeWindowsPathToWsl});
+const makeAgentacct=(adapter:PlatformAdapter):AgentacctAdapter=>new AgentacctAdapter(adapter,"0.10.1",{pythonExecutable:"python",uvExecutable:"uv",managedRoot:path.join(adapter.stateRoot,"telemetry-v2","agentacct")});
 async function fixture(){
-  const stateRoot=await mkdtemp(path.join(tmpdir(),"afd-runtime-"));const running=new Set<number>();const ports=new Set<number>();let nextPid=40;const calls:HostCommand[]=[];
+  const stateRoot=await mkdtemp(path.join(tmpdir(),"afd-runtime-"));const running=new Set<number>();const ports=new Set<number>();const pidPorts=new Map<number,number>();let nextPid=40;const calls:HostCommand[]=[];
   const adapter:PlatformAdapter={
     id:"win32",stateRoot,
     async run(command){
@@ -29,14 +29,14 @@ async function fixture(){
       if(joined.includes("phoenix-python")&&joined.includes("/usr/bin/sha256sum"))return{status:0,stdout:`${"e".repeat(64)}  runtime\n`,stderr:"",timedOut:false};
       if(joined.includes("/usr/bin/sha256sum"))return{status:0,stdout:`${"b".repeat(64)}  artifact\n`,stderr:"",timedOut:false};
       if(joined.includes("phoenix-python")&&joined.includes("--version"))return{status:0,stdout:"Python 3.10.21\n",stderr:"",timedOut:false};
-      if(joined.includes("agentacct --version"))return{status:0,stdout:"agentacct 0.10.1\n",stderr:"",timedOut:false};
+      if(command.executable.endsWith("python.exe")&&joined.endsWith("--version"))return{status:0,stdout:"agentacct 0.10.1\n",stderr:"",timedOut:false};
       if(joined.includes("capabilities agents --json"))return{status:0,stdout:'{"agents":[]}',stderr:"",timedOut:false};
       if(joined.includes("usage health --json"))return{status:0,stdout:'{"status":"healthy"}',stderr:"",timedOut:false};
       if(joined.includes("status --json"))return{status:0,stdout:'{"schema_version":"agent-chronicle.activation-runtime.v1","state":"running","dashboard_health":"healthy","dashboard_url":"http://127.0.0.1:8765/","watcher":"running"}',stderr:"",timedOut:false};
       return{status:0,stdout:"",stderr:"",timedOut:false};
     },
-    async start(command){const pid=++nextPid;running.add(pid);if(command.args.some(arg=>arg.includes("arize-phoenix")))ports.add(6006);else ports.add(4318);return pid;},
-    async stop(pid){running.delete(pid);if(pid===41)ports.delete(6006);if(pid===42)ports.delete(4318);},async isRunning(pid){return running.has(pid);},async processFingerprint(pid){return running.has(pid)?"f".repeat(64):undefined;},async isListening(_host,port){return ports.has(port);},async writeText(file,text){await mkdir(path.dirname(file),{recursive:true});await writeFile(file,text);},async readText(file){try{return await readFile(file,"utf8");}catch{return undefined;}},async remove(file){await rm(file,{force:true});},async downloadVerified(_url,target){await mkdir(path.dirname(target),{recursive:true});await writeFile(target,"verified");}
+    async start(command){const pid=++nextPid;running.add(pid);const port=command.args.some(arg=>arg.includes("arize-phoenix"))?6006:command.args.includes("serve")?8765:command.args.includes("usage")?0:4318;if(port){ports.add(port);pidPorts.set(pid,port);}return pid;},
+    async stop(pid){running.delete(pid);const port=pidPorts.get(pid);if(port)ports.delete(port);pidPorts.delete(pid);},async isRunning(pid){return running.has(pid);},async processFingerprint(pid){return running.has(pid)?"f".repeat(64):undefined;},async isListening(_host,port){return ports.has(port);},async writeText(file,text){await mkdir(path.dirname(file),{recursive:true});await writeFile(file,text);},async readText(file){try{return await readFile(file,"utf8");}catch{return undefined;}},async remove(file){await rm(file,{force:true});},async downloadVerified(_url,target){await mkdir(path.dirname(target),{recursive:true});await writeFile(target,"verified");}
   };
   return{adapter,calls,stateRoot};
 }

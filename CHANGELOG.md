@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## 0.3.1 — 2026-08-31
+
+- Added AFD 0.3.1's transparent WinGet-update compatibility contract: `afd doctor` detects
+  package-replacement ACL drift, while `afd fix sandbox --dry-run|--apply` provides the only
+  fixed-target, RX-only, snapshot-backed mutation path. AFD continues to leave installation and
+  updates with the user's normal package managers.
+- Documented environment ownership, post-update operations, execution-context boundaries, and the
+  security tradeoff of granting the dedicated Codex sandbox group read/execute access only to
+  declared toolchain targets.
+- Declared a disposable project-local pnpm store so normal-user and sandbox processes do not derive
+  incompatible `node_modules` metadata from different user-global stores.
+- Kept read-only telemetry status schema-stable when the interactive-user broker is offline;
+  mutating operations still fail closed and no service is started implicitly.
 - Replaced the unreleased `afd observe` surface with declarative `afd telemetry` plan/apply/status,
   verification, trace, refresh, stop, and explain commands; no compatibility wrapper is retained.
 - Added a checksummed upstream OpenTelemetry Collector, loopback Phoenix, isolated observe-only
@@ -9,8 +22,10 @@
   and one current-user autostart supervisor.
 - Made recipe confirmation the single activation decision for agentacct and every other declared
   Observability effect. Native Codex and Claude OTLP settings are exact and reversible.
-- Added a private read-only WSL namespace for Codex rollout import without copying its transcripts
-  or coupling AFD to the private SQLite schema.
+- Replaced the interim WSL-hosted agentacct path with an AFD-managed native Windows runtime using
+  mise Python, uv isolation, Windows file locking, and AFD-owned process lifecycle. Codex stores are
+  read directly through agentacct's public importer; AFD still does not parse its private SQLite
+  schema or copy transcripts.
 - Added recipe-bound PEP 751 dependency locks with artifact hashes and a CycloneDX 1.6 telemetry
   SBOM; changing either lock invalidates the recipe consent token.
 - Added executable privacy canaries and bounded redaction/freshness diagnostics, plus a content-free
@@ -24,7 +39,7 @@
   mise shim, and made `telemetry resume` reconcile its declared current-user autostart entry.
 - Made mise's global runtime pins explicit under its reviewed LocalAppData root, strengthened the
   fresh-agent gate to exercise raw shell commands and live telemetry health, and added an
-  authenticated current-user broker so elevated Windows sandboxes do not invoke user-owned WSL.
+  authenticated current-user broker for bounded control from elevated Windows sandboxes.
 
 ## 0.3.0 — 2026-08-27
 

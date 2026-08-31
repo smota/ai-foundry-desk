@@ -12,9 +12,9 @@
   `afd telemetry explain <run-id>`.
 - Recipe-bound PEP 751 dependency locks, artifact hashes, and a CycloneDX SBOM for Phoenix and
   agentacct, plus read-only Codex session import that does not depend on its Windows SQLite carrier.
-- Observability recipe `1.3.0` effective in the daily Layer 2 environment with Collector `0.159.0`,
-  Phoenix `20.4.0` on isolated CPython `3.10.21`, agentacct `0.10.1`, privacy canaries, current-user
-  autostart, rollback/reapply acceptance, and a passing fresh-sandbox matrix.
+- Observability recipe `1.4.0` defines the native-agentacct daily Layer 2 environment with Collector
+  `0.159.0`, Phoenix `20.4.0` on isolated CPython `3.10.21`, agentacct `0.10.1` on native mise
+  Python, privacy canaries, current-user autostart, and managed rollback.
 - Windows x64 and Ubuntu 26.04.1 WSL2 x86_64 have implemented and tested platform adapters; native
   Linux outside WSL still needs independent validation evidence.
 

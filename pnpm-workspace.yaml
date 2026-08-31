@@ -1,5 +1,7 @@
 packages:
   - agent-manager
 
+storeDir: .pnpm-store
+
 allowBuilds:
   esbuild: true
