@@ -39,3 +39,30 @@ output, inconsistent policy, timeout, or canonical-file drift make the evidence 
 and stores a private receipt outside the project. It is transactional. `verify` checks every applied
 artifact plus the complete Git-visible workspace fingerprint. `rollback` requires the
 same token, refuses drift, restores the exact prior bytes, and emits a separate private receipt.
+
+## MCP configuration
+
+AFD can keep explicitly selected MCP definitions consistent between its user registry at
+`~/.afd/mcp/user.json`, a project's `.afd/mcp.json`, and verified native agent files. Discovery and
+status are read-only. Sync, adoption, enable/disable, and scope moves first produce a redacted plan;
+the exact content-derived token is required to apply it.
+
+```powershell
+afd mcp discover codex --scope user --json
+afd mcp status --scope effective --project .
+afd mcp sync --scope effective --project . --agents claude-code,codex,grok --dry-run
+afd mcp sync --scope effective --project . --agents claude-code,codex,grok --confirm <plan-token>
+afd mcp disable context7 --scope project --project . --agents claude-code,codex,grok --dry-run
+afd mcp move context7 --from user --to project --project . --agents claude-code,codex,grok --dry-run
+```
+
+Claude Code, Codex, and Grok have verified user and project adapters. Hermes has a verified user
+adapter but no stable project-scoped surface. The installed Antigravity and Pi contracts are not
+verified. A default all-agent plan therefore blocks when any selected scope cannot be represented;
+use `afd catalog` to inspect the current per-scope capability and `--agents` only when deliberately
+targeting a supported subset.
+
+AFD never reads or copies native OAuth/login state. Secret-like environment and header values must
+be environment references, plans never contain rendered configuration values, unmanaged native
+entries are preserved, concurrent edits invalidate the token, and a failed transaction restores
+all earlier writes from local snapshots.

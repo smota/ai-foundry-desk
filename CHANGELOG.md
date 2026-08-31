@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## 0.5.0 — 2026-08-31
+
+- Added one scope-aware MCP workflow for discovering, adopting, synchronizing, enabling, disabling,
+  and moving server definitions between user and project configuration.
+- Added native user/project adapters for Claude Code, Codex, and Grok, plus a verified user adapter
+  for Hermes; AFD now reports per-scope MCP capabilities and blocks all-target operations whenever
+  an agent cannot safely represent the requested scope.
+- Added canonical user/project registries, whole-entry project precedence, project tombstones,
+  deterministic fingerprints, redacted plans, and content-derived confirmation tokens.
+- Preserved unrelated JSON, TOML, and YAML settings while refusing divergent unmanaged entries,
+  undocumented value conversions, inline secret-like values, unsafe project paths, and stale plans.
+- Made compound MCP changes transactional with pre-change snapshots and byte-for-byte rollback on
+  failure; added focused coverage for idempotence, drift, unsupported targets, atomic scope moves,
+  project-only disable, comment preservation, and injected mid-transaction failure.
+
 ## 0.4.0 — 2026-08-31
 
 - Added the project-harness workflow: read-only repository audit, hash-bound human/JSON plans,

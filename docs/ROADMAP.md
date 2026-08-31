@@ -17,20 +17,28 @@
   Python, privacy canaries, current-user autostart, and managed rollback.
 - Windows x64 and Ubuntu 26.04.1 WSL2 x86_64 have implemented and tested platform adapters; native
   Linux outside WSL still needs independent validation evidence.
+- Scope-aware MCP registries, redacted discovery, hash-bound transactions, enable/disable, atomic
+  scope moves, and verified Claude Code/Codex/Grok plus Hermes-user adapters are implemented. Plans
+  fail closed for the unverified Antigravity/Pi and unsupported Hermes project surfaces.
+- Project harness audit, hash-bound staging, and disposable multi-agent smoke tests are implemented
+  without claiming that file presence proves an agent loaded the policy.
 
 ## Next cycle
 
-1. Reduce the measured `status`/`explain` p95 baseline of about 10.3 seconds without weakening
+1. Close the remaining MCP adapter evidence gaps in
+   [MCP-CONFIGURATION-DESIGN.md](MCP-CONFIGURATION-DESIGN.md): validate Antigravity and Pi contracts
+   and establish genuine Hermes project scoping before enabling default all-target project apply.
+2. Reduce the measured `status`/`explain` p95 baseline of about 10.3 seconds without weakening
    fail-closed source checks, privacy, or process isolation.
-2. Add Hermes native operational OTLP only after its recipe effects and content-free vocabulary are
+3. Add Hermes native operational OTLP only after its recipe effects and content-free vocabulary are
    reviewed. Implement Pi telemetry as a native extension, not a launcher wrapper. Keep AGY explicit
    as unsupported until a stable native contract exists.
-3. Track agentacct Evidence v2 upstream maturity and enable it only after its shadow refresh is
+4. Track agentacct Evidence v2 upstream maturity and enable it only after its shadow refresh is
    conflict-free in live acceptance; v1 session/usage/Work Receipt evidence remains the daily path.
-4. CI matrices for the validated Windows workflows and portable unit suite.
-5. Assisted `npx skills` integration without duplicating the native workflow or implicit network use.
-6. Grok/Hermes/Antigravity profiles only after stable official contracts exist.
-7. Optional local/private Tokscale reporting without credential capture or duplicated session data.
+5. CI matrices for the validated Windows workflows and portable unit suite.
+6. Assisted `npx skills` integration without duplicating the native workflow or implicit network use.
+7. Grok/Hermes/Antigravity profiles only after stable official contracts exist.
+8. Optional local/private Tokscale reporting without credential capture or duplicated session data.
 
 ## Maintainer/release decisions
 

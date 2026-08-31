@@ -177,13 +177,13 @@ if ($node -and (Test-Path -LiteralPath $cli)) {
 $globalAfd = Resolve-Application "afd"
 if ($globalAfd) {
     $global = if ($globalAfd -match '(?i)\.(cmd|bat)$') { Invoke-Bounded "cmd.exe" @("/d", "/s", "/c", "call", $globalAfd, "--version") } else { Invoke-Bounded $globalAfd @("--version") }
-    Add-Result "afd.global-version" ($global.Status -eq 0 -and ($global.Output -split "\r?\n" | Select-Object -First 1) -eq "0.4.0") "path=$globalAfd version=$($global.Output)"
+    Add-Result "afd.global-version" ($global.Status -eq 0 -and ($global.Output -split "\r?\n" | Select-Object -First 1) -eq "0.5.0") "path=$globalAfd version=$($global.Output)"
     $globalProvenance = if ($globalAfd -match '(?i)\.(cmd|bat)$') { Invoke-Bounded "cmd.exe" @("/d", "/s", "/c", "call", $globalAfd, "provenance", "--json") } else { Invoke-Bounded $globalAfd @("provenance", "--json") }
     $globalProvenancePass = $false
     if ($globalProvenance.Status -eq 0) {
         try {
             $globalDetails = $globalProvenance.Output | ConvertFrom-Json
-        $globalProvenancePass = $globalDetails.version -eq "0.4.0" -and -not [string]::IsNullOrWhiteSpace($globalDetails.cli) -and -not [string]::IsNullOrWhiteSpace($globalDetails.runtime.executable)
+        $globalProvenancePass = $globalDetails.version -eq "0.5.0" -and -not [string]::IsNullOrWhiteSpace($globalDetails.cli) -and -not [string]::IsNullOrWhiteSpace($globalDetails.runtime.executable)
         } catch { $globalProvenancePass = $false }
     }
     Add-Result "afd.global-provenance" $globalProvenancePass "exit=$($globalProvenance.Status)"

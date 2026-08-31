@@ -26,8 +26,12 @@ import { auditHarness, renderHarnessAudit } from "./harness-audit.js";
 import { parseHarnessAgents, planHarness, renderHarnessPlan, stageHarness } from "./harness-plan.js";
 import { renderHarnessSmoke, testHarness, writeHarnessEvidence } from "./harness-smoke.js";
 import { applyHarnessPlan, renderHarnessVerification, rollbackHarness, verifyHarnessReceipt } from "./harness-apply.js";
+import { applyMcpPlan, planMcpAdopt, planMcpMove, planMcpSync, planMcpToggle, publicMcpPlan, renderMcpPlan } from "./mcp-manager.js";
+import { discoverNativeMcp } from "./mcp-formats.js";
+import { mcpCapabilities, type McpManagerOptions, type McpScope } from "./mcp-contracts.js";
+import { sha256 } from "./mcp-registry.js";
 
-const VERSION = "0.4.0";
+const VERSION = "0.5.0";
 const productRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const help = `afd — AI Foundry Desk · Multi-Agent Workbench
 
@@ -60,6 +64,12 @@ Usage:
   afd harness apply <project> [--agents <auto|list>] [--remove-legacy] --evidence <file> --confirm <plan-token> [--json]
   afd harness verify <project> --receipt <file> [--json]
   afd harness rollback <project> --receipt <file> --confirm <plan-token> [--json]
+  afd mcp status|verify [--scope user|project|effective] [--project <path>] [--agents <list>] [--json]
+  afd mcp discover <agent> --scope user|project [--project <path>] [--json]
+  afd mcp sync --scope user|project|effective [--project <path>] [--agents <list>] --dry-run|--confirm <plan-token> [--json]
+  afd mcp adopt <agent> <server> --from-scope user|project --to-scope user|project [--project <path>] [--agents <list>] --dry-run|--confirm <plan-token> [--json]
+  afd mcp enable|disable <server> --scope user|project [--project <path>] [--agents <list>] --dry-run|--confirm <plan-token> [--json]
+  afd mcp move <server> --from user|project --to user|project --project <path> [--agents <list>] --dry-run|--confirm <plan-token> [--json]
 
 No layer is applied automatically. Use --dry-run before --apply.`;
 
@@ -97,7 +107,25 @@ async function main(args: readonly string[]): Promise<number> {
     if(process.platform==="linux"){if(command==="layer1"){for(const[script,sudo]of [["01-layer1-runtime-linux.sh",false],["02-docker-linux.sh",apply]] as const){const code=await runPosix(script,[dryRun?"--dry-run":"--apply"],sudo);if(code!==0)return code;}}else{let code=await runPosix("07-layer2-common-toolbox-linux.sh",[dryRun?"--dry-run":"--apply"]);if(code!==0)return code;code=await runPosix("07-layer2-agent-clis-linux.sh",[dryRun?"--dry-run":"--apply",...(allowClaude?["--allow-claude-postinstall"]:[])]);if(code!==0)return code;}return 0;}
     throw new Error("Layer automation is not implemented for macOS.");
   }
-  if (command === "catalog") { if (args.length !== 1) throw new Error("Usage: afd catalog"); for (const target of agentTargets) console.log(`${target.id}\tskills=${target.skills}\tprofile=${target.profile}\t${target.reason ?? ""}`); return 0; }
+  if (command === "catalog") { if (args.length !== 1) throw new Error("Usage: afd catalog"); for (const target of agentTargets) { const mcp=mcpCapabilities[target.id]; console.log(`${target.id}\tskills=${target.skills}\tprofile=${target.profile}\tmcp-user=${mcp.user}\tmcp-project=${mcp.project}\t${target.reason ?? mcp.detail ?? ""}`); } return 0; }
+  if (command === "mcp") {
+    const sub = args[1] ?? "status"; const flag = (name: string) => { const index = args.indexOf(name); return index >= 0 ? args[index + 1] : undefined; }; const json = args.includes("--json");
+    const valuedFlags = new Set(["--scope", "--project", "--agents", "--confirm", "--from-scope", "--to-scope", "--from", "--to"]); const booleanFlags = new Set(["--json", "--dry-run"]);
+    const contracts: Readonly<Record<string, { readonly positional: number; readonly flags: readonly string[] }>> = { status: { positional: 0, flags: ["--scope", "--project", "--agents", "--json"] }, verify: { positional: 0, flags: ["--scope", "--project", "--agents", "--json"] }, discover: { positional: 1, flags: ["--scope", "--project", "--agents", "--json"] }, sync: { positional: 0, flags: ["--scope", "--project", "--agents", "--dry-run", "--confirm", "--json"] }, adopt: { positional: 2, flags: ["--from-scope", "--to-scope", "--project", "--agents", "--dry-run", "--confirm", "--json"] }, enable: { positional: 1, flags: ["--scope", "--project", "--agents", "--dry-run", "--confirm", "--json"] }, disable: { positional: 1, flags: ["--scope", "--project", "--agents", "--dry-run", "--confirm", "--json"] }, move: { positional: 1, flags: ["--from", "--to", "--project", "--agents", "--dry-run", "--confirm", "--json"] } };
+    const contract=contracts[sub]; if(contract){const allowed=new Set(contract.flags);for(let index=2+contract.positional;index<args.length;index++){const token=args[index]!;if(!token.startsWith("--")||!allowed.has(token)||(!valuedFlags.has(token)&&!booleanFlags.has(token)))throw new Error(`Unknown MCP option: ${token}.`);if(valuedFlags.has(token)){const value=args[++index];if(!value||value.startsWith("--"))throw new Error(`MCP option requires a value: ${token}.`);}}}
+    const parseScope = (value: string | undefined, allowEffective: boolean): McpScope | "effective" => { const actual=value??(allowEffective?"effective":"user"); if(actual!=="user"&&actual!=="project"&&(allowEffective?actual!=="effective":true))throw new Error(`Invalid MCP scope: ${actual}.`);return actual as McpScope|"effective"; };
+    const parseAgents = (): readonly AgentId[] | undefined => { const value=flag("--agents");if(!value)return undefined;const values=value.split(",") as AgentId[];if(!values.length||values.some(item=>!agentTargets.some(target=>target.id===item))||new Set(values).size!==values.length)throw new Error("--agents must contain unique known agent ids.");return values; };
+    const optionsFor = (scope: McpScope | "effective"): McpManagerOptions => { const projectFlag=flag("--project");const project=scope!=="user"?(projectFlag??process.cwd()):projectFlag;const targets=parseAgents();return { ...(project?{project}:{}),...(targets?{targets}:{}) }; };
+    const mode = () => { const dry=args.includes("--dry-run"),confirm=flag("--confirm");if(dry===Boolean(confirm))throw new Error("Use exactly one of --dry-run or --confirm <plan-token>.");return {dry,confirm}; };
+    const outputPlan = (plan: Awaited<ReturnType<typeof planMcpSync>>) => console.log(json?JSON.stringify(publicMcpPlan(plan),null,2):renderMcpPlan(plan));
+    if(sub==="discover") { const agent=args[2] as AgentId|undefined;const scope=parseScope(flag("--scope"),false) as McpScope;if(!agent||!agentTargets.some(target=>target.id===agent))throw new Error("Usage: afd mcp discover <agent> --scope user|project [--project <path>] [--json]");if(mcpCapabilities[agent][scope]!=="native")throw new Error(`${agent} ${scope} MCP discovery is ${mcpCapabilities[agent][scope]}; no verified native adapter is available.`);const options=optionsFor(scope);const targets=parseAgents()??agentTargets.map(target=>target.id);const entries=await discoverNativeMcp(agent,scope,options,targets);const visible=entries.map(entry=>({agent:entry.agent,scope:entry.scope,id:entry.id,path:entry.path,transport:entry.server.transport,enabled:entry.server.enabled,fingerprint:sha256(JSON.stringify(entry.server))}));console.log(json?JSON.stringify(visible,null,2):visible.map(item=>`${item.agent}\t${item.scope}\t${item.id}\t${item.transport}\tenabled=${item.enabled}\t${item.path}\t${item.fingerprint}`).join("\n"));return 0;}
+    if(sub==="status"||sub==="verify") { const scope=parseScope(flag("--scope"),true);const plan=await planMcpSync(scope,optionsFor(scope));outputPlan(plan);return plan.blocked||plan.actions.some(action=>!["in-sync"].includes(action.kind))?2:0; }
+    if(sub==="sync") { if(!flag("--scope"))throw new Error("afd mcp sync requires --scope user|project|effective.");const scope=parseScope(flag("--scope"),true);const options=optionsFor(scope);const plan=await planMcpSync(scope,options);const selected=mode();if(selected.dry){outputPlan(plan);return plan.blocked?2:0;}console.log(JSON.stringify(await applyMcpPlan(plan,selected.confirm!,options),null,json?2:0));return 0; }
+    if(sub==="adopt") { const agent=args[2] as AgentId|undefined,id=args[3];if(!flag("--from-scope")||!flag("--to-scope"))throw new Error("afd mcp adopt requires --from-scope and --to-scope.");const from=parseScope(flag("--from-scope"),false) as McpScope,to=parseScope(flag("--to-scope"),false) as McpScope;if(!agent||!id||!agentTargets.some(target=>target.id===agent))throw new Error("Usage: afd mcp adopt <agent> <server> --from-scope user|project --to-scope user|project ...");const options=optionsFor(to==="project"||from==="project"?"project":"user");const plan=await planMcpAdopt(agent,id,from,to,options);const selected=mode();if(selected.dry){outputPlan(plan);return plan.blocked?2:0;}console.log(JSON.stringify(await applyMcpPlan(plan,selected.confirm!,options),null,json?2:0));return 0; }
+    if(sub==="enable"||sub==="disable") { const id=args[2];if(!flag("--scope"))throw new Error(`afd mcp ${sub} requires --scope user|project.`);const scope=parseScope(flag("--scope"),false) as McpScope;if(!id)throw new Error(`Usage: afd mcp ${sub} <server> --scope user|project ...`);const options=optionsFor(scope);const plan=await planMcpToggle(id,scope,sub==="enable",options);const selected=mode();if(selected.dry){outputPlan(plan);return plan.blocked?2:0;}console.log(JSON.stringify(await applyMcpPlan(plan,selected.confirm!,options),null,json?2:0));return 0; }
+    if(sub==="move") { const id=args[2];if(!flag("--from")||!flag("--to"))throw new Error("afd mcp move requires --from and --to.");const from=parseScope(flag("--from"),false) as McpScope,to=parseScope(flag("--to"),false) as McpScope;if(!id)throw new Error("Usage: afd mcp move <server> --from user|project --to user|project --project <path> ...");const options=optionsFor("project");const plan=await planMcpMove(id,from,to,options);const selected=mode();if(selected.dry){outputPlan(plan);return plan.blocked?2:0;}console.log(JSON.stringify(await applyMcpPlan(plan,selected.confirm!,options),null,json?2:0));return 0; }
+    throw new Error("Usage: afd mcp status|discover|sync|adopt|enable|disable|move|verify ...");
+  }
   if (command === "harness") {
     const subcommand = args[1]; const project = args[2]; const flag = (name: string) => { const index = args.indexOf(name); return index >= 0 ? args[index + 1] : undefined; };
     if (!project) throw new Error("Usage: afd harness audit|plan|stage|test|apply|verify|rollback <project> [options]");

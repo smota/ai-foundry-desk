@@ -7,7 +7,7 @@ import { spawn, spawnSync } from "node:child_process";
 
 const values = process.argv.slice(2);
 function option(name, fallback) { const index = values.indexOf(name); return index >= 0 ? values[index + 1] : fallback; }
-const version = option("--version", "0.4.0"); const repository = option("--repository", "smota/ai-foundry-desk"); const prefix = option("--prefix", process.platform === "win32" ? undefined : path.join(homedir(), ".local")); const assetDir = option("--asset-dir", undefined);
+const version = option("--version", "0.5.0"); const repository = option("--repository", "smota/ai-foundry-desk"); const prefix = option("--prefix", process.platform === "win32" ? undefined : path.join(homedir(), ".local")); const assetDir = option("--asset-dir", undefined);
 if (values.includes("--help")) { console.log("Usage: node afd-bootstrap.mjs [--version VERSION] [--repository OWNER/REPO] [--prefix DIR] [--asset-dir DIR]"); process.exit(0); }
 const major = Number(process.versions.node.split(".")[0]); if (major < 24) throw new Error("Node.js 24 or newer is required.");
 function invocation(command, args) {

@@ -1,6 +1,6 @@
 {
   "name": "ai-foundry-desk",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "AI Foundry Desk — Multi-Agent Workbench for a personal AI workstation.",
   "license": "MIT",
   "type": "module",
@@ -8,6 +8,10 @@
   "engines": { "node": ">=24" },
   "files": ["agent-manager/dist", "agent-manager/schema", "assets/brand", "scripts", "docs", "pilot", "recipes", "requirements", "setup.ps1", "README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "CHANGELOG.md"],
   "packageManager": "pnpm@11.23.0",
+  "dependencies": {
+    "smol-toml": "^1.8.0",
+    "yaml": "^2.9.0"
+  },
   "scripts": {
     "build": "pnpm --filter @ai-foundry-desk/cli build",
     "typecheck": "pnpm --filter @ai-foundry-desk/cli typecheck",
