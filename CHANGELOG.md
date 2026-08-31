@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+## 0.4.0 — 2026-08-31
+
+- Added the project-harness workflow: read-only repository audit, hash-bound human/JSON plans,
+  external staging, and minimal agent adapters that point to one canonical project policy instead
+  of copying its instructions.
+- Added disposable live smoke tests that exercise the proposed harness in fresh, bounded,
+  read-only agent sessions. Every selected agent must return the same canonical-policy fingerprint;
+  unavailable, unsupported, inconsistent, or mutating agents fail closed.
+- Added evidence-gated transactional apply, exact post-apply verification, private receipts, and
+  drift-refusing rollback. Plans bind the canonical hash, Git revision, and Git-visible workspace
+  state so an older approval cannot be applied after the project changes.
+- Added conservative legacy cleanup for proven redundant or unselected thin pointers, including
+  `AGY.md` where appropriate. Divergent project-owned instructions are preserved and block apply
+  until a human reconciles them.
+- Documented the four review gates and validated the audit against Ativaly, MoveTheNeedle,
+  Metaskills, and Holoself without modifying those repositories.
+
 ## 0.3.1 — 2026-08-31
 
 - Added AFD 0.3.1's transparent WinGet-update compatibility contract: `afd doctor` detects

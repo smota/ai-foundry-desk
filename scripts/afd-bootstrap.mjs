@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm, writeFile, mkdir } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, writeFile, mkdir } from "node:fs/promises";
 import { tmpdir, homedir } from "node:os";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 
 const values = process.argv.slice(2);
 function option(name, fallback) { const index = values.indexOf(name); return index >= 0 ? values[index + 1] : fallback; }
-const version = option("--version", "0.3.1"); const repository = option("--repository", "smota/ai-foundry-desk"); const prefix = option("--prefix", process.platform === "win32" ? undefined : path.join(homedir(), ".local")); const assetDir = option("--asset-dir", undefined);
+const version = option("--version", "0.4.0"); const repository = option("--repository", "smota/ai-foundry-desk"); const prefix = option("--prefix", process.platform === "win32" ? undefined : path.join(homedir(), ".local")); const assetDir = option("--asset-dir", undefined);
 if (values.includes("--help")) { console.log("Usage: node afd-bootstrap.mjs [--version VERSION] [--repository OWNER/REPO] [--prefix DIR] [--asset-dir DIR]"); process.exit(0); }
 const major = Number(process.versions.node.split(".")[0]); if (major < 24) throw new Error("Node.js 24 or newer is required.");
 function invocation(command, args) {
@@ -32,10 +32,23 @@ function capture(command, args) {
   const actual = invocation(command, args); const result = spawnSync(actual.command, actual.args, { encoding: "utf8", timeout: 30_000, windowsHide: true });
   if (result.error) throw result.error; if (result.status !== 0) throw new Error((result.stderr || result.stdout || command + " failed").trim()); return result.stdout.trim();
 }
-async function installWindowsLauncher(pnpm) {
-  const metadata = JSON.parse(capture(pnpm, ["list", "--global", "ai-foundry-desk", "--depth", "-1", "--json"]));
-  const packageRoot = metadata?.[0]?.dependencies?.["ai-foundry-desk"]?.path; if (typeof packageRoot !== "string") throw new Error("Could not resolve the installed AFD package.");
-  const cli = path.join(packageRoot, "agent-manager", "dist", "cli.js"); const bin = capture(pnpm, ["bin", "--global"]).split(/\r?\n/).at(-1)?.trim(); if (!bin) throw new Error("Could not resolve the pnpm global bin directory.");
+async function installWindowsLauncher(pnpm, installPrefix) {
+  let packageRoot;
+  if (installPrefix) {
+    const globalDir = path.join(installPrefix, "share", "pnpm", "global");
+    for (const schema of await readdir(globalDir, { withFileTypes: true })) {
+      if (!schema.isDirectory()) continue; const schemaRoot = path.join(globalDir, schema.name);
+      for (const installation of await readdir(schemaRoot, { withFileTypes: true })) {
+        if (!installation.isDirectory()) continue; const candidate = path.join(schemaRoot, installation.name, "node_modules", "ai-foundry-desk");
+        try { const manifest = JSON.parse(await readFile(path.join(candidate, "package.json"), "utf8")); if (manifest.name === "ai-foundry-desk" && manifest.version === version) { packageRoot = candidate; break; } } catch { /* not the installed package */ }
+      }
+      if (packageRoot) break;
+    }
+  } else {
+    const metadata = JSON.parse(capture(pnpm, ["list", "--global", "ai-foundry-desk", "--depth", "-1", "--json"])); packageRoot = metadata?.[0]?.dependencies?.["ai-foundry-desk"]?.path;
+  }
+  if (typeof packageRoot !== "string") throw new Error("Could not resolve the installed AFD package.");
+  const cli = path.join(packageRoot, "agent-manager", "dist", "cli.js"); const bin = installPrefix ? path.join(installPrefix, "bin") : capture(pnpm, ["bin", "--global"]).split(/\r?\n/).at(-1)?.trim(); if (!bin) throw new Error("Could not resolve the pnpm global bin directory.");
   await readFile(cli); await mkdir(bin, { recursive: true });
   const psNode = process.execPath.replace(/'/g, "''"); const psCli = cli.replace(/'/g, "''");
   const cmd = `@echo off\r\n"${process.execPath}" "${cli}" %*\r\nexit /b %ERRORLEVEL%\r\n`;
@@ -54,5 +67,5 @@ try {
   const isolation = prefix ? ["--global-dir", path.join(prefix, "share", "pnpm", "global"), "--global-bin-dir", path.join(prefix, "bin"), "--store-dir", path.join(prefix, "store")] : [];
   const args = ["add", "--global", ...isolation, "--ignore-scripts", ...(assetDir ? ["--offline"] : []), packagePath];
   if (prefix) { const bin = path.join(prefix, "bin"); await mkdir(bin, { recursive: true }); process.env.PATH = bin + path.delimiter + (process.env.PATH ?? ""); }
-  await run(pnpm, args); if (process.platform === "win32") await installWindowsLauncher(pnpm); console.log("AI Foundry Desk " + version + " installed. No Layer was applied.");
+  await run(pnpm, args); if (process.platform === "win32") await installWindowsLauncher(pnpm, prefix); console.log("AI Foundry Desk " + version + " installed. No Layer was applied.");
 } finally { await rm(temp, { recursive: true, force: true }); }

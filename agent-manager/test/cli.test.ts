@@ -9,7 +9,7 @@ function cli(...args: string[]) {
 test("help and version use the afd brand", () => {
   const help = cli("--help"); const version = cli("--version");
   assert.equal(help.status, 0); assert.match(help.stdout, /AI Foundry Desk/); assert.match(help.stdout, /afd layer1/);
-  assert.equal(version.status, 0); assert.equal(version.stdout.trim(), "0.3.1");
+  assert.equal(version.status, 0); assert.equal(version.stdout.trim(), "0.4.0");
 });
 
 test("init applies no layers and unknown mutating flags are rejected", () => {
@@ -28,7 +28,7 @@ test("doctor and fix expose safe argument contracts", () => {
 test("provenance identifies the running CLI and hybrid repair fails closed", () => {
   const provenance = cli("provenance", "--json"); const repair = cli("fix", "layer1", "--dry-run");
   assert.equal(provenance.status, 0); const value = JSON.parse(provenance.stdout) as { version?: string; cli?: string; identity?: { context?: string } };
-  assert.equal(value.version, "0.3.1"); assert.match(value.cli ?? "", /cli\.js$/);
+  assert.equal(value.version, "0.4.0"); assert.match(value.cli ?? "", /cli\.js$/);
   if (value.identity?.context === "hybrid") { assert.notEqual(repair.status, 0); assert.match(repair.stderr, /identity do not match/); }
 });
 

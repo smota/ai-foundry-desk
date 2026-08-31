@@ -27,7 +27,7 @@ import { parseHarnessAgents, planHarness, renderHarnessPlan, stageHarness } from
 import { renderHarnessSmoke, testHarness, writeHarnessEvidence } from "./harness-smoke.js";
 import { applyHarnessPlan, renderHarnessVerification, rollbackHarness, verifyHarnessReceipt } from "./harness-apply.js";
 
-const VERSION = "0.3.1";
+const VERSION = "0.4.0";
 const productRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const help = `afd — AI Foundry Desk · Multi-Agent Workbench
 
