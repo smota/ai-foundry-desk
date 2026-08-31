@@ -105,3 +105,29 @@ export interface HarnessStageResult {
   readonly rendered: readonly string[];
   readonly removals: readonly string[];
 }
+
+export type HarnessSmokeState = "passed" | "failed" | "unavailable" | "unsupported" | "not-run";
+
+export interface HarnessSmokeResult {
+  readonly agent: HarnessAgentId;
+  readonly state: HarnessSmokeState;
+  readonly command: string | null;
+  readonly version: string | null;
+  readonly policyFingerprint: string | null;
+  readonly detail: string;
+  readonly durationMs: number;
+}
+
+export interface HarnessSmokeReport {
+  readonly schemaVersion: 1;
+  readonly project: string;
+  readonly approvalToken: string;
+  readonly selectedAgents: readonly HarnessAgentId[];
+  readonly live: boolean;
+  readonly expectedPolicyFingerprint: string;
+  readonly results: readonly HarnessSmokeResult[];
+  readonly ready: boolean;
+  readonly consistent: boolean;
+  readonly passed: boolean;
+  readonly evidenceToken: string;
+}
