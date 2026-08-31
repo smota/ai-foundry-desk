@@ -23,6 +23,7 @@ import { foundationPlan, layer2Plan } from "./foundation.js";
 import { NodePlatformAdapter, writePrivateText } from "./platform.js";
 import { sandboxAccessDiagnostic } from "./sandbox-access.js";
 import { auditHarness, renderHarnessAudit } from "./harness-audit.js";
+import { parseHarnessAgents, planHarness, renderHarnessPlan, stageHarness } from "./harness-plan.js";
 
 const VERSION = "0.3.1";
 const productRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -51,6 +52,8 @@ Usage:
   afd layer1|layer2 --dry-run|--apply [--allow-claude-postinstall]
   afd catalog | help | --version
   afd harness audit <project> [--json]
+  afd harness plan <project> [--agents <auto|list>] [--remove-legacy] [--json]
+  afd harness stage <project> --output <directory> [--agents <auto|list>] [--remove-legacy] [--json]
 
 No layer is applied automatically. Use --dry-run before --apply.`;
 
@@ -90,10 +93,17 @@ async function main(args: readonly string[]): Promise<number> {
   }
   if (command === "catalog") { if (args.length !== 1) throw new Error("Usage: afd catalog"); for (const target of agentTargets) console.log(`${target.id}\tskills=${target.skills}\tprofile=${target.profile}\t${target.reason ?? ""}`); return 0; }
   if (command === "harness") {
-    const subcommand = args[1]; const project = args[2];
-    if (subcommand !== "audit" || !project || args.slice(3).some((arg) => arg !== "--json")) throw new Error("Usage: afd harness audit <project> [--json]");
-    const report = await auditHarness(project); console.log(args.includes("--json") ? JSON.stringify(report, null, 2) : renderHarnessAudit(report));
-    return report.summary.blockers ? 2 : 0;
+    const subcommand = args[1]; const project = args[2]; const flag = (name: string) => { const index = args.indexOf(name); return index >= 0 ? args[index + 1] : undefined; };
+    if (!project) throw new Error("Usage: afd harness audit|plan|stage <project> [options]");
+    if (subcommand === "audit") { if (args.slice(3).some((arg) => arg !== "--json")) throw new Error("Usage: afd harness audit <project> [--json]"); const report = await auditHarness(project); console.log(args.includes("--json") ? JSON.stringify(report, null, 2) : renderHarnessAudit(report)); return report.summary.blockers ? 2 : 0; }
+    if (subcommand === "plan" || subcommand === "stage") {
+      const allowed = new Set(["--json", "--remove-legacy", "--agents", "--output"]); for (let index = 3; index < args.length; index++) { const value = args[index]!; if (!allowed.has(value) && (index === 3 || !["--agents", "--output"].includes(args[index - 1]!))) throw new Error(`Unknown harness option: ${value}`); }
+      const agents = parseHarnessAgents(flag("--agents")); const plan = await planHarness(project, { agents, removeLegacy: args.includes("--remove-legacy") });
+      if (subcommand === "plan") { console.log(args.includes("--json") ? JSON.stringify(plan, null, 2) : renderHarnessPlan(plan)); return plan.blocked ? 2 : 0; }
+      const output = flag("--output"); if (!output) throw new Error("Usage: afd harness stage <project> --output <directory> [--agents <auto|list>] [--remove-legacy] [--json]");
+      const result = await stageHarness(plan, output); console.log(JSON.stringify(result, null, args.includes("--json") ? 2 : 0)); return 0;
+    }
+    throw new Error("Usage: afd harness audit|plan|stage <project> [options]");
   }
   if (command === "observe") throw new Error("afd observe was removed before release; use afd telemetry.");
   if (command === "telemetry") {

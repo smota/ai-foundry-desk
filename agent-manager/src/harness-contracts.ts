@@ -67,3 +67,41 @@ export interface HarnessAuditReport {
     readonly duplicateInstructionBytes: number;
   };
 }
+
+export type HarnessPlanActionKind = "create" | "update-managed" | "remove-legacy" | "preserve";
+export type HarnessReviewGroup = "canonical" | "adapters" | "legacy-cleanup";
+
+export interface HarnessPlanAction {
+  readonly kind: HarnessPlanActionKind;
+  readonly group: HarnessReviewGroup;
+  readonly agent: HarnessAgentId | null;
+  readonly path: string;
+  readonly reason: string;
+  readonly beforeSha256: string | null;
+  readonly afterSha256: string | null;
+  readonly content: string | null;
+}
+
+export interface HarnessPlan {
+  readonly schemaVersion: 1;
+  readonly project: string;
+  readonly baseRevision: string | null;
+  readonly canonicalPath: string;
+  readonly canonicalSha256: string;
+  readonly selectedAgents: readonly HarnessAgentId[];
+  readonly removeLegacy: boolean;
+  readonly actions: readonly HarnessPlanAction[];
+  readonly blocked: boolean;
+  readonly blockers: readonly string[];
+  readonly approvalToken: string;
+}
+
+export interface HarnessStageResult {
+  readonly schemaVersion: 1;
+  readonly project: string;
+  readonly output: string;
+  readonly approvalToken: string;
+  readonly status: "created" | "unchanged";
+  readonly rendered: readonly string[];
+  readonly removals: readonly string[];
+}
