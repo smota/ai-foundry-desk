@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 0.6.4 — 2026-09-01
+
+- Unified the stable release identity across the CLI, package manifests, bootstrap defaults,
+  validation gates, installation examples, GitHub Releases, and npm's `latest` distribution tag.
+- Made production builds delete prior output and reject emitted modules that do not correspond to
+  current TypeScript sources, preventing stale code from entering a release.
+- Added explicit npm metadata, a runtime-only script allowlist, sensitive-content and artifact-size
+  release gates, and disposable npm/pnpm installation smokes outside the repository.
+- Split release publication into least-privilege jobs that share one audited tarball across GitHub
+  Releases and stage-only npm trusted publishing with maintainer 2FA approval.
+
 ## 0.6.3-rc.1 — 2026-09-01
 
 - Made production builds delete prior output and reject emitted modules that do not correspond to

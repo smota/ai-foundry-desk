@@ -142,7 +142,7 @@ if ($pnpm -and $toolPass.pnpm) {
 $cli = Join-Path $ProjectRoot "agent-manager\dist\cli.js"
 if ($node -and (Test-Path -LiteralPath $cli)) {
     $provenance = Invoke-Bounded $node @($cli, "provenance", "--json")
-    Add-Result "afd.provenance" ($provenance.Status -eq 0 -and $provenance.Output -match '"version":\s*"0\.3\.1"') "exit=$($provenance.Status)"
+    Add-Result "afd.provenance" ($provenance.Status -eq 0 -and $provenance.Output -match '"version":\s*"0\.6\.4"') "exit=$($provenance.Status)"
     $doctor = Invoke-BoundedStable $node @($cli, "doctor", "--json") 60000
     $doctorPassed = ($doctor.Status -eq 0 -or $doctor.Status -eq 2) -and $doctor.Output -notmatch '"status":\s*"FAIL"'
     $doctorEvidence = "exit=$($doctor.Status) attempts=$($doctor.Attempts)"
@@ -177,13 +177,13 @@ if ($node -and (Test-Path -LiteralPath $cli)) {
 $globalAfd = Resolve-Application "afd"
 if ($globalAfd) {
     $global = if ($globalAfd -match '(?i)\.(cmd|bat)$') { Invoke-Bounded "cmd.exe" @("/d", "/s", "/c", "call", $globalAfd, "--version") } else { Invoke-Bounded $globalAfd @("--version") }
-    Add-Result "afd.global-version" ($global.Status -eq 0 -and ($global.Output -split "\r?\n" | Select-Object -First 1) -eq "0.6.3-rc.1") "path=$globalAfd version=$($global.Output)"
+    Add-Result "afd.global-version" ($global.Status -eq 0 -and ($global.Output -split "\r?\n" | Select-Object -First 1) -eq "0.6.4") "path=$globalAfd version=$($global.Output)"
     $globalProvenance = if ($globalAfd -match '(?i)\.(cmd|bat)$') { Invoke-Bounded "cmd.exe" @("/d", "/s", "/c", "call", $globalAfd, "provenance", "--json") } else { Invoke-Bounded $globalAfd @("provenance", "--json") }
     $globalProvenancePass = $false
     if ($globalProvenance.Status -eq 0) {
         try {
             $globalDetails = $globalProvenance.Output | ConvertFrom-Json
-        $globalProvenancePass = $globalDetails.version -eq "0.6.3-rc.1" -and -not [string]::IsNullOrWhiteSpace($globalDetails.cli) -and -not [string]::IsNullOrWhiteSpace($globalDetails.runtime.executable)
+        $globalProvenancePass = $globalDetails.version -eq "0.6.4" -and -not [string]::IsNullOrWhiteSpace($globalDetails.cli) -and -not [string]::IsNullOrWhiteSpace($globalDetails.runtime.executable)
         } catch { $globalProvenancePass = $false }
     }
     Add-Result "afd.global-provenance" $globalProvenancePass "exit=$($globalProvenance.Status)"
