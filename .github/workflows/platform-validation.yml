@@ -30,5 +30,17 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm check
+      - name: Prepare canonical Windows temp directory
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force ../afd-ci-temp | Out-Null
+      - name: Full project checks
+        if: runner.os == 'Windows'
+        env:
+          TEMP: ${{ github.workspace }}\..\afd-ci-temp
+          TMP: ${{ github.workspace }}\..\afd-ci-temp
+        run: pnpm check
+      - name: Portable project checks
+        if: runner.os != 'Windows'
+        run: pnpm lint && pnpm typecheck && pnpm build && pnpm docs:check
       - run: node scripts/afd-bootstrap.mjs --help

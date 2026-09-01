@@ -12,6 +12,9 @@ jobs:
   release:
     name: Publish GitHub release
     runs-on: windows-latest
+    env:
+      TEMP: ${{ github.workspace }}\..\afd-ci-temp
+      TMP: ${{ github.workspace }}\..\afd-ci-temp
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,6 +27,9 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Prepare canonical temp directory
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force ../afd-ci-temp | Out-Null
       - run: pnpm release:check -- ${{ github.ref_name }}
       - name: Audit package contents
         shell: pwsh
