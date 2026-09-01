@@ -70,7 +70,7 @@ jobs:
 
   npm-stage:
     name: Stage exact package on npm
-    needs: build
+    needs: [build, github-release]
     runs-on: ubuntu-latest
     permissions:
       contents: read
