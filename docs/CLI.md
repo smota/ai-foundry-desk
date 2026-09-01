@@ -1,7 +1,7 @@
 # `afd` command-line reference
 
 `afd` is the single command-line entry point for AI Foundry Desk. This reference documents every
-user-facing command and the operational maintenance commands present in version 0.5.0. Run
+user-facing command and the operational maintenance commands present in version 0.6.0. Run
 `afd help` for the compact syntax summary and `afd --version` for the installed version.
 
 ## Command model
@@ -27,6 +27,10 @@ PowerShell session for the intended user, not from an agent sandbox.
 | `afd init [--dry-run]` | Confirm that AFD is ready for inspection and print safe next steps. It never applies a layer. |
 | `afd provenance [--json]` | Show the CLI path, product root, Node.js runtime, version, and execution identity. |
 | `afd catalog` | List supported agent targets and their skill, profile, and user/project MCP capabilities. |
+| `afd tui` | Open the interactive terminal interface. It calls the same application services as the CLI and requires a TTY. |
+
+See [Terminal user interface](TUI.md) for the complete capability taxonomy, keyboard map,
+accessibility modes, safety workflow, and production-rendered screenshots.
 
 ## Diagnose, install, and repair the workstation
 

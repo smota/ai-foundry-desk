@@ -1,18 +1,22 @@
 # Architecture
 
-AI Foundry Desk is a local control plane for a personal multi-agent workstation. The `afd` CLI
-coordinates platform adapters, a portable TypeScript core, declarative recipes, and bounded local
-state. It does not proxy agent conversations, store credentials, or orchestrate a remote team.
+AI Foundry Desk is a local control plane for a personal multi-agent workstation. Its line-oriented
+CLI and interactive terminal UI coordinate the same typed application service, platform adapters,
+portable TypeScript core, declarative recipes, and bounded local state. It does not proxy agent
+conversations, store credentials, or orchestrate a remote team.
 
 ## System at a glance
 
 ```mermaid
 flowchart TB
-    U["User or automation"] --> CLI["afd CLI<br/>TypeScript entry point"]
-    CLI --> P["Inspect and plan<br/>read-only evidence"]
-    CLI --> F["Foundation adapters<br/>PowerShell · POSIX"]
-    CLI --> C["Portable control plane"]
-    CLI --> O["Optional local observability"]
+    U["User or automation"] --> CLI["Line-oriented CLI adapter"]
+    U --> TUI["HQTUI adapter<br/>afd tui"]
+    CLI --> APP["Typed application service"]
+    TUI --> APP
+    APP --> P["Inspect and plan<br/>read-only evidence"]
+    APP --> F["Foundation adapters<br/>PowerShell · POSIX"]
+    APP --> C["Portable control plane"]
+    APP --> O["Optional local observability"]
 
     F --> L1["Layer 1<br/>runtimes · PATH · package managers · host tools"]
     F --> L2["Layer 2<br/>agent apps · CLIs · common toolbox"]
@@ -33,17 +37,25 @@ layers.
 
 ## Major components
 
-### CLI and portable core
+### Interfaces, application service, and portable core
 
-`agent-manager/src/cli.ts` is the only public executable entry point. It parses commands, enforces
-preview/confirmation contracts, selects the current platform adapter, and returns meaningful exit
-codes. Portable behavior stays in TypeScript so catalog, recipe, harness, telemetry, and validation
-logic can share contracts across platforms.
+`agent-manager/src/cli.ts` is the public executable entry point. It selects either the normal CLI
+adapter or `afd tui`. `command-service.ts` owns command orchestration and is shared by both
+interfaces. `application-service.ts` converts in-process command execution into typed stdout/stderr
+events, exit codes, and outcomes without invoking a shell or parsing rendered CLI output.
+
+The HQTUI adapter under `src/tui` owns navigation, transient form state, selection/focus,
+confirmation presentation, and rendering only. `capability-registry.ts` provides the complete
+machine-checkable taxonomy and safety class. Validation, confirmation tokens, drift detection,
+redaction, transactions, platform effects, receipts, and rollback stay below both interfaces.
+See [Terminal user interface](TUI.md) for workflows and real screens.
 
 The main source areas are:
 
 | Area | Responsibility |
 | --- | --- |
+| `cli.ts`, `command-service.ts`, `application-service.ts` | CLI/TUI selection, shared command orchestration, typed output events, and exit-code outcomes |
+| `capability-registry.ts`, `tui/*` | Complete UI taxonomy, responsive rendering, input state, explicit confirmation, and command palette |
 | `catalog.ts`, `manager.ts`, `review.ts` | Agent capability catalog, inspection, synchronization, pending review, promotion, rejection, and recovery |
 | `mcp-*.ts` | Scoped MCP registries, format-preserving native adapters, redacted discovery, hash-bound planning, transactional apply, and verification |
 | `foundation.ts`, `doctor.ts`, `sandbox-access.ts` | Declarative foundation plans, diagnostics, execution identity, and sandbox-access postconditions |

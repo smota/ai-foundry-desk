@@ -8,7 +8,7 @@ guide; use the concept and reference material when you need the underlying model
 | Audience or task | Recommended path |
 | --- | --- |
 | New user | [Project overview and quick start](../README.md) → [Layer 1](README-LAYER-1.md) → [Layer 2](README-LAYER-2-AGENTS.md) |
-| Returning user | [CLI reference](CLI.md) → [environment ownership](ENVIRONMENT-OWNERSHIP.md) |
+| Returning user | [Terminal UI](TUI.md) or [CLI reference](CLI.md) → [environment ownership](ENVIRONMENT-OWNERSHIP.md) |
 | Skill/profile maintainer | [Skills and profiles](LAYER-2-SYNC.md) → [Layer 3 recipes](LAYER-3-RECIPES.md) |
 | MCP configuration maintainer | [MCP configuration](MCP-CONFIGURATION.md) → [CLI reference](CLI.md#manage-mcp-configuration) |
 | Repository maintainer | [Project harnesses](PROJECT-HARNESSES.md) → [validation matrix](VALIDATION-MATRIX.md) |
@@ -17,6 +17,7 @@ guide; use the concept and reference material when you need the underlying model
 
 ## Task guides
 
+- [Use the interactive terminal interface](TUI.md)
 - [Install and verify Layer 1](README-LAYER-1.md)
 - [Install and verify Layer 2](README-LAYER-2-AGENTS.md)
 - [Synchronize skills and profiles](LAYER-2-SYNC.md)
@@ -39,6 +40,7 @@ guide; use the concept and reference material when you need the underlying model
 
 ## Reference and project information
 
+- [Terminal UI](TUI.md): interactive taxonomy, workflow, keymap, safety, accessibility, and real screens
 - [CLI reference](CLI.md): every public and operational `afd` command
 - [Validation matrix](VALIDATION-MATRIX.md): agent and environment coverage
 - [Roadmap](ROADMAP.md): current direction and deliberately deferred capabilities
