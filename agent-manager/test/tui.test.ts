@@ -52,7 +52,7 @@ test("typed application service and CLI adapter share command behavior", async (
   const result = await executeAfdUseCase(["--version"]);
   assert.equal(result.exitCode, 0);
   assert.equal(result.outcome, "passed");
-  assert.equal(result.events.map((event) => event.text).join("").trim(), "0.6.0");
+  assert.equal(result.events.map((event) => event.text).join("").trim(), "0.6.1");
 });
 
 test("TUI renders real responsive screens at wide, standard, and compact sizes", () => {

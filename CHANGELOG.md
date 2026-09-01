@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## 0.6.1 — 2026-09-01
+
+- Explore all 74 AFD actions from one interactive terminal workspace with `afd tui`, organized by
+  outcome so you can discover the right workflow without memorizing commands.
+- Search capabilities, edit inputs without shell quoting, review structured results, and move between
+  keyboard-accessible responsive layouts. High-contrast, monochrome, ASCII, reduced-motion, and
+  mouse-free modes keep the interface usable across terminals and accessibility needs.
+- Keep control of every change: read-only actions run directly, while writes show their scope and
+  require the same explicit confirmation, safety tokens, drift checks, receipts, and rollback
+  protections as the CLI.
+- Use the CLI and TUI interchangeably without behavioral surprises because both interfaces call the
+  same application and command services.
+- Install from checksummed release assets produced by a corrected Windows publication workflow that
+  creates its isolated temporary directory before dependency setup.
+
 ## 0.6.0 — 2026-09-01
 
 - Explore all 74 AFD actions from one interactive terminal workspace with `afd tui`, organized by

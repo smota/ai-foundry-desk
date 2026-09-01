@@ -121,7 +121,7 @@ Windows bootstrap and checksum separately, verifies SHA-256, and installs only t
 It does **not** configure either Layer automatically.
 
 ```powershell
-$v='0.6.0'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
+$v='0.6.1'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
 ```
 
 The bootstrap requires Node.js 24 or newer and pnpm. If a prerequisite is missing, it stops and
@@ -254,7 +254,7 @@ Never use a blind remote pipe; download the script and checksum separately befor
 Validated Linux/WSL bootstrap (downloads, verifies, then executes as separate steps):
 
 ```sh
-v=0.6.0; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
+v=0.6.1; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
 ```
 
 Docker is a Layer 1 host capability, not an AFD runtime. Layers 1–3 run directly on the host. Higher
