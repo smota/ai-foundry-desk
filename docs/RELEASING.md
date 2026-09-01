@@ -1,7 +1,9 @@
 # Releasing
 
-GitHub Releases are the official distribution channel for the current phase. npm publication is
-deferred until registry governance and broader supply-chain controls are decided.
+GitHub Releases remain the checksummed and offline-capable distribution channel. After the one-time
+npm package claim described in [npm publishing](NPM-PUBLISHING.md), stable tags also submit the exact
+audited release tarball to npm's staged-publishing queue through OIDC. A maintainer reviews and
+approves that staged package with 2FA before it becomes public; no long-lived npm write token is used.
 
 Releases use a short release-preparation pull request followed by a version tag. No permanent release
 branch is kept. Prepare the release from current `main` on `release/vX.Y.Z`, then:
@@ -30,9 +32,10 @@ passes; macOS remains experimental until validated on real hardware.
 
 Pushing the stable version tag triggers `.github/workflows/release.yml`. GitHub Actions verifies the
 tag against both package manifests, bootstrap defaults, and README installation examples; audits the
-package; runs the complete project checks while building the checksummed assets; and creates the
-GitHub Release. The workflow uses only the repository-provided `GITHUB_TOKEN` and does not publish to
-npm.
+package; runs the complete project and isolated package-install checks; and builds the tarball once.
+Separate least-privilege jobs publish that same artifact to GitHub Releases and submit it to npm with
+`npm stage publish --tag next`. The GitHub job has `contents: write`; the npm job has only
+`contents: read` and `id-token: write`.
 
 Before pushing the tag, verify a clean tree, confirm that the tag targets the intended `main` commit,
 and inspect the generated release assets. Tags and releases must never be forced or silently replaced.
@@ -41,6 +44,7 @@ and tag that new commit. If a release exists but needs an explanatory correction
 without replacing its tag or assets. Do not advertise the remote command until the tag and all
 checksum assets exist publicly.
 
-Backups, logs, local state, profiles, `.env`, caches, node_modules, dist source directories, and tool
-installations must never enter a release. SBOM, provenance, checksum signing, and artifact signing
-remain backlog items.
+Backups, logs, local state, profiles, `.env`, caches, node_modules, source directories, orphaned build
+outputs, contributor-only release tooling, and tool installations must never enter a release. npm
+trusted publishing supplies provenance for approved public packages; GitHub assets retain explicit
+SHA-256 files. Independent artifact signing remains a backlog item.

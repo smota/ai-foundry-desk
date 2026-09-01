@@ -1,8 +1,24 @@
 {
   "name": "ai-foundry-desk",
-  "version": "0.6.2",
+  "version": "0.6.3-rc.1",
   "description": "AI Foundry Desk — Multi-Agent Workbench for a personal AI workstation.",
+  "author": "Samuel Mota",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smota/ai-foundry-desk.git"
+  },
+  "homepage": "https://github.com/smota/ai-foundry-desk#readme",
+  "bugs": {
+    "url": "https://github.com/smota/ai-foundry-desk/issues"
+  },
+  "keywords": [
+    "ai-workstation",
+    "agent-tools",
+    "developer-tools",
+    "multi-agent",
+    "workbench"
+  ],
   "type": "module",
   "bin": {
     "afd": "agent-manager/dist/cli.js"
@@ -14,12 +30,25 @@
     "agent-manager/dist",
     "agent-manager/schema",
     "assets/brand",
-    "scripts",
+    "scripts/00-*.ps1",
+    "scripts/01-*.ps1",
+    "scripts/01-*.sh",
+    "scripts/02-*.sh",
+    "scripts/07-*.ps1",
+    "scripts/07-*.sh",
+    "scripts/08-update-hermes.ps1",
+    "scripts/10-*.ps1",
+    "scripts/12-*.ps1",
+    "scripts/13-*.ps1",
+    "scripts/14-*.ps1",
+    "scripts/BackupPolicy.ps1",
+    "scripts/afd-run-tree.ps1",
+    "scripts/agentacct-query.py",
+    "scripts/agentacct-native",
     "docs",
     "pilot",
     "recipes",
     "requirements",
-    "setup.ps1",
     "README.md",
     "LICENSE",
     "CONTRIBUTING.md",
@@ -27,6 +56,9 @@
     "CHANGELOG.md"
   ],
   "packageManager": "pnpm@11.23.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@profullstack/hqtui": "0.1.9",
     "smol-toml": "^1.8.0",
@@ -37,8 +69,10 @@
     "typecheck": "pnpm --filter @ai-foundry-desk/cli typecheck",
     "lint": "pnpm --filter @ai-foundry-desk/cli lint",
     "test": "pnpm --filter @ai-foundry-desk/cli test",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm docs:check",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:clean-build && pnpm docs:check",
     "docs:check": "node scripts/check-docs.mjs",
+    "test:clean-build": "node scripts/test-clean-build.mjs",
+    "test:package-smoke": "node scripts/package-smoke.mjs",
     "afd": "pnpm --filter @ai-foundry-desk/cli dev",
     "afd:status": "pnpm --filter @ai-foundry-desk/cli dev status",
     "afd:review": "pnpm --filter @ai-foundry-desk/cli dev review",

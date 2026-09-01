@@ -1,5 +1,7 @@
 # Documentation
 
+- [npm publishing](NPM-PUBLISHING.md) — package boundary, trusted publisher, staged approval, and recovery
+
 AI Foundry Desk documentation is organized by what you are trying to accomplish. Start with a task
 guide; use the concept and reference material when you need the underlying model or exact contract.
 

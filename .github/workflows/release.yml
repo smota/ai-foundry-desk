@@ -5,13 +5,12 @@ on:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
-permissions:
-  contents: write
-
 jobs:
-  release:
-    name: Publish GitHub release
+  build:
+    name: Build and audit release artifact
     runs-on: windows-latest
+    permissions:
+      contents: read
     env:
       TEMP: ${{ github.workspace }}\..\afd-ci-temp
       TMP: ${{ github.workspace }}\..\afd-ci-temp
@@ -36,6 +35,26 @@ jobs:
         run: ./scripts/release-audit.ps1
       - run: pnpm check
       - run: pnpm release:build -- --skip-check
+      - name: Smoke exact release tarball
+        run: node scripts/package-smoke.mjs --tarball release --manager both --host-dry-run
+      - uses: actions/upload-artifact@v4
+        with:
+          name: afd-release-${{ github.ref_name }}
+          path: release
+          if-no-files-found: error
+          retention-days: 7
+
+  github-release:
+    name: Publish GitHub release
+    needs: build
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: afd-release-${{ github.ref_name }}
+          path: release
       - name: Publish release and assets
         shell: pwsh
         env:
@@ -48,3 +67,28 @@ jobs:
             --verify-tag `
             --notes-file $notes `
             --title "AI Foundry Desk ${{ github.ref_name }}"
+
+  npm-stage:
+    name: Stage exact package on npm
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: afd-release-${{ github.ref_name }}
+          path: release
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Pin npm staged-publishing client
+        run: npm install --global npm@11.17.0 --ignore-scripts
+      - name: Verify release checksum
+        shell: bash
+        run: cd release && sha256sum --check ai-foundry-desk-*.tgz.sha256
+      - name: Submit package for maintainer review
+        run: npm stage publish release/ai-foundry-desk-*.tgz --access public --tag next
