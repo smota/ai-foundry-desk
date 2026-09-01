@@ -2,13 +2,19 @@ name: Platform validation
 
 on:
   push:
+    branches: [main]
   pull_request:
+
+concurrency:
+  group: platform-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
   test:
+    name: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:

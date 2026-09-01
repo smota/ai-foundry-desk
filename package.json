@@ -28,6 +28,7 @@
     "validate:observability": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/14-validate-observability-pilot.ps1",
     "sbom:telemetry": "node scripts/generate-telemetry-sbom.mjs",
     "pack:dry-run": "pnpm build && pnpm pack --dry-run",
+    "release:check": "node scripts/check-release-version.mjs",
     "release:build": "node scripts/build-release.mjs"
   }
 }

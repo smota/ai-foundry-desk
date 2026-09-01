@@ -24,6 +24,7 @@
 ## Documentation
 
 - [ ] User-facing behavior and the CLI reference were updated, or no documentation change is needed.
+- [ ] `CHANGELOG.md` was updated under `Unreleased`, or the change has no user-visible release impact.
 - [ ] Local documentation links pass validation.
 
 ## Review notes

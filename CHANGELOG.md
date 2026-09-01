@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added a protected pull-request workflow for maintainers and external contributors, automatic
+  cleanup of merged repository branches, and tag-driven GitHub Release publication with version and
+  artifact validation.
+
 ## 0.5.0 — 2026-08-31
 
 - Added one scope-aware MCP workflow for discovering, adopting, synchronizing, enabling, disabling,
