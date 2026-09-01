@@ -5,6 +5,20 @@ harness. The design uses one canonical project policy, minimal agent adapters, d
 and a confirmed apply. AFD does not silently merge instructions or assume that a filename proves an
 agent will discover it.
 
+```mermaid
+flowchart TB
+    C["Canonical AGENTS.md"] --> P["Hash-bound plan"]
+    P -. inspect first .-> S["External staged adapters"]
+    P --> T["Disposable multi-agent test"]
+    T -->|consistent policy evidence| A["Confirmed apply"]
+    A --> D["Minimal agent adapters"]
+    D --> V["Workspace-wide verify"]
+    V -->|exact receipt and no drift| R["Scoped rollback"]
+
+    T -->|unsupported · unavailable · inconsistent| B["Fail closed"]
+    V -->|source or workspace drift| B
+```
+
 ## The four gates
 
 1. `afd harness audit <project>` is read-only. It identifies the canonical policy, agent surfaces,

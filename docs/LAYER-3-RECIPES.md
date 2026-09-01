@@ -11,6 +11,20 @@ For a recipe containing Observability, its expanded plan and content-derived con
 the complete activation decision for Collector, Phoenix, agentacct, declared native integrations,
 policies, and lifecycle. Apply must not request a second component-specific confirmation.
 
+```mermaid
+flowchart LR
+    S["Built-in · local · HTTPS recipe"] --> L["Load and validate"]
+    L --> P["Plan all managed effects"]
+    P --> T["Content-derived token"]
+    T -->|exact confirmation| A["Apply transaction"]
+    A --> V["Verify desired state"]
+    V -->|recorded managed state| R["Rollback"]
+
+    L -->|invalid or unsafe| X["Stop without writing"]
+    T -->|stale or missing| X
+    A -->|verification fails| X2["Remove transaction-created state"]
+```
+
 ```text
 afd layer3 recipes
 afd layer3 show builtin:smota-foundations

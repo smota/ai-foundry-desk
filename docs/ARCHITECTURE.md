@@ -6,29 +6,25 @@ state. It does not proxy agent conversations, store credentials, or orchestrate 
 
 ## System at a glance
 
-```text
-User or automation
-       │
-       ▼
-  afd CLI (TypeScript)
-       │
-       ├── inspect / plan ─────────────── read-only evidence
-       │
-       ├── Foundation adapters ───────── PowerShell on Windows, POSIX on Linux
-       │      ├── Layer 1: runtimes, PATH, package managers, host tools
-       │      └── Layer 2: agent CLIs/apps and common toolbox
-       │
-       ├── Portable control plane
-       │      ├── shared skill and profile catalog
-       │      ├── scoped MCP registries and native adapters
-       │      ├── pending review, sync, drift, backup, recovery
-       │      ├── Layer 3 recipe plan/apply/verify/rollback
-       │      └── project harness audit/test/apply/rollback
-       │
-       └── Optional capability: local observability
-              ├── OpenTelemetry Collector and Phoenix
-              ├── agentacct evidence adapters
-              └── bounded correlation index and Windows loopback broker
+```mermaid
+flowchart TB
+    U["User or automation"] --> CLI["afd CLI<br/>TypeScript entry point"]
+    CLI --> P["Inspect and plan<br/>read-only evidence"]
+    CLI --> F["Foundation adapters<br/>PowerShell · POSIX"]
+    CLI --> C["Portable control plane"]
+    CLI --> O["Optional local observability"]
+
+    F --> L1["Layer 1<br/>runtimes · PATH · package managers · host tools"]
+    F --> L2["Layer 2<br/>agent apps · CLIs · common toolbox"]
+
+    C --> S["Skills and profiles<br/>catalog · review · sync · recovery"]
+    C --> M["MCP configuration<br/>scoped registries · native adapters"]
+    C --> R["Layer 3 recipes<br/>plan · apply · verify · rollback"]
+    C --> H["Project harnesses<br/>audit · test · apply · rollback"]
+
+    O --> OT["OpenTelemetry Collector · Phoenix"]
+    O --> EA["agentacct evidence adapters"]
+    O --> BI["Bounded correlation index · loopback broker"]
 ```
 
 Layers 1–3 are sequential workstation foundations. Observability and project harnesses are
@@ -105,10 +101,15 @@ the [configuration design](MCP-CONFIGURATION-DESIGN.md) for registry and adapter
 Harnesses govern agent instructions inside a repository without mixing them into the user-level
 catalog. The workflow is deliberately evidence-gated:
 
-```text
-audit → plan → optional external stage → disposable test → apply → verify
-                                                           │
-                                                           └── rollback
+```mermaid
+flowchart LR
+    A["Audit"] --> P["Plan"]
+    P -. optional .-> S["External stage"]
+    P --> T["Disposable test"]
+    S --> T
+    T -->|passing evidence| AP["Apply"]
+    AP --> V["Verify"]
+    V -->|managed state only| R["Rollback"]
 ```
 
 Audit and plan are read-only. Live tests render proposed policy into a disposable workspace and

@@ -1,5 +1,20 @@
 # Security boundaries
 
+```mermaid
+flowchart LR
+    U["User-reviewed action"] --> A["AFD-managed scope"]
+    A --> M["Declared runtimes · tools · adapters"]
+    A --> B["Bounded backups · receipts · telemetry"]
+
+    A -. does not own .-> N["Agent-native data"]
+    A -. does not own .-> P["Projects · credentials · login state"]
+    A -. does not normalize .-> H["Unrelated host configuration"]
+
+    D["Dry-run and doctor"] -->|read-only evidence| U
+    M -->|verify postconditions| V["Verified managed state"]
+    B -->|exact recorded scope| R["Rollback"]
+```
+
 - Use official sources, verifiable versions, dry-run, and separate verification.
 - Keep project dependencies isolated and never manage user secrets or login state.
 - Preserve drift and require human review before promoting pending or Hermes-created skills.

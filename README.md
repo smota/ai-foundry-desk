@@ -66,19 +66,22 @@ manager. Your logins, tokens, projects, conversations, and agent-native data rem
 
 ## How the workbench fits together
 
-```text
-                         afd — one daily command
-                                   │
-              ┌────────────────────┼────────────────────┐
-              │                    │                    │
-       Layer 1 Foundation   Layer 2 Agent Setup   Layer 3 Recipes
-       runtimes + PATH      apps + agent CLIs     skills + profiles
-              │                    │                    │
-              └──────────── Common Agent Toolbox ──────┘
-                    rg · fd · jq · yq · bat · delta
-                                   │
-                     Claude · Codex · Pi · Grok
-                       Hermes · Antigravity*
+```mermaid
+flowchart TB
+    A["afd — one daily command"]
+    L1["Layer 1 — Foundation<br/>runtimes · PATH · package managers"]
+    L2["Layer 2 — Agent Setup<br/>apps · agent CLIs"]
+    L3["Layer 3 — Recipes<br/>reviewed skills · tools · capabilities"]
+    T["Common Agent Toolbox<br/>rg · fd · jq · yq · bat · delta"]
+    G["Supported agent surfaces<br/>Claude · Codex · Pi · Grok · Hermes · Antigravity*"]
+
+    A --> L1
+    A --> L2
+    A --> L3
+    L1 --> T
+    L2 --> T
+    L3 --> T
+    T --> G
 ```
 
 `*` Capabilities vary by agent. AFD reports unsupported integrations instead of pretending they

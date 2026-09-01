@@ -4,6 +4,30 @@ Observability is a declarative AFD capability for normal Layer 2 use. It is enab
 reviews and applies a recipe that includes it; agentacct does not ask for a second confirmation.
 AFD does not wrap agent execution and does not maintain a proprietary Collector or session parser.
 
+```mermaid
+flowchart LR
+    subgraph Agents["Agent-owned sources"]
+        C["Claude · Codex<br/>native traces"]
+        S["Supported local<br/>session stores"]
+    end
+
+    subgraph Boundary["AFD privacy boundary — local and bounded"]
+        O["OTLP Collector<br/>allowlist · no logs · no span events"]
+        A["agentacct<br/>observe-only evidence"]
+        I["Correlation index<br/>IDs and hashes only"]
+        B["Loopback broker<br/>fixed authenticated operations"]
+    end
+
+    P["Phoenix<br/>local trace UI"]
+    CLI["afd telemetry<br/>status · verify · explain"]
+
+    C --> O --> P
+    S --> A --> I
+    O --> I
+    I --> B --> CLI
+    P --> CLI
+```
+
 ## Runtime
 
 - OpenTelemetry Collector Contrib `0.159.0` receives OTLP/HTTP on `127.0.0.1:4318`, enforces the
