@@ -1,0 +1,61 @@
+name: Bug report
+description: Report reproducible behavior that differs from the documented contract.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include credentials, private paths, profiles, logs, transcripts, or exploitable security details. Use the security policy for vulnerabilities.
+  - type: input
+    id: version
+    attributes:
+      label: AFD version
+      description: Output of `afd --version`.
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows x64
+        - Ubuntu on WSL2 x86_64
+        - Native Linux
+        - macOS
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Redact user names, paths, tokens, session data, and other private content.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Safe reproduction
+      description: Prefer read-only commands or dry-run steps.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized validation evidence
+      description: Include relevant exit codes and diagnostic IDs, not complete logs.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Submission checks
+      options:
+        - label: I searched existing issues and pull requests.
+          required: true
+        - label: I removed credentials, private paths, profiles, logs, and conversation content.
+          required: true

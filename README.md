@@ -33,6 +33,34 @@ Use AFD to:
 AFD is a local personal workbench. It is not a SaaS platform, a team orchestrator, or a credential
 manager. Your logins, tokens, projects, conversations, and agent-native data remain outside it.
 
+## Choose your path
+
+| I want to… | Start here | Time |
+| --- | --- | --- |
+| Set up my workstation | [Windows quick start](#quick-start-on-windows) or [Linux/WSL bootstrap](#linuxwsl-bootstrap) | About 10 minutes plus downloads |
+| Check or repair an existing setup | [`afd doctor`](#your-everyday-workflow), then preview the suggested fix | 2–5 minutes |
+| Keep skills and profiles consistent across agents | [Skills and profiles](docs/LAYER-2-SYNC.md) | 10 minutes |
+| Apply a reviewed bundle of tools and skills | [Layer 3 recipes](docs/LAYER-3-RECIPES.md) | 10–20 minutes |
+| Understand an agent run | [Observability](docs/OBSERVABILITY.md) | 10 minutes |
+| Standardize instructions in a repository | [Project harnesses](docs/PROJECT-HARNESSES.md) | 15 minutes |
+| Look up an `afd` command | [CLI reference](docs/CLI.md) | 1 minute |
+| Understand or change the project | [Contributor guide](CONTRIBUTING.md) | 10 minutes |
+
+## Common use cases
+
+- **A clean first setup:** preview and install the runtime foundation, agent CLIs, and shared toolbox.
+- **A workstation health check:** find PATH, runtime, backup, or sandbox-access problems without
+  changing the machine.
+- **Safe repair after an update:** reconcile only AFD-owned state after package-manager or agent
+  upgrades.
+- **Cross-agent consistency:** review shared skills and small profile blocks, preserve drift, then
+  synchronize intentionally.
+- **Repeatable workstation recipes:** plan, approve, apply, verify, and roll back declarative bundles.
+- **Local execution evidence:** inspect bounded, content-free telemetry and correlate supported agent
+  activity without copying conversations.
+- **Repository instruction governance:** audit and test one canonical project policy across supported
+  agents before applying it.
+
 ## How the workbench fits together
 
 ```text
@@ -250,21 +278,13 @@ pnpm check
 ```
 
 Start with [Contributing](CONTRIBUTING.md), [Architecture](docs/ARCHITECTURE.md), and the
-[next-session handoff](docs/NEXT-SESSION.md).
+[development guide](docs/DEVELOPMENT.md). The repository includes issue forms, a pull-request
+template, ownership routing, and cross-platform CI checks.
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md)
-- [Layer 1 Foundation](docs/README-LAYER-1.md)
-- [Layer 2 Agent Setup](docs/README-LAYER-2-AGENTS.md)
-- [Skills and profiles](docs/LAYER-2-SYNC.md)
-- [Agent environment validation matrix](docs/VALIDATION-MATRIX.md)
-- [Agent sandbox toolchain repair](docs/AGENT-SANDBOX-REPAIR.md)
-- [Layer 3 recipes](docs/LAYER-3-RECIPES.md)
-- [Platform support](docs/PLATFORM-SUPPORT.md)
-- [Security boundaries](docs/SECURITY-BOUNDARIES.md)
-- [Roadmap](docs/ROADMAP.md)
-- [Release process](docs/RELEASING.md)
+Use the [documentation map](docs/README.md) to find task guides, concepts, operations, architecture,
+security, and project references. The complete command syntax is in the [CLI reference](docs/CLI.md).
 
 AI Foundry Desk is available under the [MIT License](LICENSE). See [SECURITY.md](SECURITY.md) for
 responsible reporting. Brand artwork is documented in [assets/brand/README.md](assets/brand/README.md).
