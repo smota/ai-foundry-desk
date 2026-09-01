@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, realpath, rm, stat } from "node:fs/promises";
 import { existsSync, statSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
@@ -84,7 +84,11 @@ async function smoke(selected, base) {
   if (!recipes.stdout.includes("builtin:smota-foundations") || !recipes.stdout.includes("builtin:observability")) throw new Error(`${selected} built-in recipes are unavailable.`);
   const provenance = invoke(launcher, ["provenance", "--json"], { cwd: base, env });
   const parsed = JSON.parse(provenance.stdout);
-  if (parsed.version !== manifest.version || !path.resolve(parsed.productRoot).startsWith(path.resolve(prefix))) throw new Error(`${selected} provenance does not resolve to the isolated package.`);
+  const canonicalPrefix = await realpath(prefix);
+  const canonicalProductRoot = await realpath(parsed.productRoot);
+  const relativeProductRoot = path.relative(canonicalPrefix, canonicalProductRoot);
+  const productRootIsIsolated = relativeProductRoot !== "" && relativeProductRoot !== ".." && !relativeProductRoot.startsWith(`..${path.sep}`) && !path.isAbsolute(relativeProductRoot);
+  if (parsed.version !== manifest.version || !productRootIsIsolated) throw new Error(`${selected} provenance does not resolve to the isolated package.`);
   if (hostDryRun && ["win32", "linux"].includes(process.platform)) invoke(launcher, ["layer1", "--dry-run"], { cwd: base, env, timeout: 300_000 });
   console.log(`${selected} isolated package smoke OK.`);
 }
