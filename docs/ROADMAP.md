@@ -23,6 +23,9 @@
   without that declaration and for unsupported Hermes project scope.
 - Project harness audit, hash-bound staging, and disposable multi-agent smoke tests are implemented
   without claiming that file presence proves an agent loaded the policy.
+- `afd tui` provides a responsive HQTUI interface over the shared typed application service, with
+  complete command taxonomy, shell-free inputs, explicit write review, accessible fallbacks,
+  headless tests, and production-rendered documentation screens.
 
 ## Next cycle
 
@@ -59,7 +62,6 @@ explicit adapters; AI Foundry Desk remains one product with one portable core.
 
 ## Later
 
-- OpenTUI interface over existing CLI contracts.
 - Windows ARM64 and native CI matrices.
 
 ## Deliberately out of scope

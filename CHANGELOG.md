@@ -2,9 +2,22 @@
 
 ## Unreleased
 
-- Added a protected pull-request workflow for maintainers and external contributors, automatic
-  cleanup of merged repository branches, and tag-driven GitHub Release publication with version and
-  artifact validation.
+## 0.6.0 — 2026-09-01
+
+- Explore all 74 AFD actions from one interactive terminal workspace with `afd tui`, organized by
+  outcome so you can discover the right workflow without memorizing commands.
+- Search capabilities, edit inputs without shell quoting, review structured results, and move between
+  keyboard-accessible responsive layouts. High-contrast, monochrome, ASCII, reduced-motion, and
+  mouse-free modes keep the interface usable across terminals and accessibility needs.
+- Keep control of every change: read-only actions run directly, while writes show their scope and
+  require the same explicit confirmation, safety tokens, drift checks, receipts, and rollback
+  protections as the CLI.
+- Use the CLI and TUI interchangeably without behavioral surprises. Both interfaces now call the
+  same application and command services instead of duplicating or parsing command logic.
+- Start quickly with a practical TUI guide and production-rendered screenshots, including a
+  machine-redacted real doctor result.
+- Contribute through a protected pull-request workflow with automatic merged-branch cleanup and
+  tag-driven releases that validate versions and artifacts before publication.
 
 ## 0.5.0 — 2026-08-31
 

@@ -5,7 +5,12 @@ adoption, synchronization, verification, and review workflows.
 
 `afd status`, `review`, `sync`, `verify`, and `adopt/import` operate on `%USERPROFILE%\.afd`.
 `sync --dry-run` does not write. Divergent content is preserved and adoption enters
-`catalog/pending`; Hermes-created skills are never promoted automatically. OpenTUI remains backlog.
+`catalog/pending`; Hermes-created skills are never promoted automatically.
+
+`afd tui` provides an exact-pinned HQTUI adapter over the same typed application service. Its
+searchable capability registry covers the complete CLI taxonomy while validation, plan tokens,
+drift checks, writes, receipts, and rollback remain in the portable control plane. See
+[`docs/TUI.md`](../docs/TUI.md) for screens, keys, accessibility modes, and architecture.
 
 Project harness inspection is separate from user-level synchronization:
 
