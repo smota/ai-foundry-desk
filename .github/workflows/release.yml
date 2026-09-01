@@ -34,7 +34,8 @@ jobs:
       - name: Audit package contents
         shell: pwsh
         run: ./scripts/release-audit.ps1
-      - run: pnpm release:build
+      - run: pnpm check
+      - run: pnpm release:build -- --skip-check
       - name: Publish release and assets
         shell: pwsh
         env:

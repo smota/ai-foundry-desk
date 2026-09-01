@@ -30,7 +30,7 @@ import { discoverNativeMcp, piMcpAdapterConfigured } from "./mcp-formats.js";
 import { mcpCapabilities, type McpManagerOptions, type McpScope } from "./mcp-contracts.js";
 import { sha256 } from "./mcp-registry.js";
 
-export const VERSION = "0.6.1";
+export const VERSION = "0.6.2";
 const productRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 export const help = `afd — AI Foundry Desk · Multi-Agent Workbench
 
