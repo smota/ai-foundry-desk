@@ -10,6 +10,7 @@ guide; use the concept and reference material when you need the underlying model
 | New user | [Project overview and quick start](../README.md) → [Layer 1](README-LAYER-1.md) → [Layer 2](README-LAYER-2-AGENTS.md) |
 | Returning user | [CLI reference](CLI.md) → [environment ownership](ENVIRONMENT-OWNERSHIP.md) |
 | Skill/profile maintainer | [Skills and profiles](LAYER-2-SYNC.md) → [Layer 3 recipes](LAYER-3-RECIPES.md) |
+| MCP configuration maintainer | [MCP configuration](MCP-CONFIGURATION.md) → [CLI reference](CLI.md#manage-mcp-configuration) |
 | Repository maintainer | [Project harnesses](PROJECT-HARNESSES.md) → [validation matrix](VALIDATION-MATRIX.md) |
 | Operator | [Observability](OBSERVABILITY.md) → [sandbox repair](AGENT-SANDBOX-REPAIR.md) |
 | Contributor | [Contributing](../CONTRIBUTING.md) → [development](DEVELOPMENT.md) → [architecture](ARCHITECTURE.md) |
@@ -19,6 +20,7 @@ guide; use the concept and reference material when you need the underlying model
 - [Install and verify Layer 1](README-LAYER-1.md)
 - [Install and verify Layer 2](README-LAYER-2-AGENTS.md)
 - [Synchronize skills and profiles](LAYER-2-SYNC.md)
+- [Manage scoped MCP configuration](MCP-CONFIGURATION.md)
 - [Plan and apply Layer 3 recipes](LAYER-3-RECIPES.md)
 - [Audit and govern project instructions](PROJECT-HARNESSES.md)
 - [Operate local observability](OBSERVABILITY.md)
@@ -33,6 +35,7 @@ guide; use the concept and reference material when you need the underlying model
 - [Environment ownership](ENVIRONMENT-OWNERSHIP.md): what AFD manages and what it leaves alone
 - [Security boundaries](SECURITY-BOUNDARIES.md): trust model and protected data
 - [Observability design](OBSERVABILITY-PLAN.md): implementation rationale and evidence model
+- [MCP configuration design](MCP-CONFIGURATION-DESIGN.md): registry contracts, adapter architecture, and rationale
 
 ## Reference and project information
 

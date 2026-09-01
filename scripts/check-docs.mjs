@@ -45,7 +45,8 @@ const requiredCliSyntax = [
   "afd telemetry resume", "afd telemetry uninstall-autostart", "afd telemetry broker",
   "afd harness audit", "afd harness plan", "afd harness stage", "afd harness test",
   "afd harness apply", "afd harness verify", "afd harness rollback", "afd backup status",
-  "afd backup maintain", "afd migrate",
+  "afd backup maintain", "afd migrate", "afd mcp status", "afd mcp verify", "afd mcp discover",
+  "afd mcp sync", "afd mcp adopt", "afd mcp enable", "afd mcp disable", "afd mcp move",
 ];
 for (const syntax of requiredCliSyntax) {
   if (!cliReference.includes(syntax)) failures.push(`docs/CLI.md is missing: ${syntax}`);

@@ -20,6 +20,7 @@ User or automation
        │
        ├── Portable control plane
        │      ├── shared skill and profile catalog
+       │      ├── scoped MCP registries and native adapters
        │      ├── pending review, sync, drift, backup, recovery
        │      ├── Layer 3 recipe plan/apply/verify/rollback
        │      └── project harness audit/test/apply/rollback
@@ -48,6 +49,7 @@ The main source areas are:
 | Area | Responsibility |
 | --- | --- |
 | `catalog.ts`, `manager.ts`, `review.ts` | Agent capability catalog, inspection, synchronization, pending review, promotion, rejection, and recovery |
+| `mcp-*.ts` | Scoped MCP registries, format-preserving native adapters, redacted discovery, hash-bound planning, transactional apply, and verification |
 | `foundation.ts`, `doctor.ts`, `sandbox-access.ts` | Declarative foundation plans, diagnostics, execution identity, and sandbox-access postconditions |
 | `recipes.ts`, `extract.ts` | Recipe loading, schema validation, planning, approval tokens, managed apply/verify/rollback, and sanitized extraction |
 | `harness-*.ts` | Project-policy audit, planning, external staging, disposable smoke tests, transactional apply, receipts, verification, and rollback |
@@ -85,6 +87,19 @@ token. Apply revalidates the token, records only the state it manages, and verif
 Rollback restores or removes only recorded managed state. HTTPS loading rejects redirects and
 arbitrary executable adapters.
 
+### MCP configuration
+
+MCP configuration is separate from skill/profile synchronization. AFD maintains canonical user and
+project registries, computes effective configuration, and adapts explicitly selected definitions to
+verified agent-native formats. Discovery and status are read-only. Sync, adoption, enable/disable,
+and scope moves produce redacted content-derived plans before any write.
+
+The MCP manager preserves unrelated native settings and unmanaged servers, rejects inline secret-like
+values, never reads OAuth/login stores, and uses fingerprints to reject concurrent edits. Apply is
+transactional across selected targets. Unsupported scope/agent combinations block instead of being
+silently omitted. See the [MCP configuration guide](MCP-CONFIGURATION.md) for the user workflow and
+the [configuration design](MCP-CONFIGURATION-DESIGN.md) for registry and adapter rationale.
+
 ### Project harnesses
 
 Harnesses govern agent instructions inside a repository without mixing them into the user-level
@@ -120,6 +135,8 @@ for the content allowlist.
 | --- | --- |
 | Product installation | Versioned CLI, schemas, recipes, scripts, and documentation; no user secrets or runtime state |
 | `~/.afd` | Canonical user catalog, manifests, managed skills/profiles, and pending review state |
+| `~/.afd/mcp/user.json` | Canonical workstation-wide MCP definitions |
+| `<project>/.afd/mcp.json` | Canonical project-scoped MCP definitions |
 | `%LOCALAPPDATA%\AI Foundry Desk` on Windows | Operational state, bounded backups, telemetry state, and private receipts |
 | Agent-native directories | Agent-owned authentication, history, memory, sessions, plugins, and unmanaged configuration |
 | User projects | Project-owned source and policy; harness changes require evidence and explicit confirmation |

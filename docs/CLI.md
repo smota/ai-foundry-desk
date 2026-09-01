@@ -1,7 +1,7 @@
 # `afd` command-line reference
 
 `afd` is the single command-line entry point for AI Foundry Desk. This reference documents every
-user-facing command and the operational maintenance commands present in version 0.4.0. Run
+user-facing command and the operational maintenance commands present in version 0.5.0. Run
 `afd help` for the compact syntax summary and `afd --version` for the installed version.
 
 ## Command model
@@ -26,7 +26,7 @@ PowerShell session for the intended user, not from an agent sandbox.
 | `afd --version`, `afd -v` | Print the CLI version. |
 | `afd init [--dry-run]` | Confirm that AFD is ready for inspection and print safe next steps. It never applies a layer. |
 | `afd provenance [--json]` | Show the CLI path, product root, Node.js runtime, version, and execution identity. |
-| `afd catalog` | List supported agent targets and their skill/profile capabilities. |
+| `afd catalog` | List supported agent targets and their skill, profile, and user/project MCP capabilities. |
 
 ## Diagnose, install, and repair the workstation
 
@@ -68,6 +68,36 @@ supported declarative surfaces but fails closed for unimplemented layer automati
 | `afd hermes update --apply` | Yes | Apply the guarded Hermes update. |
 
 Valid agent IDs are reported by `afd catalog`. `adopt`/`import` never promote automatically.
+
+## Manage MCP configuration
+
+AFD manages explicitly selected Model Context Protocol server definitions across a canonical user
+registry, a project registry, and verified native agent files. `user` scope is workstation-wide;
+`project` scope belongs to one project; `effective` combines both for inspection or synchronization.
+When a non-user scope omits `--project`, the current directory is used.
+
+| Command | Writes? | Purpose |
+| --- | --- | --- |
+| `afd mcp status [--scope user\|project\|effective] [--project <path>] [--agents <list>] [--json]` | No | Plan synchronization and report blockers or drift. Defaults to effective scope. |
+| `afd mcp verify [--scope user\|project\|effective] [--project <path>] [--agents <list>] [--json]` | No | Verify the same registry/native-file postconditions as status. |
+| `afd mcp discover <agent> --scope user\|project [--project <path>] [--agents <list>] [--json]` | No | Read one verified native agent surface and return redacted definitions and fingerprints. |
+| `afd mcp sync --scope user\|project\|effective [--project <path>] [--agents <list>] [--enable-pi-adapter] --dry-run [--json]` | No | Produce the exact redacted synchronization plan and approval token. |
+| `afd mcp sync --scope user\|project\|effective [--project <path>] [--agents <list>] [--enable-pi-adapter] --confirm <plan-token> [--json]` | Yes | Revalidate and atomically apply the reviewed synchronization plan. |
+| `afd mcp adopt <agent> <server> --from-scope user\|project --to-scope user\|project [--project <path>] [--agents <list>] [--enable-pi-adapter] --dry-run\|--confirm <plan-token> [--json]` | Preview or apply | Adopt one discovered server definition into the destination registry and selected native targets. |
+| `afd mcp enable <server> --scope user\|project [--project <path>] [--agents <list>] [--enable-pi-adapter] --dry-run\|--confirm <plan-token> [--json]` | Preview or apply | Enable one managed server at the selected scope. |
+| `afd mcp disable <server> --scope user\|project [--project <path>] [--agents <list>] [--enable-pi-adapter] --dry-run\|--confirm <plan-token> [--json]` | Preview or apply | Disable one managed server at the selected scope. |
+| `afd mcp move <server> --from user\|project --to user\|project --project <path> [--agents <list>] [--enable-pi-adapter] --dry-run\|--confirm <plan-token> [--json]` | Preview or apply | Atomically move a server definition between user and project scope. |
+
+Mutating MCP commands require exactly one of `--dry-run` or `--confirm <plan-token>`. `--agents`
+accepts unique comma-separated IDs from `afd catalog`. Default all-agent plans fail closed when any
+selected scope lacks a verified adapter; narrow the target list only intentionally. Pi's adapter is
+an extension and requires explicit `--enable-pi-adapter` consent.
+
+Discovery and plans omit rendered configuration values. Secret-like environment and header values
+must remain environment references; OAuth/login state is never read or copied. Concurrent edits
+invalidate approval tokens, unmanaged native entries are preserved, and failed transactions restore
+earlier writes from local snapshots. See [MCP configuration](MCP-CONFIGURATION.md) for the task
+workflow and per-agent support boundaries.
 
 ## Manage Layer 3 recipes
 
