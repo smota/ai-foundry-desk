@@ -18,7 +18,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        include:
+          - os: windows-latest
+            manager: both
+            host_dry_run: true
+          - os: ubuntu-latest
+            manager: both
+            host_dry_run: true
+          - os: macos-latest
+            manager: npm
+            host_dry_run: false
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -54,4 +63,10 @@ jobs:
       - name: Portable project checks
         if: runner.os != 'Windows'
         run: pnpm lint && pnpm typecheck && pnpm build && pnpm docs:check
+      - name: Build portable smoke tarball
+        if: runner.os != 'Windows'
+        run: node -e "require('fs').mkdirSync('release',{recursive:true})" && pnpm pack --pack-destination release
+      - name: Smoke installed package outside the repository
+        shell: pwsh
+        run: node scripts/package-smoke.mjs --tarball release --manager "${{ matrix.manager }}" ${{ matrix.host_dry_run && '--host-dry-run' || '' }}
       - run: node scripts/afd-bootstrap.mjs --help

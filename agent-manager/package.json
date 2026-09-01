@@ -1,6 +1,6 @@
 {
   "name": "@ai-foundry-desk/cli",
-  "version": "0.6.2",
+  "version": "0.6.3-rc.1",
   "private": true,
   "description": "AI Foundry Desk — Multi-Agent Workbench CLI.",
   "type": "module",
@@ -13,7 +13,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "node ../scripts/clean-dist.mjs && tsc -p tsconfig.build.json && node ../scripts/check-dist-parity.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src test",
     "test": "node -e \"require('fs').rmSync('.test-dist',{recursive:true,force:true})\" && tsc -p tsconfig.test.json && node --test .test-dist/test/*.test.js",

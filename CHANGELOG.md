@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.6.3-rc.1 — 2026-09-01
+
+- Made production builds delete prior output and reject emitted modules that do not correspond to
+  current TypeScript sources, preventing stale code from entering a release.
+- Added explicit npm metadata, a runtime-only script allowlist, sensitive-content and artifact-size
+  release gates, and disposable npm/pnpm installation smokes outside the repository.
+- Split release publication into least-privilege jobs that share one audited tarball across GitHub
+  Releases and stage-only npm trusted publishing with maintainer 2FA approval.
+
 ## 0.6.2 — 2026-09-01
 
 - Explore all 74 AFD actions from one interactive terminal workspace with `afd tui`, organized by
