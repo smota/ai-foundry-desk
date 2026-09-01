@@ -1,7 +1,7 @@
 # `afd` command-line reference
 
 `afd` is the single command-line entry point for AI Foundry Desk. This reference documents every
-user-facing command and the operational maintenance commands present in version 0.6.1. Run
+user-facing command and the operational maintenance commands present in version 0.6.2. Run
 `afd help` for the compact syntax summary and `afd --version` for the installed version.
 
 ## Command model

@@ -40,6 +40,17 @@ jobs:
           TEMP: ${{ github.workspace }}\..\afd-ci-temp
           TMP: ${{ github.workspace }}\..\afd-ci-temp
         run: pnpm check
+      - name: Build release candidate
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          TEMP: ${{ github.workspace }}\..\afd-ci-temp
+          TMP: ${{ github.workspace }}\..\afd-ci-temp
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          pnpm release:check -- "v$version"
+          ./scripts/release-audit.ps1
+          pnpm release:build -- --skip-check
       - name: Portable project checks
         if: runner.os != 'Windows'
         run: pnpm lint && pnpm typecheck && pnpm build && pnpm docs:check

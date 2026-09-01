@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## 0.6.2 — 2026-09-01
+
+- Explore all 74 AFD actions from one interactive terminal workspace with `afd tui`, organized by
+  outcome so you can discover the right workflow without memorizing commands.
+- Search capabilities, edit inputs without shell quoting, review structured results, and move between
+  keyboard-accessible responsive layouts. High-contrast, monochrome, ASCII, reduced-motion, and
+  mouse-free modes keep the interface usable across terminals and accessibility needs.
+- Keep control of every change: read-only actions run directly, while writes show their scope and
+  require the same explicit confirmation, drift checks, receipts, and rollback protections as the
+  CLI.
+- Receive checksummed assets from a release path that is now exercised on pull requests before a tag
+  can trigger public publication.
+
 ## 0.6.1 — 2026-09-01
 
 - Explore all 74 AFD actions from one interactive terminal workspace with `afd tui`, organized by
