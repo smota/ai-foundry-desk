@@ -47,10 +47,11 @@ Usage:
   afd recover <agent> <rejected-snapshot> [--dry-run|--confirm]
   afd layer3 recipes|show|plan|apply|verify|rollback <source>
   afd layer3 extract --output <file> [--include <id,id>]
-  afd telemetry plan|apply|verify|status|stop [--json] [--recipe <source>] [--confirm <plan-token>]
+  afd telemetry plan|apply|verify|status|stop|resume [--json] [--recipe <source>] [--confirm <plan-token>]
   afd telemetry explain <run-id> [--json]
   afd telemetry refresh --agentacct
-  afd telemetry trace --workspace <path> --agent <name> --operation <name> [--outcome ok|error|cancelled] [--duration-ms <ms>] [--client-session-id <id>]
+  afd telemetry trace --workspace <path> --agent <name> --operation <name> [--outcome ok|error|cancelled] [--duration-ms <ms>]
+  afd telemetry uninstall-autostart
   afd init [--dry-run]
   afd migrate --dry-run|--apply
   afd backup status | maintain --dry-run|--apply
@@ -180,7 +181,7 @@ async function main(args: readonly string[]): Promise<number> {
       await recordTelemetryRun({ schemaVersion: 2, runId: identity["afd.run.id"], traceId: identity.traceId, rootSpanId, projectId: identity["afd.project.id"], agent, startedAt: new Date(endedAt-duration).toISOString(), endedAt: new Date(endedAt).toISOString(), outcome: outcome as TelemetryOutcome, source: "afd-otel" }, status.retention?.correlationDays ?? 30);
       console.log(`EXPORTED\t${identity["afd.project.id"]}\t${identity["afd.run.id"]}`); return 0;
     }
-    throw new Error("Usage: afd telemetry plan|apply|verify|status|stop|explain|refresh|trace");
+    throw new Error("Usage: afd telemetry plan|apply|verify|status|stop|resume|uninstall-autostart|explain|refresh|trace");
   }
   if(command==="hermes"){if(args[1]!=="update"||args.slice(2).some(arg=>!["--dry-run","--apply"].includes(arg)))throw new Error("Usage: afd hermes update --dry-run|--apply");const dry=args.includes("--dry-run"),apply=args.includes("--apply");if(dry===apply)throw new Error("Use exactly one of --dry-run or --apply.");return runPowerShellArgs("08-update-hermes.ps1",dry?["-WhatIf"]:["-Confirm"]);}
   if (["status", "review", "verify"].includes(command)) { if (args.length !== 1) throw new Error(`Usage: afd ${command}`); const result = await inspect({ dryRun: true }); print(result.changes); if(command==="review") for(const item of await listPending(result.root)) console.log(`PENDING\t${item.agent}\t${item.id}\t${item.path}`); const pending = result.changes.some((change) => ["drift", "create", "update"].includes(change.kind)); if(command==="verify"){if(process.platform==="win32")for(const script of ["01-verify-layer1.ps1","07-verify-layer2-agent-clis.ps1","07-verify-layer2-toolbox.ps1","10-verify-backups.ps1"]){const code=await runPowerShell(script);if(code!==0)return code;}else if(process.platform==="linux")for(const script of ["01-verify-layer1-linux.sh","07-verify-layer2-linux.sh"]){const code=await runPosix(script,[]);if(code!==0)return code;}} return command === "verify" && pending ? 2 : 0; }
