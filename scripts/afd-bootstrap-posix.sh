@@ -23,10 +23,7 @@ done
 OS="$(uname -s)"
 case "$OS" in
   Linux) PLATFORM="linux" ;;
-  Darwin)
-    echo "macOS bootstrap is experimental and has not been validated on real macOS hardware." >&2
-    echo "Install Node.js 24+ and pnpm, then use the local development path until validation exists." >&2
-    exit 3 ;;
+  Darwin) PLATFORM="macos" ;;
   *) echo "Unsupported operating system: $OS" >&2; exit 3 ;;
 esac
 
@@ -43,7 +40,14 @@ command -v node >/dev/null 2>&1 || { echo "Node.js 24+ is required." >&2; exit 4
 NODE_MAJOR="$(node --version | sed 's/^v//' | cut -d. -f1)"
 [ "$NODE_MAJOR" -ge 24 ] || { echo "Node.js 24+ is required; found $(node --version)." >&2; exit 4; }
 command -v pnpm >/dev/null 2>&1 || { echo "pnpm is required." >&2; exit 4; }
-command -v sha256sum >/dev/null 2>&1 || { echo "sha256sum is required." >&2; exit 4; }
+if command -v sha256sum >/dev/null 2>&1; then
+  CHECKSUM_COMMAND="sha256sum"
+elif command -v shasum >/dev/null 2>&1; then
+  CHECKSUM_COMMAND="shasum"
+else
+  echo "sha256sum or shasum is required." >&2
+  exit 4
+fi
 
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/afd-bootstrap.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT HUP INT TERM
@@ -56,7 +60,11 @@ else
   curl --fail --location --proto '=https' --tlsv1.2 --output "$TMP/$PACKAGE" "$BASE/$PACKAGE"
   curl --fail --location --proto '=https' --tlsv1.2 --output "$TMP/$CHECKSUM" "$BASE/$CHECKSUM"
 fi
-(cd "$TMP" && sha256sum --check "$CHECKSUM")
+if [ "$CHECKSUM_COMMAND" = sha256sum ]; then
+  (cd "$TMP" && sha256sum --check "$CHECKSUM")
+else
+  (cd "$TMP" && shasum -a 256 --check "$CHECKSUM")
+fi
 mkdir -p "$PREFIX/bin" "$PREFIX/share/pnpm/global"
 PATH="$PREFIX/bin:$PATH"
 export PATH

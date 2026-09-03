@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Install or verify Docker Desktop as a default Windows and macOS Layer 1 host capability through
+  explicit, elevation-aware adapters without automatic startup, terms acceptance, backend changes,
+  privileged preconfiguration, or group edits.
+- Install the integrity-pinned `@lavamoat/allow-scripts` CLI on Windows and Linux with lifecycle
+  hooks disabled, while keeping pnpm/LavaMoat dependency-script approval policy project-owned.
+- Group the Layer 1 inventory into runtime, package workflow, supply-chain security, host capability,
+  and diagnostic categories without introducing additional sequential layers.
+- Add checksum-pinned Apple Silicon and Intel macOS Layer 1 runtime, Docker, doctor, verifier, and
+  POSIX bootstrap adapters; the implementation remains unvalidated until exercised on real hardware.
+
 ## 0.6.4 — 2026-09-01
 
 - Unified the stable release identity across the CLI, package manifests, bootstrap defaults,

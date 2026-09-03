@@ -52,7 +52,9 @@
 
 ## Platform expansion — contributions welcome
 
-- Implement, test, document, and validate macOS adapters while preserving the shared core.
+- Validate the implemented macOS Layer 1 adapters on Apple Silicon and Intel hardware, then add a
+  representative CI matrix before making a validated compatibility claim.
+- Implement macOS Layer 2 adapters while preserving the shared core and fail-closed boundaries.
 - Validate the Linux adapters on native Ubuntu hardware/VMs in addition to the WSL2 fixture.
 - Define WSL behavior separately from native Windows and Linux after its boundaries are tested.
 - Add platform and architecture CI matrices only when representative environments are available.

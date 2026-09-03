@@ -37,8 +37,8 @@ accessibility modes, safety workflow, and production-rendered screenshots.
 | Command | Writes? | Purpose |
 | --- | --- | --- |
 | `afd doctor [--json]` | No | Diagnose the foundation and sandbox-access postconditions. JSON output is intended for automation. |
-| `afd layer1 --dry-run` | No | Plan the runtime, package-manager, PATH, shim, and host-tool foundation. |
-| `afd layer1 --apply` | Yes | Apply the reviewed Layer 1 plan through the platform adapter. |
+| `afd layer1 --dry-run` | No | Plan runtimes, package workflow and security tools, PATH, shims, and Docker host capability, including any elevation boundary. |
+| `afd layer1 --apply` | Yes | Apply the reviewed Layer 1 plan; Docker installation may request platform elevation but is never started automatically. |
 | `afd layer2 --dry-run` | No | Plan supported agent CLIs/apps and the common toolbox. |
 | `afd layer2 --apply` | Yes | Apply the reviewed Layer 2 plan. |
 | `afd layer2 --apply --allow-claude-postinstall` | Yes | Linux only: explicitly allow Claude's upstream postinstall during Layer 2 apply. |
@@ -48,8 +48,8 @@ accessibility modes, safety workflow, and production-rendered screenshots.
 | `afd fix sandbox --apply` | Yes | Apply and verify the reviewed sandbox-access repair. |
 | `afd verify` | No | Inspect catalog drift and run the platform verification scripts. |
 
-`layer1`, `layer2`, and `fix` require exactly one of `--dry-run` or `--apply`. macOS currently plans
-supported declarative surfaces but fails closed for unimplemented layer automation.
+`layer1`, `layer2`, and `fix` require exactly one of `--dry-run` or `--apply`. macOS implements Layer
+1 and its verifier through native adapters; macOS Layer 2 remains unavailable and fails closed.
 
 ## Manage shared skills and profiles
 

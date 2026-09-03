@@ -37,7 +37,7 @@ manager. Your logins, tokens, projects, conversations, and agent-native data rem
 
 | I want to… | Start here | Time |
 | --- | --- | --- |
-| Set up my workstation | [Windows quick start](#quick-start-on-windows) or [Linux/WSL bootstrap](#linuxwsl-bootstrap) | About 10 minutes plus downloads |
+| Set up my workstation | [Windows quick start](#quick-start-on-windows) or [Linux/macOS bootstrap](#linuxmacos-bootstrap) | About 10 minutes plus downloads |
 | Check or repair an existing setup | [`afd doctor`](#your-everyday-workflow), then preview the suggested fix | 2–5 minutes |
 | Keep skills and profiles consistent across agents | [Skills and profiles](docs/LAYER-2-SYNC.md) | 10 minutes |
 | Keep MCP servers consistent across agents and scopes | [MCP configuration](docs/MCP-CONFIGURATION.md) | 10 minutes |
@@ -70,7 +70,7 @@ manager. Your logins, tokens, projects, conversations, and agent-native data rem
 ```mermaid
 flowchart TB
     A["afd — one daily command"]
-    L1["Layer 1 — Foundation<br/>runtimes · PATH · package managers"]
+    L1["Layer 1 — Foundation<br/>runtimes · package security · host tools"]
     L2["Layer 2 — Agent Setup<br/>apps · agent CLIs"]
     L3["Layer 3 — Recipes<br/>reviewed skills · tools · capabilities"]
     T["Common Agent Toolbox<br/>rg · fd · jq · yq · bat · delta"]
@@ -90,7 +90,7 @@ work.
 
 | Module | Objective | What it gives you |
 | --- | --- | --- |
-| **Layer 1 — Foundation** | Build a stable base | mise-managed Python, Node.js, Go and Rust; uv, pnpm, PATH, guardrails, doctor and controlled repair |
+| **Layer 1 — Foundation** | Build a stable base | mise-managed Python, Node.js, Go and Rust; uv, pnpm, LavaMoat allow-scripts, Docker, PATH, guardrails, doctor and controlled repair |
 | **Layer 2 — Agent Setup** | Make agents available consistently | Idempotent detection and installation of supported desktop apps and CLIs without handling login credentials |
 | **Common Agent Toolbox** | Give every agent dependable utilities | Fast search, file discovery, structured-data processing, readable source output and clear diffs |
 | **Agent Manager** | Keep shared guidance manageable | A canonical skill catalog, small profiles, one-way sync, drift detection, review and safe import/adopt |
@@ -224,22 +224,24 @@ project or operating system requires them, and tool availability never authorize
 
 ## Platform support
 
-- **Windows x64:** complete validated workstation experience, including both Layers, doctor/fix,
-  Agent Manager, toolbox, backups, and verification.
+- **Windows x64:** complete validated workstation experience, including native Layers 1–3,
+  Docker Desktop host capability, doctor/fix, Agent Manager, toolbox, backups, and verification.
 - **Ubuntu 26.04.1 LTS on WSL2 x86_64:** native Layer 1 runtime and Docker adapters, native Layer 2
   CLI/toolbox adapters, portable Layer 3 recipes, doctor/fix, and verification are implemented.
-- **macOS:** experimental detection only; no validated support claim.
+- **macOS 14+ on Apple Silicon or Intel:** native Layer 1 runtime, LavaMoat, Docker Desktop,
+  doctor/fix, verification, and POSIX bootstrap adapters are implemented but await real-hardware
+  validation. Layer 2 automation remains unavailable and fails closed.
 
 See [Platform support](docs/PLATFORM-SUPPORT.md) for the exact test boundary. Contributions for
-native Linux and macOS adapters are welcome when they preserve one portable core and document real
-validation evidence.
+native platform adapters are welcome when they preserve one portable core and document real validation
+evidence.
 
-### Linux/WSL bootstrap
+### Linux/macOS bootstrap
 
-`scripts/afd-bootstrap-posix.sh` is a separate POSIX adapter with `--dry-run`, SHA-256 verification,
-and an isolated `--prefix`. The bootstrap installs only `afd` and never applies Layers. On Linux,
-run `afd layer1 --dry-run`, review the native runtime and Docker plan, then use `--apply`. Layer 2
-follows the same preview/apply contract. macOS detection remains experimental and fail-closed.
+`scripts/afd-bootstrap-posix.sh` is a separate Linux/macOS adapter with `--dry-run`, SHA-256
+verification, and an isolated `--prefix`. The bootstrap installs only `afd` and never applies Layers.
+On Linux or macOS, run `afd layer1 --dry-run`, review the native runtime and Docker plan, then use
+`--apply`. Linux Layer 2 follows the same preview/apply contract; macOS Layer 2 fails closed.
 
 ```sh
 afd layer1 --dry-run
@@ -257,9 +259,20 @@ Validated Linux/WSL bootstrap (downloads, verifies, then executes as separate st
 v=0.6.4; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
 ```
 
-Docker is a Layer 1 host capability, not an AFD runtime. Layers 1–3 run directly on the host. Higher
-layers may use Docker only when explicitly requested or required by a documented dependency. AFD
-does not automatically add users to the root-equivalent `docker` group.
+The same downloaded bootstrap uses macOS-native `shasum -a 256 --check`; that path remains pending
+real-hardware validation.
+
+Docker is a Layer 1 host capability, not an AFD runtime. Layer 1 installs or verifies Docker Desktop
+on Windows and macOS, and Docker Engine on Ubuntu; Layers 1–3 still run directly on the host. Windows
+WinGet or the checksum-verified macOS installer may request elevation. AFD does not start Docker
+Desktop, accept its in-app terms, preconfigure privileged macOS settings, change its backend, or add
+users to `docker-users` or the root-equivalent Linux `docker` group.
+
+Layer 1 also installs the scoped `@lavamoat/allow-scripts` CLI with a pinned version and registry
+integrity check. Policy remains project-owned: pnpm projects should use native `allowBuilds` and
+`pnpm approve-builds`; npm/Yarn or mixed-tool projects can use `allow-scripts setup`, review the
+generated policy, then use `allow-scripts run` and `allow-scripts check`. AFD does not silently set a
+machine-wide `ignore-scripts` policy or approve dependency lifecycle scripts.
 
 ## Safety by design
 

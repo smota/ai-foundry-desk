@@ -34,6 +34,7 @@
     "scripts/01-*.ps1",
     "scripts/01-*.sh",
     "scripts/02-*.sh",
+    "scripts/02-*.ps1",
     "scripts/07-*.ps1",
     "scripts/07-*.sh",
     "scripts/08-update-hermes.ps1",

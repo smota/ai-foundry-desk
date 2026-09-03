@@ -70,14 +70,16 @@ The main source areas are:
 ### Platform adapters and scripts
 
 Windows-specific installation, PATH, ACL, and workstation behavior lives in allowlisted PowerShell
-scripts under `scripts/`. Linux uses explicit POSIX adapters. The CLI invokes only known scripts and
-passes structured, bounded arguments; it is not a general remote-script runner.
+scripts under `scripts/`. Linux and macOS use explicit POSIX adapters. The CLI invokes only known
+scripts and passes structured, bounded arguments; it is not a general remote-script runner.
 
-- Layer 1 owns the mise-managed language runtimes, uv, pnpm, declared PATH entries, shims, and
-  optional host tools such as Docker.
+- Layer 1 owns the mise-managed language runtimes, uv, pnpm, the integrity-pinned LavaMoat
+  allow-scripts CLI, declared PATH entries, shims, and native Docker host capability. Project policy
+  remains project-owned and Docker never becomes the execution wrapper for Layers 1–3.
 - Layer 2 owns supported agent installers and the common toolbox (`rg`, `fd`, `jq`, `yq`, `bat`, and
   `delta`). It does not own agent authentication or general third-party updates.
-- macOS discovery is experimental and unimplemented mutations fail closed.
+- macOS Layer 1 uses architecture-specific checksummed runtime and Docker artifacts; Layer 2 remains
+  unimplemented and fails closed. Real-hardware validation is required before a validated claim.
 
 See [Platform support](PLATFORM-SUPPORT.md) for the validated environment boundary and
 [Environment ownership](ENVIRONMENT-OWNERSHIP.md) for the exact ownership model.

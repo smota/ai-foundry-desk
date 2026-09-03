@@ -28,7 +28,7 @@ The builder creates an allowlisted npm tarball, an explicitly Windows-specific P
 a separate POSIX bootstrap, SHA-256 files, and release notes. Each bootstrap downloads only the
 versioned tarball and checksum from the same GitHub Release, verifies SHA-256, installs the CLI, and
 never applies Layer 1/2. Publish POSIX assets as stable only after the documented platform fixture
-passes; macOS remains experimental until validated on real hardware.
+passes; macOS Layer 1 remains an unvalidated implementation until exercised on real hardware.
 
 Pushing the stable version tag triggers `.github/workflows/release.yml`. GitHub Actions verifies the
 tag against both package manifests, bootstrap defaults, and README installation examples; audits the

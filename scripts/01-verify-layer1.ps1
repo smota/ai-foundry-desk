@@ -26,7 +26,7 @@ function Get-FirstLine {
     try { return [string](& $Command 2>&1 | Select-Object -First 1) } catch { return $_.Exception.Message }
 }
 
-$commands = @("mise", "uv", "pnpm", "python", "node", "go", "rustc", "cargo")
+$commands = @("mise", "uv", "pnpm", "python", "node", "go", "rustc", "cargo", "allow-scripts", "docker")
 foreach ($command in $commands) {
     $found = Get-Command $command -CommandType Application,ExternalScript -ErrorAction SilentlyContinue |
         Select-Object -First 1
@@ -44,6 +44,16 @@ Add-Check "Python" ($versions.Python -match '^Python 3\.14\.') $versions.Python 
 Add-Check "Node.js" ($versions.Node -match '^v24\.') $versions.Node "24.x LTS"
 Add-Check "Go" ($versions.Go -match 'go1\.26\.') $versions.Go "1.26.x"
 Add-Check "Rust" ($versions.Rust -match '^rustc 1\.98\.0\b') $versions.Rust "1.98.0"
+$allowScriptsVersion = Get-FirstLine { allow-scripts --version }
+$dockerVersion = Get-FirstLine { docker --version 2>$null }
+$composeVersion = Get-FirstLine { docker compose version 2>$null }
+Add-Check "LavaMoat allow-scripts" ($allowScriptsVersion -match '^v?5\.1\.0$') $allowScriptsVersion "5.1.0"
+Add-Check "Docker CLI" ($dockerVersion -match '^Docker version ') $dockerVersion "installed"
+Add-Check "Docker Compose" ($composeVersion -match '^Docker Compose version ') $composeVersion "installed"
+$dockerDaemon = [string](& docker info --format '{{.ServerVersion}}' 2>$null | Select-Object -First 1)
+if ($LASTEXITCODE -ne 0 -or -not $dockerDaemon) {
+    Write-Warning "Docker Desktop is installed but its daemon is unavailable. Start it interactively when needed."
+}
 
 $autoInstall = Get-FirstLine { mise settings get not_found_auto_install }
 Add-Check "mise not_found_auto_install" ($autoInstall -eq "false") $autoInstall "false"

@@ -20,6 +20,7 @@ check python '^Python 3\.14\.' python --version
 check node '^v24\.' node --version
 check go '^go version go1\.26\.' go version
 check rust '^rustc 1\.98\.0' rustc --version
+check allow-scripts '^v?5\.1\.0$' allow-scripts --version
 [ "$(mise settings get not_found_auto_install 2>/dev/null || true)" = false ] || { echo 'FAIL mise auto-install guard'; failed=$((failed+1)); }
 [ "${UV_NO_MANAGED_PYTHON:-}" = 1 ] || { echo 'FAIL UV_NO_MANAGED_PYTHON'; failed=$((failed+1)); }
 [ "${UV_PYTHON_DOWNLOADS:-}" = 0 ] || { echo 'FAIL UV_PYTHON_DOWNLOADS'; failed=$((failed+1)); }
