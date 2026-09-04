@@ -11,6 +11,11 @@
   and diagnostic categories without introducing additional sequential layers.
 - Add checksum-pinned Apple Silicon and Intel macOS Layer 1 runtime, Docker, doctor, verifier, and
   POSIX bootstrap adapters; the implementation remains unvalidated until exercised on real hardware.
+- Add recipe schema v3 and `herdr-workbench` for exact Herdr 0.8.2 installation through the existing
+  Layer 1 Mise authority on Windows, Linux/WSL2, and implemented-but-unvalidated macOS, with
+  immutable manifest-hashed plugin declarations and managed-only rollback.
+- Keep Herdr independent from Hermes MCP, and make the current Hermes user-global MCP limitation an
+  explicit project-scope capability gate until a released native contract passes non-leak validation.
 
 ## 0.6.4 — 2026-09-01
 

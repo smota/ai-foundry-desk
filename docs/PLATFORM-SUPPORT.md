@@ -16,6 +16,9 @@ mise and uv in user scope, pins Python/Node/Go/Rust/pnpm and `@lavamoat/allow-sc
 tests hardlinks, and installs Docker Engine from Docker's signed Ubuntu repository through a separate
 privileged step. Layer 2 installs the common toolbox through mise's GitHub backend and integrity-pinned
 Node agent CLIs. Layer 3 uses the same portable recipe engine and resolves state under Linux `$HOME`.
+The `herdr-workbench` recipe invokes the mise installed inside WSL2, never a Windows mise binary or
+Windows Herdr installation. Native Linux shares this adapter but keeps an independent validation
+claim and state root.
 
 Docker is an independent Layer 1 host tool. Layers 1–3 are never run in containers. AFD does not add
 the user to the `docker` group; daemon access remains privileged until separately reviewed. Native
@@ -38,3 +41,7 @@ settings interactively.
 Doctor/fix and Layer 1 verification are wired. Layer 2 automation is not implemented on macOS and
 fails closed. These are implementation claims backed by static checks, shared unit tests, release
 auditing, and package smoke tests—not a real-hardware compatibility claim.
+
+Recipe v3 and `herdr-workbench` include macOS as an explicit target. The adapter uses macOS's own
+Layer 1 mise state and enforces plugin platform declarations. This is an implementation boundary,
+not evidence that Herdr or any declared plugin has passed real-hardware acceptance on macOS.

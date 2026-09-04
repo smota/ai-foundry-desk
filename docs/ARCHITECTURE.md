@@ -97,6 +97,11 @@ token. Apply revalidates the token, records only the state it manages, and verif
 Rollback restores or removes only recorded managed state. HTTPS loading rejects redirects and
 arbitrary executable adapters.
 
+Recipe v3 can consume the existing Layer 1 mise authority through an allowlisted exact-tool adapter
+and can manage Herdr plugins from immutable, manifest-hashed GitHub sources. Platform
+selection is declarative: Windows, Linux/WSL2, and macOS share the portable core while retaining
+separate native state and validation evidence.
+
 ### MCP configuration
 
 MCP configuration is separate from skill/profile synchronization. AFD maintains canonical user and

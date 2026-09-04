@@ -105,7 +105,8 @@ workflow and per-agent support boundaries.
 
 ## Manage Layer 3 recipes
 
-A recipe source can be a built-in identifier such as `builtin:smota-foundations`, a local JSON file,
+A recipe source can be a built-in identifier such as `builtin:smota-foundations` or
+`builtin:herdr-workbench`, a local JSON file,
 a local directory containing a recipe, or a direct HTTPS URL accepted by the recipe loader.
 
 | Command | Writes? | Purpose |
@@ -122,6 +123,8 @@ a local directory containing a recipe, or a direct HTTPS URL accepted by the rec
 
 Use `afd layer3 show <source>` before planning an unfamiliar local or remote recipe. HTTPS recipes
 are data, not script delivery: redirects and arbitrary executable adapters are rejected.
+Recipe v3 may install an exact tool through the Layer 1 mise authority and install immutable Herdr
+plugins after their manifest hashes and platform declarations are included in the approval token.
 
 ## Operate observability
 

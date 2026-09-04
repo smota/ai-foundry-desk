@@ -38,9 +38,9 @@ test("moving between scopes updates canonical and native ownership in one plan",
   const userCodex = await readFile(nativeMcpPath("codex", "user", options), "utf8"); const projectCodex = await readFile(nativeMcpPath("codex", "project", options), "utf8"); assert.doesNotMatch(userCodex, /mcp_servers\.demo/); assert.match(projectCodex, /mcp_servers\.demo/);
 });
 
-test("all-target project plans fail closed on Pi dependency and unsupported Hermes project scope before writes", async () => {
+test("all-target project plans fail closed on Pi dependency and Hermes global-only MCP before writes", async () => {
   const options = await fixture(); const allOptions: McpManagerOptions = { home: options.home!, afdRoot: options.afdRoot!, backupRoot: options.backupRoot!, project: options.project! }; await registry("user", allOptions, { schemaVersion: 1, servers: {} }); await registry("project", allOptions, { schemaVersion: 1, servers: {} });
-  const plan = await planMcpSync("project", allOptions); assert.equal(plan.blocked, true); assert.ok(!plan.blockers.some((item) => item.includes("antigravity"))); assert.ok(plan.blockers.some((item) => item.includes("pi") && item.includes("--enable-pi-adapter"))); assert.ok(plan.blockers.some((item) => item.includes("hermes") && item.includes("unsupported")));
+  const plan = await planMcpSync("project", allOptions); assert.equal(plan.blocked, true); assert.ok(!plan.blockers.some((item) => item.includes("antigravity"))); assert.ok(plan.blockers.some((item) => item.includes("pi") && item.includes("--enable-pi-adapter"))); assert.ok(plan.blockers.some((item) => item.includes("hermes") && item.includes("unsupported") && item.includes("non-leak isolation"))); assert.ok(!plan.actions.some((item) => item.agent === "hermes" && item.scope === "project"));
   await assert.rejects(applyMcpPlan(plan, plan.approvalToken, allOptions), /blocked/);
 });
 

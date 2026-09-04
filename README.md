@@ -96,7 +96,7 @@ work.
 | **Agent Manager** | Keep shared guidance manageable | A canonical skill catalog, small profiles, one-way sync, drift detection, review and safe import/adopt |
 | **Project Harnesses** | Keep repository agents consistent | One canonical policy, minimal adapters, external staging, disposable cross-agent smoke tests, confirmed apply and exact rollback |
 | **MCP configuration** | Keep tool-server setup consistent | Scoped registries, redacted discovery, hash-bound preview/apply, native enable/disable and atomic moves |
-| **Layer 3 — Recipes** | Provision reviewed bundles | Uniform internal/local/HTTPS loading, mandatory plan, confirmed apply, verification and managed-only rollback |
+| **Layer 3 — Recipes** | Provision reviewed bundles | Uniform internal/local/HTTPS loading, exact npm or mise-managed tools, immutable Herdr plugins, mandatory plan, confirmed apply, verification and managed-only rollback |
 | **Observability** | Explain agent execution locally | Recipe-managed OTLP Collector, Phoenix traces, agentacct session intelligence, bounded correlation and explicit per-agent coverage |
 | **Recovery** | Keep managed changes reversible | Local backups with bounded retention before AFD changes an existing managed file |
 

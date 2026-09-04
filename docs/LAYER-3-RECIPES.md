@@ -7,6 +7,9 @@ adapter, or unsupported agent blocks application without writing.
 
 Recipe schema version 2 adds a typed capability section rather than disguising long-running
 components as tools. Version 1 remains valid for skill/tool-only recipes.
+Recipe schema version 3 adds exact mise-managed tools, immutable Herdr plugin sources,
+and explicit Windows, Linux, and macOS applicability. It uses the Layer 1 mise installation; it
+does not install, repair, or replace mise itself.
 For a recipe containing Observability, its expanded plan and content-derived confirmation token are
 the complete activation decision for Collector, Phoenix, agentacct, declared native integrations,
 policies, and lifecycle. Apply must not request a second component-specific confirmation.
@@ -33,6 +36,8 @@ afd layer3 builtin:smota-foundations
 afd layer3 apply builtin:smota-foundations --confirm <plan-token>
 afd layer3 verify builtin:smota-foundations
 afd layer3 rollback builtin:smota-foundations --confirm
+afd layer3 show builtin:herdr-workbench
+afd layer3 plan builtin:herdr-workbench
 afd layer3 extract --output recipe.json
 afd layer3 extract --output recipe.json --include skill-a,vibium
 ```
@@ -60,3 +65,17 @@ validates each command, and restores the prior version (or removes only a newly 
 rollback. Antigravity CLI uses its documented global `~/.gemini/antigravity-cli/skills/` adapter.
 Vibium's optional first browser download remains a later explicit runtime action; recipe application
 does not launch a browser.
+
+## herdr-workbench
+
+`builtin:herdr-workbench` pins Herdr 0.8.2 as `github:herdrdev/herdr` through the AFD-owned global mise configuration.
+It does not configure Hermes or MCP. The same recipe applies on Windows, Linux/WSL2, and macOS, but
+each environment has its own mise installation, state, verification, and rollback record. Windows
+x64 and Ubuntu WSL2 are live-validation targets; macOS remains implemented and fixture-tested with
+real-hardware validation pending.
+
+Recipe v3 Herdr plugins use `owner/repo[/subdir]`, an immutable 40-character commit, the reviewed
+`herdr-plugin.toml` SHA-256, an explicit enabled state, and an optional platform allowlist. Planning
+retrieves the manifest from that exact commit and blocks on a mismatch. Apply refuses to replace a
+divergent installed plugin. The built-in recipe intentionally contains no plugins until their exact
+sources and setup contracts are reviewed; no placeholder source is executable.

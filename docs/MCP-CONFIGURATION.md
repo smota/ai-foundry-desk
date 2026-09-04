@@ -29,6 +29,12 @@ verified user adapter but no stable project adapter. Pi core has no native MCP s
 the pinned `pi-mcp-adapter` only after explicit `--enable-pi-adapter` consent. Capabilities vary, so a
 default all-agent plan blocks when any selected target cannot represent the requested scope.
 
+Hermes 0.20.5 was rechecked on 2026-09-04: its released CLI still manages the user-global
+`~/.hermes/config.yaml`. Upstream project-local and scoped-server designs remain open. AFD therefore
+does not emulate project scope by rewriting that global file or by launching a wrapper; either could
+leak tools across concurrent sessions. This is an explicit upstream capability gate, not a missing
+AFD write path.
+
 Use `--agents` to choose a deliberate comma-separated subset:
 
 ```powershell
