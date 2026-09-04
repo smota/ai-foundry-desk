@@ -104,7 +104,7 @@ export const mcpCapabilities: Readonly<Record<AgentId, McpAdapterCapability>> = 
   codex: { user: "native", project: "native", transports: ["stdio", "http"], canPersistDisabled: true, activation: "restart" },
   antigravity: { user: "native", project: "native", transports: ["stdio", "http"], canPersistDisabled: true, activation: "restart", detail: "Official Antigravity mcp_config.json contract; fixture-tested because agy is not installed on this host." },
   pi: { user: "extension", project: "extension", transports: ["stdio", "http"], canPersistDisabled: true, activation: "restart", detail: "Requires explicit declaration of pinned pi-mcp-adapter 2.31.0; Pi core has no MCP client." },
-  hermes: { user: "native", project: "unsupported", transports: ["stdio", "http"], canPersistDisabled: true, activation: "live", detail: "Hermes has no stable project-scoped MCP registry." },
+  hermes: { user: "native", project: "unsupported", transports: ["stdio", "http"], canPersistDisabled: true, activation: "live", detail: "Hermes currently loads MCP servers from its user-global config; no released native project-local registry can enforce non-leak isolation." },
   grok: { user: "native", project: "native", transports: ["stdio", "http"], canPersistDisabled: true, activation: "restart" },
 };
 

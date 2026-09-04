@@ -2,7 +2,7 @@
 
 Status: core implemented; verified adapters and open capability blockers documented
 Scope: AFD Agent Manager, user and project MCP configuration
-Last reviewed: 2026-08-31
+Last reviewed: 2026-09-04
 
 ## Outcome
 
@@ -222,6 +222,15 @@ lacks genuine project scoping. A future overlay is acceptable only if launching 
 deterministically selects the project configuration; a special one-off wrapper that leaves the
 server globally active does not satisfy project scope.
 
+Hermes upstream issue `NousResearch/hermes-agent#51626` proposes a `scopes` allowlist on each
+`mcp_servers` entry, while epic `#48970` proposes a trusted project-local `.hermes/config.yaml`.
+Both remained open when Hermes 0.20.5 and upstream `main` were rechecked on 2026-09-04. AFD therefore
+retains `project: unsupported`. Herdr is a separate Layer 3 capability and must not be treated as
+evidence of MCP project isolation. AFD will not rewrite the global YAML per launch: concurrent
+sessions could observe the wrong tool surface. When a released Hermes version implements one stable
+contract, AFD can add a version-gated adapter and prove inside/outside visibility in direct Hermes
+sessions before changing the capability matrix.
+
 ## Native rendering rules
 
 Adapters should prefer structured, entry-level edits over whole-file replacement:
@@ -317,7 +326,8 @@ fixture, with native-host validation where the agent exists:
 4. Implement and native-test Claude, Codex, and Grok adapters.
 5. Keep the implemented Antigravity adapter aligned with its official dedicated JSON contract and
    keep the explicitly pinned Pi adapter contract covered by fixtures and dependency review.
-6. Establish a genuine Hermes project-scope contract or keep all-target project operations blocked.
+6. Keep Hermes all-target project operations blocked until a released native project-scope contract
+   passes inside/outside and concurrent-session non-leak acceptance.
 7. Add enable/disable and move transactions, then the acceptance matrix and documentation.
 
 No implementation slice may silently narrow `all agents` to the agents that were easiest to adapt.
@@ -329,6 +339,8 @@ No implementation slice may silently narrow `all agents` to the agents that were
 - [Google Antigravity MCP configuration](https://www.antigravity.google/docs/cli/mcp/)
 - [Pi package configuration](https://pi.dev/docs/latest/packages)
 - [`pi-mcp-adapter` configuration](https://github.com/nicobailon/pi-mcp-adapter#config)
+- [Hermes project-scoped MCP proposal](https://github.com/NousResearch/hermes-agent/issues/51626)
+- [Hermes project-local configuration epic](https://github.com/NousResearch/hermes-agent/issues/48970)
 
 Installed CLI help and package source were also inspected for the current Pi, Hermes, and Grok
 clients without reading credential values. Those observations must be revalidated during

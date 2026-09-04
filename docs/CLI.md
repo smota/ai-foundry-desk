@@ -1,7 +1,7 @@
 # `afd` command-line reference
 
 `afd` is the single command-line entry point for AI Foundry Desk. This reference documents every
-user-facing command and the operational maintenance commands present in version 0.6.3-rc.1. Run
+user-facing command and the operational maintenance commands present in version 0.6.4. Run
 `afd help` for the compact syntax summary and `afd --version` for the installed version.
 
 ## Command model
@@ -37,8 +37,8 @@ accessibility modes, safety workflow, and production-rendered screenshots.
 | Command | Writes? | Purpose |
 | --- | --- | --- |
 | `afd doctor [--json]` | No | Diagnose the foundation and sandbox-access postconditions. JSON output is intended for automation. |
-| `afd layer1 --dry-run` | No | Plan the runtime, package-manager, PATH, shim, and host-tool foundation. |
-| `afd layer1 --apply` | Yes | Apply the reviewed Layer 1 plan through the platform adapter. |
+| `afd layer1 --dry-run` | No | Plan runtimes, package workflow and security tools, PATH, shims, and Docker host capability, including any elevation boundary. |
+| `afd layer1 --apply` | Yes | Apply the reviewed Layer 1 plan; Docker installation may request platform elevation but is never started automatically. |
 | `afd layer2 --dry-run` | No | Plan supported agent CLIs/apps and the common toolbox. |
 | `afd layer2 --apply` | Yes | Apply the reviewed Layer 2 plan. |
 | `afd layer2 --apply --allow-claude-postinstall` | Yes | Linux only: explicitly allow Claude's upstream postinstall during Layer 2 apply. |
@@ -48,8 +48,8 @@ accessibility modes, safety workflow, and production-rendered screenshots.
 | `afd fix sandbox --apply` | Yes | Apply and verify the reviewed sandbox-access repair. |
 | `afd verify` | No | Inspect catalog drift and run the platform verification scripts. |
 
-`layer1`, `layer2`, and `fix` require exactly one of `--dry-run` or `--apply`. macOS currently plans
-supported declarative surfaces but fails closed for unimplemented layer automation.
+`layer1`, `layer2`, and `fix` require exactly one of `--dry-run` or `--apply`. macOS implements Layer
+1 and its verifier through native adapters; macOS Layer 2 remains unavailable and fails closed.
 
 ## Manage shared skills and profiles
 
@@ -105,7 +105,8 @@ workflow and per-agent support boundaries.
 
 ## Manage Layer 3 recipes
 
-A recipe source can be a built-in identifier such as `builtin:smota-foundations`, a local JSON file,
+A recipe source can be a built-in identifier such as `builtin:smota-foundations` or
+`builtin:herdr-workbench`, a local JSON file,
 a local directory containing a recipe, or a direct HTTPS URL accepted by the recipe loader.
 
 | Command | Writes? | Purpose |
@@ -122,6 +123,8 @@ a local directory containing a recipe, or a direct HTTPS URL accepted by the rec
 
 Use `afd layer3 show <source>` before planning an unfamiliar local or remote recipe. HTTPS recipes
 are data, not script delivery: redirects and arbitrary executable adapters are rejected.
+Recipe v3 may install an exact tool through the Layer 1 mise authority and install immutable Herdr
+plugins after their manifest hashes and platform declarations are included in the approval token.
 
 ## Operate observability
 

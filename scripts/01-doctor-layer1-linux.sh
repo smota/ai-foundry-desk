@@ -15,7 +15,9 @@ cd "$HOME"
 results=""; failures=0
 add() { severity="$1" code="$2" summary="$3" evidence="$4" suggestion="$5"; [ "$severity" != FAIL ] || failures=$((failures+1)); item="{\"category\":\"foundation\",\"severity\":\"$severity\",\"code\":\"$code\",\"summary\":\"$summary\",\"evidence\":\"$evidence\",\"suggestion\":\"$suggestion\"}"; results="${results}${results:+,}$item"; [ "$JSON" -eq 1 ] || printf '%s %s - %s\n     Evidence: %s\n     Next: %s\n' "$severity" "$code" "$summary" "$evidence" "$suggestion"; }
 if [ "$(uname -s)" = Linux ] && [ "$(uname -m)" = x86_64 ]; then add PASS platform.linux-x64 'Validated platform' "$(uname -srmo)" 'No action'; else add FAIL platform.linux-x64 'Unsupported platform' "$(uname -srmo)" 'Use Linux x86_64'; fi
-for command in mise uv pnpm python node go rustc cargo docker; do if command -v "$command" >/dev/null 2>&1; then add PASS "command.$command" "$command available" "$(command -v "$command")" 'No action'; else add FAIL "command.$command" "$command missing" missing "Run afd fix layer1 --dry-run"; fi; done
+for command in mise uv pnpm python node go rustc cargo allow-scripts docker; do if command -v "$command" >/dev/null 2>&1; then add PASS "command.$command" "$command available" "$(command -v "$command")" 'No action'; else add FAIL "command.$command" "$command missing" missing "Run afd fix layer1 --dry-run"; fi; done
+allow_scripts_version="$(allow-scripts --version 2>/dev/null | sed 's/^v//' || true)"
+[ "$allow_scripts_version" = 5.1.0 ] && add PASS security.allow-scripts 'LavaMoat allow-scripts' "$allow_scripts_version" 'No action' || add FAIL security.allow-scripts 'LavaMoat allow-scripts version mismatch' "${allow_scripts_version:-missing}" 'Run afd fix layer1 --dry-run'
 if command -v docker >/dev/null 2>&1; then add PASS docker.native-policy 'Docker installed as an optional host tool' "$(docker --version 2>/dev/null || true)" 'Do not use Docker to execute Layers 1-3'; fi
 if [ "$JSON" -eq 1 ]; then printf '{"schemaVersion":1,"product":"AI Foundry Desk","command":"doctor","platform":"linux-x64","results":[%s]}\n' "$results"; fi
 [ "$failures" -eq 0 ]

@@ -37,7 +37,7 @@ manager. Your logins, tokens, projects, conversations, and agent-native data rem
 
 | I want to… | Start here | Time |
 | --- | --- | --- |
-| Set up my workstation | [Windows quick start](#quick-start-on-windows) or [Linux/WSL bootstrap](#linuxwsl-bootstrap) | About 10 minutes plus downloads |
+| Set up my workstation | [Windows quick start](#quick-start-on-windows) or [Linux/macOS bootstrap](#linuxmacos-bootstrap) | About 10 minutes plus downloads |
 | Check or repair an existing setup | [`afd doctor`](#your-everyday-workflow), then preview the suggested fix | 2–5 minutes |
 | Keep skills and profiles consistent across agents | [Skills and profiles](docs/LAYER-2-SYNC.md) | 10 minutes |
 | Keep MCP servers consistent across agents and scopes | [MCP configuration](docs/MCP-CONFIGURATION.md) | 10 minutes |
@@ -70,7 +70,7 @@ manager. Your logins, tokens, projects, conversations, and agent-native data rem
 ```mermaid
 flowchart TB
     A["afd — one daily command"]
-    L1["Layer 1 — Foundation<br/>runtimes · PATH · package managers"]
+    L1["Layer 1 — Foundation<br/>runtimes · package security · host tools"]
     L2["Layer 2 — Agent Setup<br/>apps · agent CLIs"]
     L3["Layer 3 — Recipes<br/>reviewed skills · tools · capabilities"]
     T["Common Agent Toolbox<br/>rg · fd · jq · yq · bat · delta"]
@@ -90,13 +90,13 @@ work.
 
 | Module | Objective | What it gives you |
 | --- | --- | --- |
-| **Layer 1 — Foundation** | Build a stable base | mise-managed Python, Node.js, Go and Rust; uv, pnpm, PATH, guardrails, doctor and controlled repair |
+| **Layer 1 — Foundation** | Build a stable base | mise-managed Python, Node.js, Go and Rust; uv, pnpm, LavaMoat allow-scripts, Docker, PATH, guardrails, doctor and controlled repair |
 | **Layer 2 — Agent Setup** | Make agents available consistently | Idempotent detection and installation of supported desktop apps and CLIs without handling login credentials |
 | **Common Agent Toolbox** | Give every agent dependable utilities | Fast search, file discovery, structured-data processing, readable source output and clear diffs |
 | **Agent Manager** | Keep shared guidance manageable | A canonical skill catalog, small profiles, one-way sync, drift detection, review and safe import/adopt |
 | **Project Harnesses** | Keep repository agents consistent | One canonical policy, minimal adapters, external staging, disposable cross-agent smoke tests, confirmed apply and exact rollback |
 | **MCP configuration** | Keep tool-server setup consistent | Scoped registries, redacted discovery, hash-bound preview/apply, native enable/disable and atomic moves |
-| **Layer 3 — Recipes** | Provision reviewed bundles | Uniform internal/local/HTTPS loading, mandatory plan, confirmed apply, verification and managed-only rollback |
+| **Layer 3 — Recipes** | Provision reviewed bundles | Uniform internal/local/HTTPS loading, exact npm or mise-managed tools, immutable Herdr plugins, mandatory plan, confirmed apply, verification and managed-only rollback |
 | **Observability** | Explain agent execution locally | Recipe-managed OTLP Collector, Phoenix traces, agentacct session intelligence, bounded correlation and explicit per-agent coverage |
 | **Recovery** | Keep managed changes reversible | Local backups with bounded retention before AFD changes an existing managed file |
 
@@ -121,7 +121,7 @@ Windows bootstrap and checksum separately, verifies SHA-256, and installs only t
 It does **not** configure either Layer automatically.
 
 ```powershell
-$v='0.6.2'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
+$v='0.6.4'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
 ```
 
 The bootstrap requires Node.js 24 or newer and pnpm. If a prerequisite is missing, it stops and
@@ -224,22 +224,24 @@ project or operating system requires them, and tool availability never authorize
 
 ## Platform support
 
-- **Windows x64:** complete validated workstation experience, including both Layers, doctor/fix,
-  Agent Manager, toolbox, backups, and verification.
+- **Windows x64:** complete validated workstation experience, including native Layers 1–3,
+  Docker Desktop host capability, doctor/fix, Agent Manager, toolbox, backups, and verification.
 - **Ubuntu 26.04.1 LTS on WSL2 x86_64:** native Layer 1 runtime and Docker adapters, native Layer 2
   CLI/toolbox adapters, portable Layer 3 recipes, doctor/fix, and verification are implemented.
-- **macOS:** experimental detection only; no validated support claim.
+- **macOS 14+ on Apple Silicon or Intel:** native Layer 1 runtime, LavaMoat, Docker Desktop,
+  doctor/fix, verification, and POSIX bootstrap adapters are implemented but await real-hardware
+  validation. Layer 2 automation remains unavailable and fails closed.
 
 See [Platform support](docs/PLATFORM-SUPPORT.md) for the exact test boundary. Contributions for
-native Linux and macOS adapters are welcome when they preserve one portable core and document real
-validation evidence.
+native platform adapters are welcome when they preserve one portable core and document real validation
+evidence.
 
-### Linux/WSL bootstrap
+### Linux/macOS bootstrap
 
-`scripts/afd-bootstrap-posix.sh` is a separate POSIX adapter with `--dry-run`, SHA-256 verification,
-and an isolated `--prefix`. The bootstrap installs only `afd` and never applies Layers. On Linux,
-run `afd layer1 --dry-run`, review the native runtime and Docker plan, then use `--apply`. Layer 2
-follows the same preview/apply contract. macOS detection remains experimental and fail-closed.
+`scripts/afd-bootstrap-posix.sh` is a separate Linux/macOS adapter with `--dry-run`, SHA-256
+verification, and an isolated `--prefix`. The bootstrap installs only `afd` and never applies Layers.
+On Linux or macOS, run `afd layer1 --dry-run`, review the native runtime and Docker plan, then use
+`--apply`. Linux Layer 2 follows the same preview/apply contract; macOS Layer 2 fails closed.
 
 ```sh
 afd layer1 --dry-run
@@ -254,12 +256,23 @@ Never use a blind remote pipe; download the script and checksum separately befor
 Validated Linux/WSL bootstrap (downloads, verifies, then executes as separate steps):
 
 ```sh
-v=0.6.2; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
+v=0.6.4; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
 ```
 
-Docker is a Layer 1 host capability, not an AFD runtime. Layers 1–3 run directly on the host. Higher
-layers may use Docker only when explicitly requested or required by a documented dependency. AFD
-does not automatically add users to the root-equivalent `docker` group.
+The same downloaded bootstrap uses macOS-native `shasum -a 256 --check`; that path remains pending
+real-hardware validation.
+
+Docker is a Layer 1 host capability, not an AFD runtime. Layer 1 installs or verifies Docker Desktop
+on Windows and macOS, and Docker Engine on Ubuntu; Layers 1–3 still run directly on the host. Windows
+WinGet or the checksum-verified macOS installer may request elevation. AFD does not start Docker
+Desktop, accept its in-app terms, preconfigure privileged macOS settings, change its backend, or add
+users to `docker-users` or the root-equivalent Linux `docker` group.
+
+Layer 1 also installs the scoped `@lavamoat/allow-scripts` CLI with a pinned version and registry
+integrity check. Policy remains project-owned: pnpm projects should use native `allowBuilds` and
+`pnpm approve-builds`; npm/Yarn or mixed-tool projects can use `allow-scripts setup`, review the
+generated policy, then use `allow-scripts run` and `allow-scripts check`. AFD does not silently set a
+machine-wide `ignore-scripts` policy or approve dependency lifecycle scripts.
 
 ## Safety by design
 

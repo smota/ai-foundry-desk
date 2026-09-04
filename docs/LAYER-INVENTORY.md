@@ -13,7 +13,7 @@ project pages.
 
 | Layer | Outcome | Inventory | Installation boundary |
 | --- | --- | --- | --- |
-| **1 — Foundation** | A stable native workstation | Runtime manager, language runtimes, package workflow tools, Docker host capability | User-scoped by default; Docker is a separate reviewed privileged step |
+| **1 — Foundation** | A stable native workstation | Runtime authority, language runtimes, package workflows, supply-chain security, Docker host capability, diagnostics | User-scoped by default; Docker is a reviewed platform-specific privileged step |
 | **2 — Agent setup** | Consistent agents and utilities | Agent CLIs/apps, common toolbox, shared catalog and profiles | Detect first, preview, then install or synchronize only supported adapters |
 | **3 — Recipes** | Reviewed, repeatable personal bundles | Recipe engine, shared skills and optional pinned tools | Plan is mandatory; apply is confirmed; rollback touches managed files only |
 
@@ -23,16 +23,37 @@ it is available to workloads without becoming the execution environment for AFD 
 
 ## Layer 1 — Foundation
 
+Categories organize the inventory conceptually; they are not extra layers or an execution order.
+Security remains cross-cutting even where a tool has a primary functional category.
+
+### Runtime authority and language runtimes
+
 | | Tool / product | Description | Objective in the layer | AFD treatment |
 | --- | --- | --- | --- | --- |
 | <img src="https://cdn.simpleicons.org/mise" alt="mise" width="22"> | [mise](https://mise.jdx.dev/) | Polyglot runtime and tool version manager. | Provide one declared source of truth for runtime versions and shims. | **Managed**; pinned, checksum-verified binary. |
-| <img src="https://cdn.simpleicons.org/astral" alt="Astral" width="22"> | [uv](https://docs.astral.sh/uv/) | Fast Python project and package workflow tool. | Create reproducible Python environments while mise remains the runtime authority. | **Managed**; pinned, checksum-verified binary. |
-| <img src="https://cdn.simpleicons.org/pnpm" alt="pnpm" width="22"> | [pnpm](https://pnpm.io/) | Disk-efficient Node.js package manager. | Install project dependencies from lockfiles without mixing dependency trees. | **Managed** through Corepack; pinned version. |
 | <img src="https://cdn.simpleicons.org/python" alt="Python" width="22"> | [Python](https://www.python.org/) | General-purpose programming runtime. | Support Python applications, automation, and agent tooling. | **Managed** by mise. |
 | <img src="https://cdn.simpleicons.org/nodedotjs" alt="Node.js" width="22"> | [Node.js](https://nodejs.org/) | JavaScript runtime used by AFD and many agent tools. | Run the AFD CLI and Node-based development tools. | **Managed** by mise. |
 | <img src="https://cdn.simpleicons.org/go" alt="Go" width="22"> | [Go](https://go.dev/) | Compiled language and toolchain. | Support Go projects and utilities without a system-wide version conflict. | **Managed** by mise. |
 | <img src="https://cdn.simpleicons.org/rust" alt="Rust" width="22"> | [Rust](https://www.rust-lang.org/) | Systems language and Cargo toolchain. | Support Rust projects and source-based tooling. | **Managed** by mise. |
-| <img src="https://cdn.simpleicons.org/docker" alt="Docker" width="22"> | [Docker Engine](https://docs.docker.com/engine/) | Container runtime and build tooling. | Offer an optional host capability for workloads that explicitly need containers. | **Capability**; separate native Ubuntu install from Docker's signed repository; never an AFD layer runtime. |
+
+### Package workflows and supply-chain security
+
+| | Tool / product | Description | Objective in the layer | AFD treatment |
+| --- | --- | --- | --- | --- |
+| <img src="https://cdn.simpleicons.org/astral" alt="Astral" width="22"> | [uv](https://docs.astral.sh/uv/) | Fast Python project and package workflow tool. | Create reproducible Python environments while mise remains the runtime authority. | **Managed**; pinned, checksum-verified binary. |
+| <img src="https://cdn.simpleicons.org/pnpm" alt="pnpm" width="22"> | [pnpm](https://pnpm.io/) | Disk-efficient Node.js package manager with native dependency-build approval. | Install from lockfiles without mixing dependency trees and keep lifecycle builds default-deny through project `allowBuilds`. | **Managed** through Corepack; pinned version. |
+|  | [`@lavamoat/allow-scripts`](https://github.com/LavaMoat/LavaMoat/tree/main/packages/allow-scripts) | Runs only dependency lifecycle hooks explicitly allowed by project policy. | Bootstrap deny-by-default lifecycle-script policy for npm, Yarn, and mixed-tool projects. | **Managed CLI**; exact version and registry integrity verified, installed with lifecycle scripts disabled; policy remains project-owned. |
+
+### Native host capability
+
+| | Tool / product | Description | Objective in the layer | AFD treatment |
+| --- | --- | --- | --- | --- |
+| <img src="https://cdn.simpleicons.org/docker" alt="Docker" width="22"> | [Docker](https://docs.docker.com/) | Container runtime and build tooling: Docker Desktop on Windows/macOS, Docker Engine on Ubuntu. | Offer a native host capability for workloads that explicitly need containers. | **Capability**; platform-native reviewed installation, never an AFD layer runtime; no automatic startup, terms acceptance, backend change, privileged preconfiguration, or group membership. |
+
+### Diagnostics and controlled recovery
+
+| | Tool / product | Description | Objective in the layer | AFD treatment |
+| --- | --- | --- | --- | --- |
 | <img src="../assets/brand/ai-foundry-desk-logo.png" alt="AFD" width="22"> | AFD doctor, fix and verifier | Read-only diagnostics, scoped reconciliation, and compact verification. | Explain drift and repair only state owned by the foundation. | **Managed component**; dry-run before apply. |
 
 ## Layer 2 — Agents and common toolbox
@@ -72,6 +93,7 @@ and verified. Rollback is limited to files and links recorded as AFD-managed.
 |  | [Holoself](https://github.com/smota/holoself) | Portable, reviewable personal context distributed as an agent skill. | Give detected agents the same user-owned context without duplicating its source. | **Integrated** by the built-in smota-foundations recipe through an explicit local overlay. |
 |  | [Vibium](https://www.npmjs.com/package/vibium) | Browser automation CLI and library. | Add the browser-control tool declared by the smota-foundations bundle. | **Managed by recipe**; pinned package and integrity hash. |
 |  | [Tokscale](https://www.npmjs.com/package/tokscale) | Local token-usage analysis CLI. | Add the usage-analysis tool declared by the smota-foundations bundle. | **Managed by recipe**; pinned package and integrity hash. |
+|  | [Herdr](https://herdr.dev/) | Persistent terminal runtime for coding agents and plugin workflows. | Give local agents durable workspaces without replacing their native CLIs. | **Managed by recipe through Layer 1 mise**; exact version, immutable plugin inputs, and platform-specific verification. Separate from Hermes MCP management. |
 
 ## Reading the inventory safely
 

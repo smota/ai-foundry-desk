@@ -31,7 +31,8 @@ pnpm check
 
 Start with doctor. Use fix dry-run only for managed Layer 1 reconciliation, and require explicit
 `--apply` before writing. Linux/WSL currently covers the portable bootstrap/CLI cycle only; Windows
-Layers remain fail-closed there. macOS remains experimental and unvalidated.
+Layers remain fail-closed there. macOS Layer 1 is implemented but unvalidated on hardware; Layer 2
+remains fail-closed.
 
 Do not promote pending/private skills automatically, overwrite drift, run `pnpm setup`, or manage
 tokens/login/history/plugins. Continue from [ROADMAP.md](ROADMAP.md).

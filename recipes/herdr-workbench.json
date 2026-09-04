@@ -1,0 +1,24 @@
+{
+  "recipeVersion": 3,
+  "id": "herdr-workbench",
+  "version": "1.0.0",
+  "origin": "builtin",
+  "skills": [],
+  "tools": [
+    {
+      "id": "herdr",
+      "command": "herdr",
+      "version": "0.8.2",
+      "installer": {
+        "kind": "mise",
+        "tool": "github:herdrdev/herdr",
+        "scope": "afd-global"
+      },
+      "platforms": ["windows", "linux", "macos"]
+    }
+  ],
+  "plugins": [],
+  "prerequisites": ["layer1-mise", "git"],
+  "checks": ["herdr-on-path", "herdr-version-pinned"],
+  "rollback": { "managedOnly": true }
+}

@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+- Install or verify Docker Desktop as a default Windows and macOS Layer 1 host capability through
+  explicit, elevation-aware adapters without automatic startup, terms acceptance, backend changes,
+  privileged preconfiguration, or group edits.
+- Install the integrity-pinned `@lavamoat/allow-scripts` CLI on Windows and Linux with lifecycle
+  hooks disabled, while keeping pnpm/LavaMoat dependency-script approval policy project-owned.
+- Group the Layer 1 inventory into runtime, package workflow, supply-chain security, host capability,
+  and diagnostic categories without introducing additional sequential layers.
+- Add checksum-pinned Apple Silicon and Intel macOS Layer 1 runtime, Docker, doctor, verifier, and
+  POSIX bootstrap adapters; the implementation remains unvalidated until exercised on real hardware.
+- Add recipe schema v3 and `herdr-workbench` for exact Herdr 0.8.2 installation through the existing
+  Layer 1 Mise authority on Windows, Linux/WSL2, and implemented-but-unvalidated macOS, with
+  immutable manifest-hashed plugin declarations and managed-only rollback.
+- Keep Herdr independent from Hermes MCP, and make the current Hermes user-global MCP limitation an
+  explicit project-scope capability gate until a released native contract passes non-leak validation.
+
+## 0.6.4 — 2026-09-01
+
+- Unified the stable release identity across the CLI, package manifests, bootstrap defaults,
+  validation gates, installation examples, GitHub Releases, and npm's `latest` distribution tag.
+- Made production builds delete prior output and reject emitted modules that do not correspond to
+  current TypeScript sources, preventing stale code from entering a release.
+- Added explicit npm metadata, a runtime-only script allowlist, sensitive-content and artifact-size
+  release gates, and disposable npm/pnpm installation smokes outside the repository.
+- Split release publication into least-privilege jobs that share one audited tarball across GitHub
+  Releases and stage-only npm trusted publishing with maintainer 2FA approval.
+
 ## 0.6.3-rc.1 — 2026-09-01
 
 - Made production builds delete prior output and reject emitted modules that do not correspond to

@@ -7,6 +7,9 @@
 - Pinned/checksummed Hermes staging updates, explicit pending-skill review, official Antigravity
   skill mirroring, and deterministic local/internal/HTTPS recipes with scoped rollback.
 - smota-foundations recipe for Holoself, pinned Vibium/Tokscale, plus fail-closed local extraction.
+- Recipe v3 and `herdr-workbench` for exact mise-managed Herdr installation across Windows,
+  Linux/WSL2, and implemented-but-unvalidated macOS. This is independent from Hermes MCP. Plugin entries
+  remain empty until their immutable sources, manifests, platform support, and setup are reviewed.
 - Recipe-managed telemetry-v2 with a checksummed upstream Collector, Phoenix, observe-only
   agentacct, native Codex/Claude OTLP configuration, one consent boundary, bounded correlation, and
   `afd telemetry explain <run-id>`.
@@ -29,20 +32,25 @@
 
 ## Next cycle
 
-1. Close the remaining MCP adapter evidence gap in
-   [MCP-CONFIGURATION-DESIGN.md](MCP-CONFIGURATION-DESIGN.md): establish genuine Hermes project
-   scoping before enabling default all-target project apply.
-2. Reduce the measured `status`/`explain` p95 baseline of about 10.3 seconds without weakening
+1. Reduce the measured `status`/`explain` p95 baseline of about 10.3 seconds without weakening
    fail-closed source checks, privacy, or process isolation.
-3. Add Hermes native operational OTLP only after its recipe effects and content-free vocabulary are
+2. Add Hermes native operational OTLP only after its recipe effects and content-free vocabulary are
    reviewed. Implement Pi telemetry as a native extension, not a launcher wrapper. Keep AGY explicit
    as unsupported until a stable native contract exists.
-4. Track agentacct Evidence v2 upstream maturity and enable it only after its shadow refresh is
+3. Track agentacct Evidence v2 upstream maturity and enable it only after its shadow refresh is
    conflict-free in live acceptance; v1 session/usage/Work Receipt evidence remains the daily path.
-5. CI matrices for the validated Windows workflows and portable unit suite.
-6. Assisted `npx skills` integration without duplicating the native workflow or implicit network use.
-7. Grok/Hermes/Antigravity profiles only after stable official contracts exist.
-8. Optional local/private Tokscale reporting without credential capture or duplicated session data.
+4. CI matrices for the validated Windows workflows and portable unit suite.
+5. Assisted `npx skills` integration without duplicating the native workflow or implicit network use.
+6. Grok/Hermes/Antigravity profiles only after stable official contracts exist.
+7. Optional local/private Tokscale reporting without credential capture or duplicated session data.
+
+## Upstream capability gates
+
+- Hermes project MCP remains intentionally unavailable until a released native contract passes
+  project-root, descendant, outside-project, and concurrent-session non-leak acceptance. AFD's
+  current global-only Hermes adapter stays fail-closed for project and default all-target plans.
+- Herdr plugins remain absent from `herdr-workbench` until their exact sources, immutable commits,
+  manifest hashes, platform support, and requested setup are supplied and reviewed.
 
 ## Maintainer/release decisions
 
@@ -52,7 +60,9 @@
 
 ## Platform expansion — contributions welcome
 
-- Implement, test, document, and validate macOS adapters while preserving the shared core.
+- Validate the implemented macOS Layer 1 adapters on Apple Silicon and Intel hardware, then add a
+  representative CI matrix before making a validated compatibility claim.
+- Implement macOS Layer 2 adapters while preserving the shared core and fail-closed boundaries.
 - Validate the Linux adapters on native Ubuntu hardware/VMs in addition to the WSL2 fixture.
 - Define WSL behavior separately from native Windows and Linux after its boundaries are tested.
 - Add platform and architecture CI matrices only when representative environments are available.

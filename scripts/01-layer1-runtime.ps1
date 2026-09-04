@@ -2,9 +2,10 @@
 .SYNOPSIS
     01 - Layer 1: native, verifiable, project-isolated foundation.
 .DESCRIPTION
-    Installs mise, uv, and pnpm; pins Python 3.14, Node 24 LTS, Go 1.26, and Rust 1.98.0;
-    adds mise shims to persistent PATH; and keeps guardrails limited to interactive commands.
-    Scripts and automation continue to call the real executables. Runs in user scope.
+    Installs mise, uv, pnpm, and an integrity-pinned LavaMoat allow-scripts CLI; pins Python 3.14,
+    Node 24 LTS, Go 1.26, and Rust 1.98.0; adds mise shims to persistent PATH; and keeps guardrails
+    limited to interactive commands. Scripts and automation continue to call the real executables.
+    Runs in user scope.
 .PARAMETER WhatIf
     Shows planned changes without installing packages or changing PATH/profiles.
 #>
@@ -19,6 +20,9 @@ $toolVersions = [ordered]@{
     go     = "1.26"
     rust   = "1.98.0"
 }
+$allowScriptsPackage = "@lavamoat/allow-scripts"
+$allowScriptsVersion = "5.1.0"
+$allowScriptsIntegrity = "sha512-x00YE+hIoak1mrP3w/OZSGXaYTel2oRF0eqIT50G40aa7qqv5EcSzOQKLm1LJyzp0HGFCMXev/LvVUeqPnqI7w=="
 
 function Install-WingetPackageIfMissing {
     param([string]$WingetId, [string]$FriendlyName)
@@ -70,6 +74,43 @@ function Set-UserEnvironmentVariableIfNeeded {
 
     [Environment]::SetEnvironmentVariable($Name, $Value, "User")
     Write-Host "  User environment variable updated: $Name=$Value"
+}
+
+function Get-AllowScriptsVersion {
+    $command = Get-Command allow-scripts -CommandType Application,ExternalScript -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if (-not $command) { return $null }
+    $output = [string](& $command.Source --version 2>$null | Select-Object -First 1)
+    if ($LASTEXITCODE -ne 0) { return $null }
+    return $output.Trim().TrimStart('v')
+}
+
+function Install-AllowScriptsIfNeeded {
+    $installedVersion = Get-AllowScriptsVersion
+    if ($installedVersion -eq $allowScriptsVersion) {
+        Write-Host "  $allowScriptsPackage $allowScriptsVersion is already installed."
+        return
+    }
+    if ($WhatIf) {
+        Write-Host "  [WhatIf] Would integrity-check and install $allowScriptsPackage@$allowScriptsVersion with lifecycle scripts disabled."
+        return
+    }
+
+    $pnpm = Get-Command pnpm -CommandType Application,ExternalScript -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if (-not $pnpm) { throw "pnpm is required before installing $allowScriptsPackage." }
+    $observedIntegrity = [string](& $pnpm.Source view "$allowScriptsPackage@$allowScriptsVersion" dist.integrity --json 2>$null)
+    $observedIntegrity = $observedIntegrity.Trim().Trim('"')
+    if ($LASTEXITCODE -ne 0 -or $observedIntegrity -ne $allowScriptsIntegrity) {
+        throw "Registry integrity mismatch for $allowScriptsPackage@$allowScriptsVersion."
+    }
+    & $pnpm.Source add --global --ignore-scripts "$allowScriptsPackage@$allowScriptsVersion"
+    if ($LASTEXITCODE -ne 0) { throw "pnpm failed to install $allowScriptsPackage@$allowScriptsVersion." }
+    $installedVersion = Get-AllowScriptsVersion
+    if ($installedVersion -ne $allowScriptsVersion) {
+        throw "$allowScriptsPackage installation did not expose allow-scripts $allowScriptsVersion."
+    }
+    Write-Host "  Installed $allowScriptsPackage $allowScriptsVersion with lifecycle scripts disabled."
 }
 
 function Update-PowerShellProfile {
@@ -225,6 +266,7 @@ if ($WhatIf) {
     Write-Host "  [WhatIf] Would configure Python 3.14, Node 24, Go 1.26, and Rust 1.98.0 in $miseGlobalConfig with writable runtime state in $miseState."
     Write-Host "  [WhatIf] Would retain but ignore the superseded global config at $legacyMiseGlobalConfig; project-local configs remain enabled."
     Write-Host "  [WhatIf] Would disable automatic installation of missing mise tools."
+    Install-AllowScriptsIfNeeded
     $profilePaths | ForEach-Object { Update-PowerShellProfile -ProfilePath $_ }
     return
 }
@@ -247,6 +289,9 @@ Write-Host "`nConfiguring verifiable runtimes..."
 & $mise.Source settings set not_found_auto_install false
 & $mise.Source use --global "python@$($toolVersions.python)" "node@$($toolVersions.node)" "go@$($toolVersions.go)" "rust@$($toolVersions.rust)"
 & $mise.Source reshim
+
+Write-Host "`nConfiguring Node.js supply-chain guardrail..."
+Install-AllowScriptsIfNeeded
 
 Write-Host "`nConfiguring PowerShell..."
 $profilePaths | ForEach-Object { Update-PowerShellProfile -ProfilePath $_ }

@@ -10,7 +10,11 @@ export interface Change { readonly agent: AgentId | "canonical"; readonly kind: 
 export interface AppliedState { readonly stateVersion: 1; readonly appliedAt: string; readonly files: Readonly<Record<string, string>> }
 export interface PendingEntry { readonly agent: AgentId; readonly id: string; readonly path: string }
 export interface RecipeSkill { readonly id: string; readonly source: string; readonly targets: readonly AgentId[]; readonly localOverlay?: string }
-export interface RecipeTool { readonly id: string; readonly command: string; readonly source: string; readonly version: string; readonly checksum?: string }
+export type RecipePlatform = "windows" | "linux" | "macos";
+export interface RecipeNpmTool { readonly id: string; readonly command: string; readonly source: string; readonly version: string; readonly checksum?: string; readonly platforms?: never }
+export interface RecipeMiseTool { readonly id: string; readonly command: string; readonly version: string; readonly installer: { readonly kind: "mise"; readonly tool: string; readonly scope: "afd-global" }; readonly platforms?: readonly RecipePlatform[] }
+export type RecipeTool = RecipeNpmTool | RecipeMiseTool;
+export interface RecipePlugin { readonly id: string; readonly host: "herdr"; readonly source: string; readonly commit: string; readonly manifestSha256: string; readonly enabled: boolean; readonly platforms?: readonly RecipePlatform[] }
 export interface ObservabilityRecipeCapability {
   readonly id: "observability";
   readonly required: boolean;
@@ -21,7 +25,7 @@ export interface ObservabilityRecipeCapability {
   readonly autostart: boolean;
   readonly nativeIntegrations: readonly AgentId[];
 }
-export interface Recipe { readonly recipeVersion: 1 | 2; readonly id: string; readonly version: string; readonly origin: string; readonly skills: readonly RecipeSkill[]; readonly tools: readonly RecipeTool[]; readonly capabilities?: readonly ObservabilityRecipeCapability[]; readonly prerequisites: readonly string[]; readonly checks: readonly string[]; readonly rollback: { readonly managedOnly: true } }
-export type RecipeActionKind = "copy-skill" | "install-tool" | "configure-capability" | "blocked";
+export interface Recipe { readonly recipeVersion: 1 | 2 | 3; readonly id: string; readonly version: string; readonly origin: string; readonly skills: readonly RecipeSkill[]; readonly tools: readonly RecipeTool[]; readonly capabilities?: readonly ObservabilityRecipeCapability[]; readonly plugins?: readonly RecipePlugin[]; readonly prerequisites: readonly string[]; readonly checks: readonly string[]; readonly rollback: { readonly managedOnly: true } }
+export type RecipeActionKind = "copy-skill" | "install-tool" | "configure-capability" | "install-plugin" | "blocked";
 export interface RecipeAction { readonly kind: RecipeActionKind; readonly id: string; readonly target: string; readonly detail: string }
 export interface RecipePlan { readonly recipe: Recipe; readonly source: string; readonly actions: readonly RecipeAction[]; readonly blocked: boolean; readonly approvalToken: string }

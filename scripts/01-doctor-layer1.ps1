@@ -35,7 +35,7 @@ Add-Diagnostic identity $(if($sandboxIdentity){'WARN'}else{'PASS'}) "identity.ex
     $(if($sandboxIdentity){"Persistent HKCU, user PATH, and known-folder checks are not authoritative here; run this doctor from a normal user shell."}else{"No action."})
 
 if ($sandboxIdentity) {
-    foreach($name in @('mise','uv','pnpm','python','node','go','rustc','cargo')) {
+    foreach($name in @('mise','uv','pnpm','python','node','go','rustc','cargo','allow-scripts','docker')) {
         $info = Command-Info $name
         Add-Diagnostic commands $(if($info){'PASS'}else{'FAIL'}) "command.$name" "$name resolves in the effective sandbox process" `
             $(if($info){$info.Source}else{'missing'}) "Repair the reviewed sandbox toolchain path or ACL, then start a fresh task."
@@ -85,7 +85,7 @@ Add-Diagnostic environment $(if(Test-Path -LiteralPath $pnpmHome -PathType Conta
     "PNPM_HOME directory" $(if(Test-Path -LiteralPath $pnpmHome){'present'}else{'missing'}) "Run 'afd fix layer1 --dry-run'."
 
 $env:Path=[Environment]::GetEnvironmentVariable('Path','Machine')+';'+[Environment]::GetEnvironmentVariable('Path','User')
-$commands=@('mise','uv','pnpm','python','node','go','rustc','cargo')
+$commands=@('mise','uv','pnpm','python','node','go','rustc','cargo','allow-scripts','docker')
 foreach($name in $commands){
     $info=Command-Info $name
     Add-Diagnostic commands $(if($info){'PASS'}else{'FAIL'}) "command.$name" "$name resolves in a new no-profile shell" `
@@ -98,12 +98,19 @@ if($python -and $python.Kind -eq 'Microsoft Store alias'){
 }
 
 $versions=@(
-    @{Code='runtime.python';Summary='Python 3.14';Value=(First-Line { python --version });Pattern='^Python 3\.14\.'},
-    @{Code='runtime.node';Summary='Node.js 24';Value=(First-Line { node --version });Pattern='^v24\.'},
-    @{Code='runtime.go';Summary='Go 1.26';Value=(First-Line { go version });Pattern='go1\.26\.'},
-    @{Code='runtime.rust';Summary='Rust 1.98.0';Value=(First-Line { rustc --version });Pattern='^rustc 1\.98\.0\b'}
+    @{Category='runtimes';Code='runtime.python';Summary='Python 3.14';Value=(First-Line { python --version });Pattern='^Python 3\.14\.'},
+    @{Category='runtimes';Code='runtime.node';Summary='Node.js 24';Value=(First-Line { node --version });Pattern='^v24\.'},
+    @{Category='runtimes';Code='runtime.go';Summary='Go 1.26';Value=(First-Line { go version });Pattern='go1\.26\.'},
+    @{Category='runtimes';Code='runtime.rust';Summary='Rust 1.98.0';Value=(First-Line { rustc --version });Pattern='^rustc 1\.98\.0\b'},
+    @{Category='supply-chain-security';Code='security.allow-scripts';Summary='LavaMoat allow-scripts 5.1.0';Value=(First-Line { allow-scripts --version });Pattern='^v?5\.1\.0$'},
+    @{Category='host-capabilities';Code='host.docker-cli';Summary='Docker CLI';Value=(First-Line { docker --version 2>$null });Pattern='^Docker version '},
+    @{Category='host-capabilities';Code='host.docker-compose';Summary='Docker Compose';Value=(First-Line { docker compose version 2>$null });Pattern='^Docker Compose version '}
 )
-foreach($item in $versions){$ok=$item.Value -match $item.Pattern; Add-Diagnostic runtimes $(if($ok){'PASS'}else{'FAIL'}) $item.Code $item.Summary $item.Value "Run 'afd fix layer1 --dry-run'."}
+foreach($item in $versions){$ok=$item.Value -match $item.Pattern; Add-Diagnostic $item.Category $(if($ok){'PASS'}else{'FAIL'}) $item.Code $item.Summary $item.Value "Run 'afd fix layer1 --dry-run'."}
+$dockerDaemon=[string](& docker info --format '{{.ServerVersion}}' 2>$null | Select-Object -First 1)
+$dockerDaemonReady=$LASTEXITCODE -eq 0 -and $dockerDaemon
+Add-Diagnostic host-capabilities $(if($dockerDaemonReady){'PASS'}else{'WARN'}) 'host.docker-daemon' "Docker daemon availability" `
+    $(if($dockerDaemonReady){$dockerDaemon}else{'installed but not running or unavailable'}) "Start Docker Desktop interactively only when a workload needs containers."
 $uvPython=First-Line { uv python find --no-python-downloads }
 $uvUsesMise=$uvPython -match '(?i)\\mise\\installs\\python\\3\.14'
 Add-Diagnostic runtimes $(if($uvUsesMise){'PASS'}else{'FAIL'}) 'uv.python-provider' "uv uses mise Python without downloads" `

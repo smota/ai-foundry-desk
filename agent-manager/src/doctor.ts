@@ -44,6 +44,15 @@ async function resolveCommand(adapter: PlatformAdapter, command: string): Promis
       }
     }
   }
+  if (adapter instanceof NodePlatformAdapter && adapter.id === "darwin" && command === "docker") {
+    const candidates = [
+      "/Applications/Docker.app/Contents/Resources/bin/docker",
+      path.join(process.env.HOME ?? "", "Applications", "Docker.app", "Contents", "Resources", "bin", "docker"),
+    ];
+    for (const candidate of candidates) {
+      try { if (existsSync(candidate) && statSync(candidate).isFile()) return candidate; } catch { continue; }
+    }
+  }
   const query = adapter.id === "win32"
     ? { executable: "where.exe", args: [command], timeoutMs: 5_000 }
     : { executable: "which", args: [command], timeoutMs: 5_000 };
@@ -81,7 +90,7 @@ export async function doctor(adapter: PlatformAdapter = new NodePlatformAdapter(
   });
   const hostMajor = Number(process.versions.node.split(".")[0]);
   rows.push({ status: hostMajor >= 24 ? "PASS" : "FAIL", id: "runtime.host-node", detail: `Node ${process.versions.node} via ${path.resolve(process.execPath)}`, remedy: "Run AFD with Node 24 or newer." });
-  for (const command of ["node", "pnpm", "mise", "uv", "uvx", "python", "go", "rustc", "cargo", "codex"]) rows.push(await probeCommand(adapter, command));
+  for (const command of ["node", "pnpm", "mise", "uv", "uvx", "python", "go", "rustc", "cargo", "allow-scripts", "docker", "codex"]) rows.push(await probeCommand(adapter, command));
   rows.push({ status: adapter.id === "darwin" ? "INFO" : "PASS", id: "platform.validation", detail: adapter.id === "darwin" ? "macOS adapter requires clean-host validation." : "Platform adapter available.", remedy: adapter.id === "darwin" ? "Validate on a clean macOS host before relying on apply." : "No action." });
   return rows;
 }
