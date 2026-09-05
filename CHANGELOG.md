@@ -14,6 +14,9 @@
 - Add recipe schema v3 and `herdr-workbench` for exact Herdr 0.8.2 installation through the existing
   Layer 1 Mise authority on Windows, Linux/WSL2, and implemented-but-unvalidated macOS, with
   immutable manifest-hashed plugin declarations and managed-only rollback.
+- Provision the official Herdr 0.8.2 companion agent skill globally across all supported agent
+  surfaces (`claude-code`, `codex`, `antigravity`, `pi`, `hermes`, and `grok`) as part of the
+  `builtin:herdr-workbench` recipe.
 - Keep Herdr independent from Hermes MCP, and make the current Hermes user-global MCP limitation an
   explicit project-scope capability gate until a released native contract passes non-leak validation.
 
