@@ -67,12 +67,12 @@ The maintainer then:
 6. promotes the verified version:
 
    ```powershell
-   npm dist-tag add ai-foundry-desk@0.6.4 latest
+   npm dist-tag add ai-foundry-desk@0.7.0 latest
    ```
 
 Only after promotion may documentation advertise npm as the default convenience channel. Verify
-that `npm view ai-foundry-desk dist-tags --json` reports `latest` as `0.6.4` and that GitHub's latest
-release is `v0.6.4`; a prerelease must not remain the canonical latest version. The checksummed
+that `npm view ai-foundry-desk dist-tags --json` reports `latest` as `0.7.0` and that GitHub's latest
+release is `v0.7.0`; a prerelease must not remain the canonical latest version. The checksummed
 GitHub bootstrap remains the verified/offline channel.
 
 ## Recovery

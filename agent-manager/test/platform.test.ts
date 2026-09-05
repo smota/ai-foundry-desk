@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import test from "node:test";
@@ -50,4 +50,14 @@ test("platform adapter fingerprints one process instance before managed stop", a
   try { const fingerprint = await adapter.processFingerprint(pid); assert.match(fingerprint ?? "", /^[a-f0-9]{64}$/); }
   finally { await adapter.stop(pid); }
   assert.equal(await adapter.processFingerprint(pid), undefined);
+});
+
+test("Windows PowerShell shims preserve literal arguments and propagate exit status", { skip: process.platform !== "win32" }, async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "afd-shim-"));
+  const shim = path.join(root, "literal.ps1");
+  await writeFile(shim, '[Console]::Out.Write((ConvertTo-Json -Compress -InputObject @($args))); exit 7\n');
+  const args = ['space here', '"quoted"', '$env:HOME', '%PATH%', 'a&b|c', '`tick`', 'trailing\\', ''];
+  const result = await new NodePlatformAdapter().run({ executable: shim, args });
+  assert.equal(result.status, 7);
+  assert.deepEqual(JSON.parse(result.stdout), args);
 });

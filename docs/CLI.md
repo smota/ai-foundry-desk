@@ -1,7 +1,7 @@
 # `afd` command-line reference
 
 `afd` is the single command-line entry point for AI Foundry Desk. This reference documents every
-user-facing command and the operational maintenance commands present in version 0.6.4. Run
+user-facing command and the operational maintenance commands present in version 0.7.0. Run
 `afd help` for the compact syntax summary and `afd --version` for the installed version.
 
 ## Command model
@@ -152,6 +152,27 @@ are intentionally rejected. See [Observability](OBSERVABILITY.md) for privacy an
 serve bounded loopback requests under the interactive identity. It is not an interactive user
 workflow and fails when the process identity does not match the user profile.
 
+## Initialize project directories
+
+Project initialization consumes a reviewed JSON brief and invokes no models. See
+[Project directory initialization](PROJECT-INITIALIZATION.md) for ownership and recovery rules.
+
+| Command | Effects |
+| --- | --- |
+| `afd project recipes --json` | List packaged recipe identities. |
+| `afd project inspect <target> --agents <list> --json` | Read-only target and capability inspection; no CLI/model probes. |
+| `afd project plan <target> --brief <file> --json` | Read-only exact-content foundation plan. |
+| `afd project stage --plan <file> --output <directory> --json` | Render candidate outside the target. |
+| `afd project validate --stage <directory> --checks structural|build --json` | Check exact candidate; build runs approved recipe checks in disposable storage. |
+| `afd project apply --plan <file> --scope foundation --confirm <token> [--state-dir <directory>] --json` | Apply foundation with private journal and receipt. |
+| `afd project verify <target> --receipt <file> [--state-dir <directory>] --json` | Verify exact receipt. |
+| `afd project rollback <target> --receipt <file> --confirm <token> [--state-dir <directory>] --json` | Remove only unchanged operation-owned artifacts. |
+| `afd project recover <target> --receipt <file> --confirm <token> [--state-dir <directory>] --json` | Roll back interrupted apply after owner/lock checks. |
+| `afd project status <target> [--receipt <file>] [--validation <file>] [--harness-receipt <file>] [--state-dir <directory>] --json` | Report separate foundation, validation, and harness status. |
+
+Exit code 2 means blockers, failed verification, or incomplete full setup. Live harness activation
+remains an explicit `afd harness` operation; foundation creation never bypasses that evidence gate.
+
 ## Govern project instructions with harnesses
 
 `<project>` is the repository to inspect. `--agents` accepts `auto` or a comma-separated subset of
@@ -170,6 +191,30 @@ project-owned divergent content remains protected.
 
 Harness receipts and evidence must stay outside the target project. See [Project harnesses](PROJECT-HARNESSES.md)
 for the policy model and safety contract.
+
+## Project-scoped Rust environment
+
+`afd doctor --project <path> [--json]` probes Cargo and Rust under a bounded mise
+ancestor scan, reports the execution identity, and checks Windows MSVC prerequisites.
+It does not install tools, change trust, or grant ACL access. A successful version probe
+is not evidence of a working linker.
+
+`afd exec <project> -- <command> [args...]` sets the project working directory and a
+process-scoped `MISE_CEILING_PATHS`, with automatic missing-tool installation disabled.
+This deliberately excludes ancestor project configurations while preserving the configured
+global toolchain. No persistent environment or profile settings are changed. PowerShell
+callers should quote `'--'` if their shell consumes the native argument separator.
+On Windows, Cargo and rustc runs activate the installed MSVC developer environment for
+the child process only. Other commands use the standard AFD process runner.
+
+`afd fix rust --dry-run` previews the Windows C++ Build Tools and recommended SDK repair.
+`afd fix rust --apply` requires an intended interactive-user context and explicit review
+of installation effects. The Microsoft installer can require Windows administrator consent;
+cancellation or reboot-required outcomes leave validation pending. No automatic reboot occurs.
+
+Verify with `afd exec <project> -- cargo test --workspace --locked`. The packaged
+`scripts/01-rust-build-tools.ps1 -Mode Verify -OutputDirectory <new-disposable-path>`
+also compiles and runs a synthetic executable without running project code.
 
 ## Backups and migration
 

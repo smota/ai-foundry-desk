@@ -32,12 +32,12 @@ export const harnessTargets: readonly HarnessTargetContract[] = [
   },
   {
     id: "agy",
-    displayName: "Agy",
+    displayName: "Agy CLI",
     command: "agy",
-    instructionPaths: ["AGY.md"],
+    instructionPaths: ["AGENTS.md", "GEMINI.md", "AGY.md"],
     evidencePaths: [".agy"],
-    discovery: "generated-only",
-    note: "Agy is a distinct runtime identity. AGY.md presence alone is not discovery evidence.",
+    discovery: "configured",
+    note: "The agy CLI documents AGENTS.md discovery; verify installed CLI behavior in a fresh session. AGY.md alone is not discovery evidence. The legacy Antigravity target remains separate.",
   },
   {
     id: "antigravity",
@@ -97,10 +97,10 @@ export const harnessTargets: readonly HarnessTargetContract[] = [
     id: "grok",
     displayName: "Grok Build",
     command: "grok",
-    instructionPaths: [],
+    instructionPaths: ["AGENTS.md"],
     evidencePaths: [".grok"],
-    discovery: "unsupported",
-    note: "No project instruction discovery contract is asserted.",
+    discovery: "configured",
+    note: "Grok Build documents native AGENTS.md discovery. Verify it with a fresh live session; no duplicate pointer is required.",
   },
 ];
 

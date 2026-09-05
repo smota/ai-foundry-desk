@@ -13,6 +13,7 @@ import type {
   HarnessTargetContract,
 } from "./harness-contracts.js";
 import { harnessTarget, harnessTargets } from "./harness-registry.js";
+import { safeProjectFile } from "./project-files.js";
 
 const execFileAsync = promisify(execFile);
 const START = "<!-- >>> AFD project harness adapter";
@@ -24,7 +25,7 @@ function contained(root: string, candidate: string): boolean {
   const relative = path.relative(root, candidate);
   return relative === "" || (!relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative));
 }
-async function exists(target: string): Promise<boolean> { try { await lstat(target); return true; } catch { return false; } }
+async function exists(target: string): Promise<boolean> { try { await lstat(target); return true; } catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return false; throw error; } }
 async function regularFile(target: string): Promise<boolean> { try { const value = await lstat(target); return value.isFile() && !value.isSymbolicLink(); } catch { return false; } }
 async function currentText(project: string, relative: string): Promise<string | null> {
   const target = path.resolve(project, relative); if (!contained(project, target)) throw new Error(`Harness path escapes project: ${relative}`);
@@ -32,13 +33,48 @@ async function currentText(project: string, relative: string): Promise<string | 
   return readFile(target, "utf8");
 }
 export async function harnessGitState(project: string): Promise<{ readonly revision: string | null; readonly workspaceFingerprint: string | null }> {
-  try {
-    const revisionResult = await execFileAsync("git", ["-c", `safe.directory=${slash(project)}`, "-C", project, "rev-parse", "HEAD"], { encoding: "utf8", windowsHide: true, timeout: 10_000 });
-    const revision = revisionResult.stdout.trim(); if (!revision) return { revision: null, workspaceFingerprint: null };
-    const status = await execFileAsync("git", ["-c", `safe.directory=${slash(project)}`, "-C", project, "status", "--porcelain=v1", "-z", "--untracked-files=all"], { encoding: "utf8", windowsHide: true, timeout: 10_000 });
-    return { revision, workspaceFingerprint: hash(`${revision}\0${status.stdout}`) };
+  const git = (args: string[]) => execFileAsync("git", ["-c", `safe.directory=${slash(project)}`, "-C", project, ...args], { encoding: "utf8", windowsHide: true, timeout: 10_000, maxBuffer: 16 * 1024 * 1024 });
+  let repository = true;
+  try { await git(["rev-parse", "--show-toplevel"]); }
+  catch (error) {
+    if (/not a git repository/i.test(String((error as { stderr?: string }).stderr)) && !(await exists(path.join(project, ".git")))) repository = false;
+    else throw new Error("Cannot inspect harness Git state; repair Git access before planning.", { cause: error });
   }
-  catch { return { revision: null, workspaceFingerprint: null }; }
+  let revision: string | null = null;
+  let status = "";
+  let files: string[];
+  if (repository) {
+    try { revision = (await git(["rev-parse", "--verify", "HEAD"])).stdout.trim(); }
+    catch {
+      // A symbolic branch with no ref is an unborn repository, not a Git failure.
+      const branch = (await git(["symbolic-ref", "-q", "HEAD"])).stdout.trim();
+      try { await git(["show-ref", "--verify", "--quiet", branch]); throw new Error("HEAD exists but could not be resolved."); }
+      catch (error) { if ((error as { code?: number }).code !== 1) throw error; }
+    }
+    status = (await git(["status", "--porcelain=v1", "-z", "--untracked-files=all"])).stdout;
+    files = (await git(["ls-files", "--cached", "--others", "--exclude-standard", "-z"])).stdout.split("\0").filter(Boolean);
+  } else {
+    const walk = async (directory: string): Promise<string[]> => {
+      const entries = await readdir(path.join(project, directory), { withFileTypes: true });
+      const rows: string[] = [];
+      for (const entry of entries) {
+        const relative = path.join(directory, entry.name);
+        if (entry.isDirectory()) rows.push(...await walk(relative)); else rows.push(relative);
+      }
+      return rows;
+    };
+    files = await walk("");
+  }
+  const contents: string[] = [];
+  for (const relative of [...new Set(files)].sort()) {
+    const absolute = path.resolve(project, relative);
+    if (!contained(project, absolute)) throw new Error("Git-visible path escapes harness project.");
+    if (!(await exists(absolute))) { contents.push(`${slash(relative)}:deleted`); continue; }
+    if (!(await regularFile(absolute))) throw new Error(`Cannot fingerprint non-regular harness file: ${relative}`);
+    if (!contained(project, await realpath(absolute))) throw new Error(`Harness file resolves outside project: ${relative}`);
+    contents.push(`${slash(relative)}:${createHash("sha256").update(await readFile(absolute)).digest("hex")}`);
+  }
+  return { revision, workspaceFingerprint: hash(JSON.stringify({ revision, status, contents })) };
 }
 function managed(value: string): boolean { return value.includes(START) && value.includes(END); }
 function pointerContent(target: HarnessTargetContract, canonicalPath: string, canonicalSha256: string): string {
@@ -54,7 +90,7 @@ function action(kind: HarnessPlanAction["kind"], group: HarnessPlanAction["group
 }
 function normalizeSelection(value: readonly HarnessAgentId[] | "auto" | undefined, audit: HarnessAuditReport): readonly HarnessAgentId[] {
   const selected = value === undefined || value === "auto" ? audit.agents.filter((item) => item.detected && item.discovery !== "unsupported").map((item) => item.id) : [...value];
-  const unique = [...new Set<HarnessAgentId>(["codex", ...selected])];
+  const unique = [...new Set<HarnessAgentId>(value === undefined || value === "auto" ? ["codex", ...selected] : selected)];
   for (const id of unique) harnessTarget(id);
   return unique.sort();
 }
@@ -71,10 +107,25 @@ export async function planHarness(projectInput: string, options: { readonly agen
   const project = await realpath(path.resolve(projectInput)); const audit = await auditHarness(project);
   if (!audit.canonical) throw new Error("Cannot plan a harness without canonical project instructions.");
   const selectedAgents = normalizeSelection(options.agents, audit); const selected = new Set(selectedAgents); const actions: HarnessPlanAction[] = [];
+  let policyFiles: { path: string; content: string; sha256: string }[] | undefined;
+  const projectManifest = await safeProjectFile(project, ".afd/project.json");
+  if (await exists(projectManifest)) {
+    const manifest = JSON.parse(await readFile(projectManifest, "utf8")) as { policyClosure?: unknown };
+    if (!Array.isArray(manifest.policyClosure) || !manifest.policyClosure.length || manifest.policyClosure.some(p => typeof p !== "string") || new Set(manifest.policyClosure).size !== manifest.policyClosure.length) throw new Error("Invalid required policy closure.");
+    policyFiles = [];
+    for (const relative of [...manifest.policyClosure as string[], ".afd/project.json"].sort()) {
+      const target = await safeProjectFile(project, relative);
+      const content = await readFile(target, "utf8");
+      if (Buffer.byteLength(content) > 64000) throw new Error("Required policy file exceeds smoke-test limit.");
+      policyFiles.push({ path: relative, content, sha256: hash(content) });
+    }
+  }
   const blockers = audit.findings.filter((item) => item.severity === "blocker").map((item) => `${item.code}: ${item.message}`);
   for (const id of selectedAgents) {
-    const target = harnessTarget(id); const relative = primaryPath(target); if (!relative) continue;
+    const target = harnessTarget(id);
     if (target.discovery === "unsupported") { blockers.push(`${id}: no project discovery contract`); continue; }
+    if (target.discovery === "generated-only") { blockers.push(`${id}: project discovery is unverified`); }
+    const relative = primaryPath(target); if (!relative || relative === audit.canonical.path) continue;
     const before = await currentText(project, relative); const content = pointerContent(target, audit.canonical.path, audit.canonical.sha256);
     if (before === null) actions.push(action("create", "adapters", id, relative, `Create the minimal ${target.displayName} adapter.`, null, content));
     else if (before === content) { /* already desired */ }
@@ -89,11 +140,15 @@ export async function planHarness(projectInput: string, options: { readonly agen
     schemaVersion: 1, project: slash(project), baseRevision: git.revision, workspaceFingerprint: git.workspaceFingerprint, canonicalPath: audit.canonical.path,
     canonicalSha256: audit.canonical.sha256, selectedAgents, removeLegacy: options.removeLegacy ?? false, actions,
     blocked: blockers.length > 0, blockers,
+    ...(policyFiles ? { policyFiles } : {}),
   };
   return { ...base, approvalToken: planDigest(base) };
 }
 
 export async function assertHarnessPlanCurrent(plan: HarnessPlan): Promise<void> {
+  for (const file of plan.policyFiles ?? []) {
+    if (hash(await readFile(await safeProjectFile(plan.project, file.path), "utf8")) !== file.sha256) throw new Error("Harness plan is stale: supporting policy changed.");
+  }
   const canonical = await currentText(plan.project, plan.canonicalPath); if (canonical === null || hash(canonical) !== plan.canonicalSha256) throw new Error("Harness plan is stale: canonical instructions changed.");
   const git = await harnessGitState(plan.project); if (plan.baseRevision !== git.revision) throw new Error("Harness plan is stale: repository revision changed.");
   if (plan.workspaceFingerprint !== git.workspaceFingerprint) throw new Error("Harness plan is stale: repository workspace changed.");

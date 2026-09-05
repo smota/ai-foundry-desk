@@ -44,6 +44,7 @@ manager. Your logins, tokens, projects, conversations, and agent-native data rem
 | Apply a reviewed bundle of tools and skills | [Layer 3 recipes](docs/LAYER-3-RECIPES.md) | 10–20 minutes |
 | Understand an agent run | [Observability](docs/OBSERVABILITY.md) | 10 minutes |
 | Standardize instructions in a repository | [Project harnesses](docs/PROJECT-HARNESSES.md) | 15 minutes |
+| Initialize a project from reviewed inputs | [Project directory initialization](docs/PROJECT-INITIALIZATION.md) | Foundation first, harness verification separately |
 | Look up an `afd` command | [CLI reference](docs/CLI.md) | 1 minute |
 | Explore every capability interactively | [`afd tui`](docs/TUI.md) | 1 minute |
 | Understand or change the project | [Contributor guide](CONTRIBUTING.md) | 10 minutes |
@@ -121,7 +122,7 @@ Windows bootstrap and checksum separately, verifies SHA-256, and installs only t
 It does **not** configure either Layer automatically.
 
 ```powershell
-$v='0.6.4'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
+$v='0.7.0'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
 ```
 
 The bootstrap requires Node.js 24 or newer and pnpm. If a prerequisite is missing, it stops and
@@ -256,7 +257,7 @@ Never use a blind remote pipe; download the script and checksum separately befor
 Validated Linux/WSL bootstrap (downloads, verifies, then executes as separate steps):
 
 ```sh
-v=0.6.4; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
+v=0.7.0; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
 ```
 
 The same downloaded bootstrap uses macOS-native `shasum -a 256 --check`; that path remains pending

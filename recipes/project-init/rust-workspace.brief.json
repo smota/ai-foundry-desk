@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "project": { "name": "sample-rust", "purpose": "A Rust workspace foundation; product behavior is not implemented." },
+  "desiredHarnesses": ["codex", "claude-code", "pi", "grok", "agy"],
+  "foundation": {
+    "recipe": { "id": "rust-workspace", "version": "1" },
+    "toolchain": { "version": "1.98.0", "edition": "2024" },
+    "components": ["domain", "engine", "adapters", "cli"]
+  },
+  "policy": {
+    "canonical": "AGENTS.md",
+    "engineering": "ai-coded-human-governed",
+    "architectureDecisions": "adr-v1",
+    "skills": "none"
+  },
+  "licensing": { "spdx": "Apache-2.0", "rightsHolder": "Example Maintainer" }
+}

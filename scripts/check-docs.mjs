@@ -4,7 +4,7 @@ import path from "node:path";
 import process from "node:process";
 
 const root = process.cwd();
-const excluded = new Set([".git", "node_modules", "dist", ".test-dist"]);
+const excluded = new Set([".git", "node_modules", "dist", ".test-dist", "output"]);
 const markdown = [];
 
 function visit(directory) {

@@ -83,6 +83,7 @@ export interface HarnessPlanAction {
 }
 
 export interface HarnessPlan {
+  readonly policyFiles?: readonly { readonly path: string; readonly content: string; readonly sha256: string }[];
   readonly schemaVersion: 1;
   readonly project: string;
   readonly baseRevision: string | null;
@@ -106,6 +107,7 @@ export interface HarnessMutationReceipt {
 }
 
 export interface HarnessApplyReceipt {
+  readonly policyDigests?: readonly { readonly path: string; readonly sha256: string }[];
   readonly schemaVersion: 1;
   readonly project: string;
   readonly approvalToken: string;
@@ -172,6 +174,7 @@ export interface HarnessSmokeResult {
 }
 
 export interface HarnessSmokeReport {
+  readonly runtimeBinding?: { readonly observedAt: string; readonly context: string; readonly contractDigest: string };
   readonly schemaVersion: 1;
   readonly project: string;
   readonly approvalToken: string;
@@ -183,4 +186,5 @@ export interface HarnessSmokeReport {
   readonly consistent: boolean;
   readonly passed: boolean;
   readonly evidenceToken: string;
+  readonly executionContext?: string;
 }
