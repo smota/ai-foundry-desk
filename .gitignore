@@ -1,6 +1,7 @@
 # Local setup evidence and recovery material
 backups/
 setup-logs/
+output/
 **/backups/
 **/setup-logs/
 

@@ -65,3 +65,39 @@ The read-only audit and plan are intentionally repeatable. Any source, Git revis
 staged-output, evidence, or applied-state drift stops the workflow and requires a fresh audit or
 plan. This is how a review can proceed incrementally without an older approval being applied to a
 newer project state.
+
+## Execution readiness and current native contracts
+
+Codex, Agy CLI, and Grok Build consume `AGENTS.md` natively; Claude Code uses a thin
+`CLAUDE.md` pointer. Pi supports the canonical policy and its recognized adapter surface.
+Native discovery support is a capability contract, not proof that a particular installed
+version passed the live test. Agy CLI uses `--add-dir <disposable-workspace> --mode plan --sandbox`;
+explicit workspace registration permits its scoped file reads in headless sessions. Disabling slash
+expansion disables its plan mode and is therefore not a safe combination. Grok's
+bounded test permits multiple turns so reading the file can precede the final response.
+The legacy `antigravity` target remains separate and unverified.
+
+Readiness requires a successful nonempty version probe, not merely a PATH lookup.
+Reports distinguish lookup failure, denied access, version failure and timeout, and
+identify the execution context. Windows native executables and PowerShell shims use
+structured arguments under the process-tree runner; unsafe batch-only fallback is rejected.
+
+Plans hash Git-visible file contents as well as status and revision. An unborn repository
+has a null revision but a real content fingerprint. Invalid Git metadata and access failures
+stop planning. A plain non-Git folder receives a content fingerprint of its file tree.
+
+Live tests use a disposable workspace below the process temporary directory. In a
+no-op plan, already-installed instruction entrypoints are copied too: an empty change
+list must not remove the harness's discovery surface from the test. Proposed removals
+are excluded from that disposable workspace. The prompt tests discovery rather than
+starting the project's development workflow.
+
+In a
+restricted executor, select an approved writable temporary root in the process environment
+before launching the tests; do not relax the executor's security controls. Model permission
+modes and workspace snapshots do not establish a complete host sandbox. Tests require
+authorization to send the canonical policy to each selected model service.
+
+Discovery references: [Grok instructions](https://docs.x.ai/build/features/skills-plugins-marketplaces),
+[Agy project context](https://www.agy.dev/docs/cli/best-practices/), and
+[Agy modes](https://www.agy.dev/docs/cli/modes/).

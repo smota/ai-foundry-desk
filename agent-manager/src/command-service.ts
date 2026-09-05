@@ -18,6 +18,7 @@ import { AgentacctAdapter } from "./agentacct-adapter.js";
 import { migrateLegacyState } from "./migration.js";
 import { backupReport, enforceBackupRetention } from "./backups.js";
 import { doctor, executionIdentity } from "./doctor.js";
+import { executeProject, projectDoctor } from "./project-environment.js";
 import { foundationPlan, layer2Plan } from "./foundation.js";
 import { NodePlatformAdapter, writePrivateText } from "./platform.js";
 import { sandboxAccessDiagnostic } from "./sandbox-access.js";
@@ -29,14 +30,18 @@ import { applyMcpPlan, planMcpAdopt, planMcpMove, planMcpSync, planMcpToggle, pu
 import { discoverNativeMcp, piMcpAdapterConfigured } from "./mcp-formats.js";
 import { mcpCapabilities, type McpManagerOptions, type McpScope } from "./mcp-contracts.js";
 import { sha256 } from "./mcp-registry.js";
+import { runProjectCommand } from "./project-command.js";
 
-export const VERSION = "0.6.4";
+export const VERSION = "0.7.0";
 const productRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 export const help = `afd — AI Foundry Desk · Multi-Agent Workbench
 
 Usage:
   afd status | review | verify
   afd doctor [--json]
+  afd doctor --project <path> [--json]
+  afd exec <project> -- <command> [args...]
+  afd fix rust --dry-run|--apply
   afd fix layer1|sandbox --dry-run|--apply
   afd sync [--dry-run]
   afd adopt|import <agent> <skill> [--dry-run]
@@ -58,6 +63,7 @@ Usage:
   afd layer1|layer2 --dry-run|--apply [--allow-claude-postinstall]
   afd catalog | help | --version
   afd harness audit <project> [--json]
+  afd project recipes|inspect|plan|stage|validate|apply|verify|rollback|recover|status [options] [--json]
   afd harness plan <project> [--agents <auto|list>] [--remove-legacy] [--json]
   afd harness stage <project> --output <directory> [--agents <auto|list>] [--remove-legacy] [--json]
   afd harness test <project> [--agents <auto|list>] [--remove-legacy] [--live] [--evidence <outside-project-file>] [--json]
@@ -93,12 +99,31 @@ async function dispatch(args: readonly string[]): Promise<number> {
   const console = { log: (...values: unknown[]) => activeIO.stdout(values.map(String).join(" ") + "\n"), error: (...values: unknown[]) => activeIO.stderr(values.map(String).join(" ") + "\n") };
   process.env.USERPROFILE ??= homedir();
   const command = args[0] ?? "help";
+  if (command === "project") return runProjectCommand(args.slice(1), value => activeIO.stdout(value));
   if (["--version", "-v"].includes(command)) { console.log(VERSION); return 0; }
   if (["help", "--help", "-h"].includes(command)) { console.log(help); return 0; }
   if (command === "layer3" && args[1] === "recipes") { console.log("builtin:smota-foundations\nbuiltin:observability"); return 0; }
   if (command === "init") { if (args.slice(1).some((arg) => arg !== "--dry-run")) throw new Error("Usage: afd init [--dry-run]"); console.log("AI Foundry Desk is ready for inspection. No layer was applied."); console.log("Next: afd status, then afd layer1 --dry-run and afd layer2 --dry-run."); return 0; }
   if (command === "migrate") { if (args.slice(1).some((arg) => !["--apply", "--dry-run"].includes(arg))) throw new Error("Usage: afd migrate --dry-run|--apply"); const apply = args.includes("--apply"); const dryRun = args.includes("--dry-run"); if (apply === dryRun) throw new Error("Use exactly one option: afd migrate --dry-run or --apply."); const result = await migrateLegacyState(apply); for (const action of result.actions) console.log(action); console.log(apply ? "Migration complete." : "Dry run: no files were changed."); return 0; }
   if (command === "backup") { const subcommand = args[1] ?? "status"; if (subcommand === "status" && args.length === 2) { for (const item of await backupReport()) console.log("BACKUP\t" + item.target + "\tsnapshots=" + item.snapshots + "\tbytes=" + item.bytes + "\tviolations=" + item.retentionViolations); return 0; } if (subcommand === "maintain" && (args[2] === "--dry-run" || args[2] === "--apply") && args.length === 3) { const removed = await enforceBackupRetention(undefined, Date.now(), args[2] === "--dry-run"); for (const item of removed) console.log((args[2] === "--dry-run" ? "WOULD_REMOVE\t" : "REMOVED\t") + item); return 0; } throw new Error("Usage: afd backup status | maintain --dry-run|--apply"); }
+  if (command === "exec") {
+    if (!args[1] || args[2] !== "--" || !args[3]) throw new Error("Usage: afd exec <project> -- <command> [args...]");
+    return executeProject(args[1], args[3], args.slice(4), productRoot, cliPlatform);
+  }
+  if (command === "doctor" && args.includes("--project")) {
+    const index = args.indexOf("--project"); const project = args[index + 1];
+    if (!project || project.startsWith("--") || args.slice(1).some((arg, i) => arg !== "--project" && arg !== "--json" && i + 1 !== index + 1)) throw new Error("Usage: afd doctor --project <path> [--json]");
+    const rows = await projectDoctor(project, productRoot, cliPlatform);
+    console.log(args.includes("--json") ? JSON.stringify(rows, null, 2) : rows.map(row => `${row.status}\t${row.id}\t${row.detail}\t${row.remedy}`).join("\n"));
+    return rows.some(row => row.status === "FAIL") ? 2 : 0;
+  }
+  if (command === "fix" && args[1] === "rust") {
+    if (args.length !== 3 || !["--dry-run", "--apply"].includes(args[2]!)) throw new Error("Usage: afd fix rust --dry-run|--apply");
+    if (process.platform !== "win32") throw new Error("The MSVC prerequisite repair is Windows-only.");
+    const identity = await executionIdentity();
+    if (args[2] === "--apply" && (identity.mismatch || identity.context !== "interactive-user")) throw new Error("Rust prerequisite installation requires the intended interactive-user context.");
+    return runPowerShellArgs("01-rust-build-tools.ps1", ["-Mode", args[2] === "--apply" ? "Apply" : "Plan", ...(args[2] === "--apply" ? ["-Approved"] : [])]);
+  }
   if (command === "doctor") { if (args.slice(1).some((arg) => arg !== "--json")) throw new Error("Usage: afd doctor [--json]"); const identity=await executionIdentity();const rows = [...await doctor()];const access=await sandboxAccessDiagnostic(productRoot,cliPlatform,identity);if(access)rows.push(access); if (args.includes("--json")) console.log(JSON.stringify(rows, null, 2)); else for (const row of rows) console.log(row.status + "\t" + row.id + "\t" + row.detail + "\t" + row.remedy); return rows.some((row) => row.status === "FAIL") ? 2 : 0; }
   if (command === "provenance") { if (args.slice(1).some((arg) => arg !== "--json")) throw new Error("Usage: afd provenance [--json]"); const value={version:VERSION,cli:path.resolve(process.argv[1]??""),productRoot,runtime:{executable:path.resolve(process.execPath),version:process.versions.node},identity:await executionIdentity()};if(args.includes("--json"))console.log(JSON.stringify(value,null,2));else console.log(`AFD ${VERSION}\nCLI ${value.cli}\nRuntime ${value.runtime.version} ${value.runtime.executable}\nContext ${value.identity.context} ${value.identity.account}`);return 0; }
   if (command === "fix") { const target=args[1];if(!["layer1","sandbox"].includes(target??"")||args.slice(2).some((arg) => !["--apply", "--dry-run"].includes(arg)))throw new Error("Usage: afd fix layer1|sandbox --dry-run|--apply");const apply=args.includes("--apply");const dryRun=args.includes("--dry-run");if(apply===dryRun)throw new Error(`Use exactly one option: afd fix ${target??"layer1"} --dry-run or --apply.`);const identity=await executionIdentity();if(identity.mismatch||identity.context==="sandbox")throw new Error(`${target==="sandbox"?"Sandbox access":"Layer 1"} repair is refused because the process token and profile identity do not match. Use a normal shell for the intended user.`);if(target==="sandbox"){if(process.platform!=="win32")throw new Error("Sandbox access repair is Windows-only.");const repaired=await runPowerShellArgs("13-reconcile-sandbox-toolchain-access.ps1",["-Mode",dryRun?"Plan":"Apply",...(apply?["-Approved"]:[])]);if(repaired!==0||dryRun)return repaired;return runPowerShellArgs("13-reconcile-sandbox-toolchain-access.ps1",["-Mode","Plan"]);}if(process.platform==="win32"){for(const script of ["01-layer1-runtime.ps1","02-docker-windows.ps1"]){const repair=await runPowerShell(script,dryRun);if(repair!==0)return repair;}return dryRun?0:runPowerShellArgs("01-doctor-layer1.ps1",[]);}if(process.platform==="linux"){for(const [script,sudo]of [["01-layer1-runtime-linux.sh",false],["02-docker-linux.sh",apply]] as const){const code=await runPosix(script,[dryRun?"--dry-run":"--apply"],sudo);if(code!==0)return code;}return dryRun?0:runPosix("01-doctor-layer1-linux.sh",[]);}if(process.platform==="darwin"){for(const script of ["01-layer1-runtime-macos.sh","02-docker-macos.sh"]){const code=await runPosix(script,[dryRun?"--dry-run":"--apply"]);if(code!==0)return code;}return dryRun?0:runPosix("01-doctor-layer1-macos.sh",[]);}throw new Error("Layer 1 fix is not implemented for this platform."); }

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-foundry-desk.dev/schema/project-brief.schema.json",
+  "title": "AFD project initialization brief",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "project", "desiredHarnesses", "foundation", "policy"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "project": {
+      "type": "object", "additionalProperties": false, "required": ["name", "purpose"],
+      "properties": { "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,47}$" }, "purpose": { "type": "string", "minLength": 1, "maxLength": 32000 } }
+    },
+    "desiredHarnesses": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["codex", "claude-code", "pi", "grok", "agy", "antigravity", "gemini", "copilot", "cursor", "windsurf", "hermes"] } },
+    "foundation": {
+      "type": "object", "additionalProperties": false, "required": ["recipe"],
+      "properties": {
+        "recipe": { "type": "object", "additionalProperties": false, "required": ["id", "version"], "properties": { "id": { "enum": ["policy-only", "rust-workspace"] }, "version": { "const": "1" }, "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" } } },
+        "toolchain": { "type": "object", "additionalProperties": false, "required": ["version", "edition"], "properties": { "version": { "type": "string", "pattern": "^1\\.[0-9]+\\.[0-9]+$" }, "edition": { "enum": ["2021", "2024"] } } },
+        "components": { "type": "array", "minItems": 1, "maxItems": 20, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,31}$" } }
+      },
+      "allOf": [{ "if": { "properties": { "recipe": { "properties": { "id": { "const": "rust-workspace" } } } } }, "then": { "required": ["toolchain", "components"] }, "else": { "not": { "anyOf": [{ "required": ["toolchain"] }, { "required": ["components"] }] } } }]
+    },
+    "policy": {
+      "type": "object", "additionalProperties": false, "required": ["canonical", "engineering", "architectureDecisions", "skills"],
+      "properties": { "canonical": { "const": "AGENTS.md" }, "engineering": { "enum": ["standard", "ai-coded-human-governed"] }, "architectureDecisions": { "const": "adr-v1" }, "skills": { "const": "none" } }
+    },
+    "licensing": { "type": "object", "additionalProperties": false, "required": ["spdx", "rightsHolder"], "properties": { "spdx": { "const": "Apache-2.0" }, "rightsHolder": { "type": "string", "minLength": 1, "maxLength": 32000 } } },
+    "files": { "type": "object", "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 32000 } },
+    "policyClosure": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+  }
+}

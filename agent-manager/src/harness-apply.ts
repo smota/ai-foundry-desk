@@ -3,6 +3,8 @@ import { lstat, mkdir, readFile, realpath, rename, rmdir, unlink, writeFile } fr
 import path from "node:path";
 import type { PlatformAdapter } from "./platform.js";
 import { NodePlatformAdapter, writePrivateText } from "./platform.js";
+import { commandAvailable, expectedHarnessFingerprint, harnessRuntimeBinding } from "./harness-smoke.js";
+import { harnessTarget } from "./harness-registry.js";
 import { assertHarnessPlanCurrent, harnessGitState } from "./harness-plan.js";
 import type {
   HarnessApplyReceipt,
@@ -23,16 +25,32 @@ function exactKeys(value: Record<string, unknown>, keys: readonly string[]): boo
 function parseEvidence(value: unknown): HarnessSmokeReport {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Harness smoke evidence is not an object.");
   const item = value as Record<string, unknown>; const keys = ["schemaVersion", "project", "approvalToken", "selectedAgents", "live", "expectedPolicyFingerprint", "results", "ready", "consistent", "passed", "evidenceToken"];
+  if ("executionContext" in item) {
+    if (typeof item.executionContext !== "string") throw new Error("Invalid harness execution context.");
+    keys.push("executionContext");
+  }
+  if ("runtimeBinding" in item) keys.push("runtimeBinding");
   if (!exactKeys(item, keys) || item.schemaVersion !== 1 || typeof item.project !== "string" || typeof item.approvalToken !== "string" || !Array.isArray(item.selectedAgents) || typeof item.live !== "boolean" || typeof item.expectedPolicyFingerprint !== "string" || !Array.isArray(item.results) || typeof item.ready !== "boolean" || typeof item.consistent !== "boolean" || typeof item.passed !== "boolean" || typeof item.evidenceToken !== "string") throw new Error("Harness smoke evidence has an invalid contract.");
   const { evidenceToken, ...base } = item; if (hash(JSON.stringify(base)) !== evidenceToken) throw new Error("Harness smoke evidence token does not match its content.");
   return item as unknown as HarnessSmokeReport;
 }
-async function loadEvidence(plan: HarnessPlan, input: string): Promise<HarnessSmokeReport> {
+async function loadEvidence(plan: HarnessPlan, input: string, adapter: PlatformAdapter): Promise<HarnessSmokeReport> {
   const target = await realpath(path.resolve(input)); if (contained(path.resolve(plan.project), target)) throw new Error("Harness smoke evidence must remain outside the target project.");
   const evidence = parseEvidence(JSON.parse(await readFile(target, "utf8")));
   if (evidence.project !== plan.project || evidence.approvalToken !== plan.approvalToken) throw new Error("Harness smoke evidence does not belong to this reviewed plan.");
   if (!evidence.live || !evidence.ready || !evidence.consistent || !evidence.passed) throw new Error("A passing live harness smoke report is required.");
+  if (evidence.expectedPolicyFingerprint !== await expectedHarnessFingerprint(plan)) throw new Error("Harness evidence does not match the expected policy facts.");
   if (JSON.stringify(evidence.selectedAgents) !== JSON.stringify(plan.selectedAgents)) throw new Error("Harness smoke evidence agent selection does not match the reviewed plan.");
+  if (new Set(evidence.results.map(r => r.agent)).size !== plan.selectedAgents.length || evidence.results.some(r => !plan.selectedAgents.includes(r.agent))) throw new Error("Harness evidence has duplicate or foreign agent identities.");
+  if (plan.policyFiles) {
+    const bound = evidence.runtimeBinding; const current = harnessRuntimeBinding();
+    const age = bound ? Date.now() - Date.parse(bound.observedAt) : NaN;
+    if (!bound || !Number.isFinite(age) || age < 0 || age > 86400000 || bound.context !== current.context || bound.contractDigest !== current.contractDigest) throw new Error("Harness runtime evidence is missing, stale, or from a different environment/runner contract.");
+    for (const result of evidence.results) {
+      const probe = await commandAvailable(harnessTarget(result.agent).command, command => adapter.run(command), adapter.id);
+      if (!probe.available || !result.version || probe.version !== result.version) throw new Error(`Harness executable readiness/version changed: ${result.agent}`);
+    }
+  }
   if (evidence.results.length !== plan.selectedAgents.length || evidence.results.some((result) => result.state !== "passed" || result.policyFingerprint !== evidence.expectedPolicyFingerprint)) throw new Error("Every selected agent must have passing, consistent smoke evidence.");
   return evidence;
 }
@@ -73,6 +91,10 @@ async function loadReceipt(adapter: PlatformAdapter, input: string): Promise<{ r
 export async function verifyHarnessReceipt(receiptInput: string, options: { readonly adapter?: PlatformAdapter } = {}): Promise<HarnessVerifyReport> {
   const adapter = options.adapter ?? new NodePlatformAdapter(); const loaded = await loadReceipt(adapter, receiptInput); const receipt = loaded.receipt; const project = await realpath(receipt.project); if (slash(project) !== receipt.project) throw new Error("Harness receipt project path no longer resolves to the reviewed target.");
   const checks: { path: string; valid: boolean; detail: string }[] = [];
+  for (const file of receipt.policyDigests ?? []) {
+    const content = await currentText(project, file.path);
+    checks.push({ path: file.path, valid: content !== null && hash(content) === file.sha256, detail: "Required supporting policy digest" });
+  }
   const canonical = await currentText(project, receipt.canonicalPath); checks.push({ path: receipt.canonicalPath, valid: canonical !== null && hash(canonical) === receipt.canonicalSha256, detail: "Canonical instruction hash" });
   for (const mutation of receipt.mutations) { const value = await currentText(project, mutation.path); const current = value === null ? null : hash(value); checks.push({ path: mutation.path, valid: current === mutation.afterSha256, detail: "Applied harness artifact hash" }); }
   const git = await harnessGitState(project); checks.push({ path: ".git/workspace", valid: git.revision === receipt.baseRevision && git.workspaceFingerprint === receipt.afterWorkspaceFingerprint, detail: "Repository revision and complete Git-visible workspace fingerprint" });
@@ -81,7 +103,7 @@ export async function verifyHarnessReceipt(receiptInput: string, options: { read
 
 export async function applyHarnessPlan(plan: HarnessPlan, options: { readonly confirm: string; readonly evidence: string; readonly adapter?: PlatformAdapter }): Promise<HarnessApplyResult> {
   if (plan.blocked) throw new Error(`Harness plan is blocked: ${plan.blockers.join("; ")}`); if (options.confirm !== plan.approvalToken) throw new Error("Harness apply confirmation does not match the reviewed plan token.");
-  const adapter = options.adapter ?? new NodePlatformAdapter(); const evidence = await loadEvidence(plan, options.evidence);
+  const adapter = options.adapter ?? new NodePlatformAdapter(); const evidence = await loadEvidence(plan, options.evidence, adapter);
   const receiptPath = path.join(stateDirectory(adapter, plan.project), `${plan.approvalToken}.json`); const existing = await adapter.readText(receiptPath);
   if (existing !== undefined) { validateReceipt(JSON.parse(existing)); const verification = await verifyHarnessReceipt(receiptPath, { adapter }); if (!verification.valid) throw new Error("Existing harness apply receipt does not match the current project state."); return { schemaVersion: 1, status: "unchanged", project: plan.project, approvalToken: plan.approvalToken, receiptPath: slash(receiptPath), changed: [] }; }
   await assertHarnessPlanCurrent(plan);
@@ -91,7 +113,8 @@ export async function applyHarnessPlan(plan: HarnessPlan, options: { readonly co
   try {
     for (const mutation of mutations) { await setMutation(plan.project, mutation, "after", created); applied.push(mutation); }
     const afterGit = await harnessGitState(plan.project); const base: Omit<HarnessApplyReceipt, "receiptToken"> = { schemaVersion: 1, project: plan.project, approvalToken: plan.approvalToken, evidenceToken: evidence.evidenceToken, selectedAgents: plan.selectedAgents, canonicalPath: plan.canonicalPath, canonicalSha256: plan.canonicalSha256, baseRevision: plan.baseRevision, beforeWorkspaceFingerprint: plan.workspaceFingerprint, afterWorkspaceFingerprint: afterGit.workspaceFingerprint, appliedAt: new Date().toISOString(), mutations, createdDirectories: [...created].sort() };
-    const receipt: HarnessApplyReceipt = { ...base, receiptToken: hash(JSON.stringify(base)) }; await writePrivateText(adapter, receiptPath, `${JSON.stringify(receipt, null, 2)}\n`);
+    const boundBase = { ...base, ...(plan.policyFiles ? { policyDigests: plan.policyFiles.map(f => ({ path: f.path, sha256: f.sha256 })) } : {}) };
+    const receipt: HarnessApplyReceipt = { ...boundBase, receiptToken: hash(JSON.stringify(boundBase)) }; await writePrivateText(adapter, receiptPath, `${JSON.stringify(receipt, null, 2)}\n`);
   } catch (error) { for (const mutation of [...applied].reverse()) await setMutation(plan.project, mutation, "before", new Set()); for (const directory of [...created].sort((left, right) => right.length - left.length)) try { await rmdir(safeDirectoryTarget(plan.project, directory)); } catch { /* preserve non-empty directories */ } throw error; }
   return { schemaVersion: 1, status: "applied", project: plan.project, approvalToken: plan.approvalToken, receiptPath: slash(receiptPath), changed: mutations.map((item) => item.path) };
 }

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "project": { "name": "sample-project", "purpose": "A reviewed project foundation." },
+  "desiredHarnesses": ["codex", "claude-code", "pi", "grok", "agy"],
+  "foundation": { "recipe": { "id": "policy-only", "version": "1" } },
+  "policy": {
+    "canonical": "AGENTS.md",
+    "engineering": "ai-coded-human-governed",
+    "architectureDecisions": "adr-v1",
+    "skills": "none"
+  }
+}

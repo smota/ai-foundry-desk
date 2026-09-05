@@ -1,6 +1,6 @@
 {
   "name": "ai-foundry-desk",
-  "version": "0.6.4",
+  "version": "0.7.0",
   "description": "AI Foundry Desk — Multi-Agent Workbench for a personal AI workstation.",
   "author": "Samuel Mota",
   "license": "MIT",
@@ -74,6 +74,7 @@
     "docs:check": "node scripts/check-docs.mjs",
     "test:clean-build": "node scripts/test-clean-build.mjs",
     "test:package-smoke": "node scripts/package-smoke.mjs",
+    "test:project-smoke": "pnpm build && node scripts/project-init-smoke.mjs",
     "afd": "pnpm --filter @ai-foundry-desk/cli dev",
     "afd:status": "pnpm --filter @ai-foundry-desk/cli dev status",
     "afd:review": "pnpm --filter @ai-foundry-desk/cli dev review",

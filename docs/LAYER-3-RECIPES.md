@@ -68,7 +68,9 @@ does not launch a browser.
 
 ## herdr-workbench
 
-`builtin:herdr-workbench` pins Herdr 0.8.2 as `github:herdrdev/herdr` through the AFD-owned global mise configuration.
+`builtin:herdr-workbench` pins Herdr 0.8.2 as `github:herdrdev/herdr` through the AFD-owned global mise configuration,
+along with the official `herdr` agent skill distributed globally to all supported agent surfaces (`claude-code`,
+`codex`, `antigravity`, `pi`, `hermes`, and `grok`).
 It does not configure Hermes or MCP. The same recipe applies on Windows, Linux/WSL2, and macOS, but
 each environment has its own mise installation, state, verification, and rollback record. Windows
 x64 and Ubuntu WSL2 are live-validation targets; macOS remains implemented and fixture-tested with

@@ -13,7 +13,7 @@ function isolatedCli(root: string, ...args: string[]) { return spawnSync(process
 test("help and version use the afd brand", () => {
   const help = cli("--help"); const version = cli("--version");
   assert.equal(help.status, 0); assert.match(help.stdout, /AI Foundry Desk/); assert.match(help.stdout, /afd layer1/); assert.match(help.stdout, /afd tui/);
-  assert.equal(version.status, 0); assert.equal(version.stdout.trim(), "0.6.4");
+  assert.equal(version.status, 0); assert.equal(version.stdout.trim(), "0.7.0");
 });
 
 test("TUI refuses non-interactive streams and preserves CLI parity", () => {
@@ -39,7 +39,7 @@ test("doctor and fix expose safe argument contracts", () => {
 test("provenance identifies the running CLI and hybrid repair fails closed", () => {
   const provenance = cli("provenance", "--json"); const repair = cli("fix", "layer1", "--dry-run");
   assert.equal(provenance.status, 0); const value = JSON.parse(provenance.stdout) as { version?: string; cli?: string; identity?: { context?: string } };
-  assert.equal(value.version, "0.6.4"); assert.match(value.cli ?? "", /cli\.js$/);
+  assert.equal(value.version, "0.7.0"); assert.match(value.cli ?? "", /cli\.js$/);
   if (value.identity?.context === "hybrid") { assert.notEqual(repair.status, 0); assert.match(repair.stderr, /identity do not match/); }
 });
 

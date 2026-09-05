@@ -35,6 +35,11 @@ try {
         "agent-manager/dist/mcp-contracts.js", "agent-manager/dist/mcp-formats.js",
         "agent-manager/dist/mcp-manager.js", "agent-manager/dist/mcp-registry.js",
         "agent-manager/dist/platform.js", "recipes/observability.json", "scripts/agentacct-query.py",
+        "agent-manager/dist/project-command.js", "agent-manager/dist/project-apply.js",
+        "agent-manager/dist/project-plan.js", "agent-manager/dist/project-validate.js",
+        "agent-manager/dist/project-environment.js", "agent-manager/schema/project-brief.schema.json",
+        "recipes/project-init/policy-only.brief.json", "recipes/project-init/rust-workspace.brief.json",
+        "recipes/project-init/Apache-2.0.txt", "scripts/01-rust-build-tools.ps1",
         "scripts/agentacct-native/afd_agentacct_windows.py", "scripts/agentacct-native/fcntl.py", "scripts/agentacct-native/sitecustomize.py",
         "requirements/agentacct.in", "requirements/phoenix.in",
         "requirements/pylock.agentacct.toml", "requirements/pylock.phoenix.toml",
@@ -49,12 +54,13 @@ try {
     )
     foreach ($item in $required) { if ($files -notcontains $item) { throw "Artifact is missing required file: $item" } }
     $forbidden = @($files | Where-Object {
-        $_ -match '(^|/)(backups|setup-logs|state|local|node_modules|\.env|src|test)(/|$)' -or
+        $_ -match '(^|/)(backups|setup-logs|output|state|local|node_modules|\.env|src|test)(/|$)' -or
         $_ -match '^scripts/(afd-bootstrap|build-release|capture-tui-screens|check-docs|check-dist-parity|check-release-version|clean-dist|generate-telemetry-sbom|package-smoke|release-audit|test-clean-build)' -or
         $_ -eq 'setup.ps1'
     })
     if ($forbidden) { throw "Forbidden development or local content found in the artifact: $($forbidden -join ', ')" }
-    if ($files.Count -gt 260) { throw "Artifact file-count ceiling exceeded: $($files.Count) > 260." }
+    # v0.7.0 adds the project initializer, its recipes/schema, and the Rust environment helper (279 files).
+    if ($files.Count -gt 280) { throw "Artifact file-count ceiling exceeded: $($files.Count) > 280." }
 
     $totalBytes = 0L
     $sensitive = [regex]'(?i)(C:\\Users\\samue|/home/[a-z0-9._-]+/|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|npm_[a-z0-9]{20,}|gh[pousr]_[a-z0-9]{20,}|AKIA[0-9A-Z]{16})'

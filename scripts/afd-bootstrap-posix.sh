@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-VERSION="0.6.4"
+VERSION="0.7.0"
 REPOSITORY="smota/ai-foundry-desk"
 PREFIX="${HOME}/.local"
 ASSET_DIR=""

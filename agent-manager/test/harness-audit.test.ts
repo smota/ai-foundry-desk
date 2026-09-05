@@ -24,11 +24,11 @@ test("audit is read-only and emits equivalent human and JSON evidence", async ()
   assert.match(renderHarnessAudit(report), /AFD project harness audit/);
 });
 
-test("audit distinguishes Agy from Antigravity and never treats generated files as discovery proof", async () => {
+test("audit records native Agy discovery as configured, retaining the separate legacy target", async () => {
   const root = await fixture(); await mkdir(path.join(root, ".agy")); await writeFile(path.join(root, "AGY.md"), "# Agy\n\nRead `AGENTS.md`.\n");
   const report = await auditHarness(root); const agy = report.agents.find((item) => item.id === "agy"); const antigravity = report.agents.find((item) => item.id === "antigravity");
-  assert.equal(agy?.detected, true); assert.equal(agy?.discovery, "generated-only"); assert.equal(antigravity?.detected, false);
-  assert.ok(report.findings.some((item) => item.code === "agent.discovery-unverified" && item.path === "AGY.md"));
+  assert.equal(agy?.detected, true); assert.equal(agy?.discovery, "configured"); assert.equal(antigravity?.detected, false);
+  assert.equal(agy?.instruction?.path, "AGENTS.md");
 });
 
 test("audit reports oversized canonical guidance without using line count as a blocker", async () => {

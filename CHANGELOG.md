@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## 0.7.0 — 2026-09-05
+
+- Initialize policy-only and Rust project foundations from reviewed briefs with canonical
+  instructions, engineering guidance, ADR lifecycles, and optional explicit Apache-2.0 licensing.
+  Review and stage exact outputs before applying; detect drift and retain scoped recovery receipts.
+- Diagnose project toolchains with `afd doctor --project`, run commands through project-scoped
+  `afd exec`, and preview or apply Windows Rust linker/SDK repair with `afd fix rust`.
+  Existing mise configuration stays intact and compiler activation is process-local.
+- Validate Codex, Claude Code, Pi, Grok, and Agy policy discovery in disposable workspaces,
+  including already-installed pointers when a plan has no changes. Correct Agy/Grok discovery and
+  preserve bounded permission checks, explicit live authorization, and execution-context evidence.
+- Reject unsupported harness targets and stale plans more reliably: fingerprints bind actual
+  Git-visible file bytes before the first commit and after edits that leave Git status unchanged.
+  Improve Windows launcher compatibility and distinguish missing commands from denied or failed execution.
+
 - Install or verify Docker Desktop as a default Windows and macOS Layer 1 host capability through
   explicit, elevation-aware adapters without automatic startup, terms acceptance, backend changes,
   privileged preconfiguration, or group edits.
@@ -14,6 +29,9 @@
 - Add recipe schema v3 and `herdr-workbench` for exact Herdr 0.8.2 installation through the existing
   Layer 1 Mise authority on Windows, Linux/WSL2, and implemented-but-unvalidated macOS, with
   immutable manifest-hashed plugin declarations and managed-only rollback.
+- Provision the official Herdr 0.8.2 companion agent skill globally across all supported agent
+  surfaces (`claude-code`, `codex`, `antigravity`, `pi`, `hermes`, and `grok`) as part of the
+  `builtin:herdr-workbench` recipe.
 - Keep Herdr independent from Hermes MCP, and make the current Hermes user-global MCP limitation an
   explicit project-scope capability gate until a released native contract passes non-leak validation.
 

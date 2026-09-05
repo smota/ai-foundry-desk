@@ -90,7 +90,28 @@ try {
 
 $process = [Diagnostics.Process]::new()
 $process.StartInfo = [Diagnostics.ProcessStartInfo]::new()
-$process.StartInfo.FileName = $Executable
+$resolvedCommand = Get-Command -Name $Executable -CommandType Application,ExternalScript -ErrorAction Stop | Select-Object -First 1
+$resolvedExecutable = $resolvedCommand.Source
+# CreateProcess does not resolve PowerShell/npm shims. Prefer a sibling PowerShell
+# shim, whose argument array does not pass through cmd.exe string interpolation.
+if ([IO.Path]::GetExtension($resolvedExecutable) -match '^\.(cmd|bat)$') {
+    $native = Get-Command -Name ([IO.Path]::GetFileNameWithoutExtension($Executable) + '.exe') -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    $sibling = [IO.Path]::ChangeExtension($resolvedExecutable, '.ps1')
+    if ($native) { $resolvedExecutable = $native.Source }
+    elseif (Test-Path -LiteralPath $sibling -PathType Leaf) { $resolvedExecutable = $sibling }
+    else {
+        $psShim = Get-Command -Name ([IO.Path]::GetFileNameWithoutExtension($Executable) + '.ps1') -CommandType ExternalScript -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($psShim) { $resolvedExecutable = $psShim.Source }
+        else { throw 'Batch-only command requires an explicit reviewed native launcher; no safe PowerShell shim was found.' }
+    }
+}
+if ([IO.Path]::GetExtension($resolvedExecutable) -eq '.ps1') {
+    $executableData = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($resolvedExecutable))
+    $script = "`$ProgressPreference='SilentlyContinue';`$exe=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('$executableData'));`$argv=ConvertFrom-Json ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('$ArgumentsBase64'))); & `$exe @argv; if (`$null -ne `$LASTEXITCODE) { exit `$LASTEXITCODE }"
+    $arguments = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($script)))
+    $resolvedExecutable = Join-Path $PSHOME 'powershell.exe'
+}
+$process.StartInfo.FileName = $resolvedExecutable
 $quotedArguments = @()
 foreach ($argument in $arguments) { $quotedArguments += ConvertTo-WindowsArgument $argument }
 $process.StartInfo.Arguments = $quotedArguments -join " "

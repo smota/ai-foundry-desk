@@ -3,7 +3,13 @@
   "id": "herdr-workbench",
   "version": "1.0.0",
   "origin": "builtin",
-  "skills": [],
+  "skills": [
+    {
+      "id": "herdr",
+      "source": "herdr-workbench/herdr",
+      "targets": ["claude-code", "codex", "antigravity", "pi", "hermes", "grok"]
+    }
+  ],
   "tools": [
     {
       "id": "herdr",
@@ -19,6 +25,6 @@
   ],
   "plugins": [],
   "prerequisites": ["layer1-mise", "git"],
-  "checks": ["herdr-on-path", "herdr-version-pinned"],
+  "checks": ["herdr-on-path", "herdr-version-pinned", "herdr-skill-visible-to-all-detected-agents"],
   "rollback": { "managedOnly": true }
 }

@@ -5,7 +5,7 @@ import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { planHarness, stageHarness } from "../src/harness-plan.js";
+import { assertHarnessPlanCurrent, planHarness, stageHarness } from "../src/harness-plan.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -53,4 +53,48 @@ test("stage writes only outside the project, is idempotent, and rejects source d
 test("stage refuses an output inside the target project", async () => {
   const root = await fixture(); const plan = await planHarness(root, { agents: ["claude-code"] });
   await assert.rejects(stageHarness(plan, path.join(root, ".afd-stage")), /outside/);
+});
+
+test("unsupported targets without an adapter path block planning", async () => {
+  const plan = await planHarness(await fixture(), { agents: ["hermes"] });
+  assert.equal(plan.blocked, true);
+  assert.ok(plan.blockers.some((item) => item.includes("hermes")));
+});
+
+test("unborn Git repositories bind untracked file bytes and detect same-status edits", async () => {
+  const root = await fixture();
+  await execFileAsync("git", ["init", root]);
+  await writeFile(path.join(root, "implementation.txt"), "before");
+  const plan = await planHarness(root, { agents: ["codex"] });
+  assert.equal(plan.baseRevision, null);
+  assert.match(plan.workspaceFingerprint ?? "", /^[a-f0-9]{64}$/);
+  await writeFile(path.join(root, "implementation.txt"), "after!");
+  await assert.rejects(assertHarnessPlanCurrent(plan), /workspace changed/);
+});
+
+test("committed repositories detect content edits even when Git porcelain is unchanged", async () => {
+  const root = await fixture();
+  await execFileAsync("git", ["init", root]);
+  await execFileAsync("git", ["-C", root, "add", "."]);
+  await execFileAsync("git", ["-C", root, "-c", "user.name=AFD Test", "-c", "user.email=afd@example.invalid", "commit", "-m", "fixture"]);
+  await writeFile(path.join(root, "CODEX.md"), "first edit");
+  const plan = await planHarness(root, { agents: ["codex"] });
+  await writeFile(path.join(root, "CODEX.md"), "other edit");
+  await assert.rejects(assertHarnessPlanCurrent(plan), /workspace changed/);
+});
+
+test("ignored build output does not invalidate a Git-bound plan", async () => {
+  const root = await fixture();
+  await execFileAsync("git", ["init", root]);
+  await writeFile(path.join(root, ".gitignore"), "build-output.txt\n");
+  await writeFile(path.join(root, "build-output.txt"), "first");
+  const plan = await planHarness(root, { agents: ["codex"] });
+  await writeFile(path.join(root, "build-output.txt"), "second");
+  await assertHarnessPlanCurrent(plan);
+});
+
+test("invalid Git metadata cannot masquerade as a non-Git project", async () => {
+  const root = await fixture();
+  await writeFile(path.join(root, ".git"), "gitdir: nonexistent-repository\n");
+  await assert.rejects(planHarness(root, { agents: ["codex"] }), /Cannot inspect harness Git state/);
 });
