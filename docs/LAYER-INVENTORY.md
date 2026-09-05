@@ -93,7 +93,7 @@ and verified. Rollback is limited to files and links recorded as AFD-managed.
 |  | [Holoself](https://github.com/smota/holoself) | Portable, reviewable personal context distributed as an agent skill. | Give detected agents the same user-owned context without duplicating its source. | **Integrated** by the built-in smota-foundations recipe through an explicit local overlay. |
 |  | [Vibium](https://www.npmjs.com/package/vibium) | Browser automation CLI and library. | Add the browser-control tool declared by the smota-foundations bundle. | **Managed by recipe**; pinned package and integrity hash. |
 |  | [Tokscale](https://www.npmjs.com/package/tokscale) | Local token-usage analysis CLI. | Add the usage-analysis tool declared by the smota-foundations bundle. | **Managed by recipe**; pinned package and integrity hash. |
-|  | [Herdr](https://herdr.dev/) | Persistent terminal runtime for coding agents and plugin workflows. | Give local agents durable workspaces without replacing their native CLIs. | **Managed by recipe through Layer 1 mise**; exact version, immutable plugin inputs, and platform-specific verification. Separate from Hermes MCP management. |
+|  | [Herdr](https://herdr.dev/) | Persistent terminal runtime for coding agents and plugin workflows. | Give local agents durable workspaces without replacing their native CLIs. | **Managed by recipe through Layer 1 mise**; exact version, companion agent skill for all supported agents, immutable plugin inputs, and platform-specific verification. Separate from Hermes MCP management. |
 
 ## Reading the inventory safely
 
