@@ -5,7 +5,7 @@ import path from "node:path";
 import { tmpdir } from "node:os";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { parseProjectBrief, projectDigest } from "../src/project-contracts.js";
+import { bytesDigest, parseProjectBrief, projectDigest } from "../src/project-contracts.js";
 import { assertProjectCurrent, planProject, stageProject, verifyStage } from "../src/project-plan.js";
 import { applyProject, recoverProject, rollbackProject, verifyProjectReceipt } from "../src/project-apply.js";
 import { validateProject } from "../src/project-validate.js";
@@ -137,6 +137,26 @@ test("Rust recipe and Apache license are deterministic and structural checks pas
   const stage = path.join(root, "stage"); await stageProject(plan, stage);
   assert.equal((await validateProject(stage, "structural")).state, "passed");
   assert.deepEqual(plan.files, (await renderProject(parsed)).files);
+});
+
+test("Git checkout preserves pinned Apache license bytes with Windows autocrlf enabled", async t => {
+  const { root } = await fixture(t);
+  const repository = path.join(root, "repository");
+  const licensePath = "recipes/project-init/Apache-2.0.txt";
+  const content = await readFile(path.resolve("..", licensePath));
+  await mkdir(path.join(repository, "recipes/project-init"), { recursive: true });
+  await writeFile(path.join(repository, licensePath), content);
+  const git = (args: string[]) => promisify(execFile)("git", ["-C", repository, "-c", "core.autocrlf=true", ...args], { windowsHide: true });
+  await git(["init"]);
+  await git(["add", licensePath]);
+  const before = path.join(root, "before").replaceAll("\\", "/") + "/";
+  await git(["checkout-index", `--prefix=${before}`, "--", licensePath]);
+  assert.notEqual(bytesDigest(await readFile(path.join(before, licensePath))), "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30");
+  await writeFile(path.join(repository, ".gitattributes"), await readFile(path.resolve("..", ".gitattributes")));
+  await git(["add", ".gitattributes"]);
+  const after = path.join(root, "after").replaceAll("\\", "/") + "/";
+  await git(["checkout-index", `--prefix=${after}`, "--", licensePath]);
+  assert.equal(bytesDigest(await readFile(path.join(after, licensePath))), "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30");
 });
 
 test("broken reviewed links block apply instead of requiring later repair", async t => {

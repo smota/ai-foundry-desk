@@ -1,1 +1,3 @@
 *.sh text eol=lf
+# This bundled license is verified against the exact upstream SHA-256.
+recipes/project-init/Apache-2.0.txt text eol=lf
