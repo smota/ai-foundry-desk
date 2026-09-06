@@ -74,7 +74,7 @@ flowchart TB
     L1["Layer 1 — Foundation<br/>runtimes · package security · host tools"]
     L2["Layer 2 — Agent Setup<br/>apps · agent CLIs"]
     L3["Layer 3 — Recipes<br/>reviewed skills · tools · capabilities"]
-    T["Common Agent Toolbox<br/>rg · fd · jq · yq · bat · delta"]
+    T["Common Agent Toolbox<br/>rg · fd · jq · yq · bat · delta · glow"]
     G["Supported agent surfaces<br/>Claude · Codex · Pi · Grok · Hermes · Antigravity*"]
 
     A --> L1
@@ -122,7 +122,7 @@ Windows bootstrap and checksum separately, verifies SHA-256, and installs only t
 It does **not** configure either Layer automatically.
 
 ```powershell
-$v='0.7.0'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
+$v='0.8.0'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
 ```
 
 The bootstrap requires Node.js 24 or newer and pnpm. If a prerequisite is missing, it stops and
@@ -219,6 +219,7 @@ adding project-specific aliases.
 | `yq` | YAML and TOML inspection | Work with workflows, manifests, and configuration files |
 | `bat` | Read source with syntax highlighting and context | Inspect files clearly without modifying them |
 | `delta` | Readable diffs | Review code changes and understand what an agent proposes |
+| `glow` | Markdown rendering | Inspect markdown output and docs without switching viewers |
 
 These tools are preferences, not mandates. AFD and its agents still use native alternatives when a
 project or operating system requires them, and tool availability never authorizes a mutating action.
@@ -257,7 +258,7 @@ Never use a blind remote pipe; download the script and checksum separately befor
 Validated Linux/WSL bootstrap (downloads, verifies, then executes as separate steps):
 
 ```sh
-v=0.7.0; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
+v=0.8.0; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
 ```
 
 The same downloaded bootstrap uses macOS-native `shasum -a 256 --check`; that path remains pending

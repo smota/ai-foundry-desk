@@ -30,5 +30,6 @@ virtualization. Competing Hermes bin paths are removed. Interactive `hermes upda
 inside staging, validates the command, preserves skills, and publishes under `~/.afd/managed/hermes`.
 Personal configuration and credentials remain in their existing Hermes home.
 
-The shared toolbox contains `rg`, `fd`, `jq`, `yq`, `bat`, and `delta`. It creates no global cat/git
+The shared toolbox contains `rg`, `fd`, `jq`, `yq`, `bat`, `delta` (git-delta), and `glow`.
+It creates no global cat/git
 aliases. RTK, Paperclip, loopersai, ai-memory, ponytail, agentacct, and Tokscale are not installed.

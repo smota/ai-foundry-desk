@@ -8,13 +8,13 @@ import type { AgentId, AgentManifest, AppliedState, Change } from "./contracts.j
 import { loadManifest } from "./manifest.js";
 
 const SKILL_ID = "afd-workbench-principles";
-const PREVIOUS_SKILL_HASHES = new Set(["e49213e3b1a4a0d0326b68bfa62edb41de0f572dc5bf5f1a854c044d67901c1b", "50a852b7a547842feb9f457730b272f8a7563e2a0adc1e62fd7888a31b3e7610"]);
+const PREVIOUS_SKILL_HASHES = new Set(["163acb47a395880ed2bccb2a13851fac0541e14f461bd358bfcd2e2eca7d2e0c", "e49213e3b1a4a0d0326b68bfa62edb41de0f572dc5bf5f1a854c044d67901c1b", "50a852b7a547842feb9f457730b272f8a7563e2a0adc1e62fd7888a31b3e7610"]);
 const SKILL = `---
 name: afd-workbench-principles
 description: Safe workbench principles for runtimes, dependencies, tools, and third-party scripts.
 metadata:
   managed-by: afd-agent-manager
-  revision: 3
+  revision: 4
 ---
 
 # Workbench principles
@@ -28,7 +28,7 @@ metadata:
 ## Common tools
 
 - When appropriate, prefer \`rg\` for ignore-aware text search and \`fd\` for file discovery.
-- Prefer \`jq\` for JSON, \`yq\` for YAML/TOML, \`bat\` for source reading, and \`delta\` for diffs.
+- Prefer \`jq\` for JSON, \`yq\` for YAML/TOML, \`bat\` for source reading, \`delta\` (git-delta) for diffs, and \`glow\` for markdown.
 - Use native alternatives when the project or operating system requires different compatibility.
 - Tool availability never authorizes mutating commands; preserve scope and review effects first.
 - RTK, fzf, zoxide, eza, and sd are not part of this baseline.
@@ -54,7 +54,7 @@ async function hashManagedPath(target: string): Promise<string | undefined> { tr
 function managedBlock(profile: string): string { return `${START}\n${profile.trim()}\n${END}`; }
 function isPreviousManagedSkill(value: string): boolean { return PREVIOUS_SKILL_HASHES.has(hash(value)); }
 function sameJson(left: string, right: string): boolean { try { return JSON.stringify(JSON.parse(left.replace(/^\uFEFF/, ""))) === JSON.stringify(JSON.parse(right)); } catch { return false; } }
-function hasToolboxPolicy(value: string): boolean { return ["`rg`", "`fd`", "`jq`", "`yq`", "`bat`", "`delta`", "RTK, fzf, zoxide, eza, and sd"].every((marker) => value.includes(marker)); }
+function hasToolboxPolicy(value: string): boolean { return ["`rg`", "`fd`", "`jq`", "`yq`", "`bat`", "`delta`", "`glow`", "RTK, fzf, zoxide, eza, and sd"].every((marker) => value.includes(marker)); }
 async function backupFile(root: string, agent: AgentId | "canonical", target: string, content: string): Promise<void> {
   const local = process.env.LOCALAPPDATA ?? path.join(homedir(), ".local", "share");
   const backupRoot = path.join(local, "AI Foundry Desk", "backups");

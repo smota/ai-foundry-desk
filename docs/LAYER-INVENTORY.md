@@ -80,6 +80,7 @@ Security remains cross-cutting even where a tool has a primary functional catego
 |  | [`yq`](https://mikefarah.gitbook.io/yq/) | YAML, JSON and TOML processor. | Inspect and transform structured configuration. | **Managed**; pinned release. |
 |  | [`bat`](https://github.com/sharkdp/bat) | Source viewer with syntax highlighting and context. | Make read-only source inspection faster and clearer. | **Managed**; pinned release. |
 | <img src="https://cdn.simpleicons.org/git" alt="Git" width="22"> | [`delta`](https://dandavison.github.io/delta/) | Syntax-aware viewer for Git and diff output. | Improve review clarity without changing Git's global behavior. | **Managed**; pinned release. |
+|  | [`glow`](https://github.com/charmbracelet/glow) | Markdown renderer for terminal output. | Improve readbacks for markdown-centric workflows. | **Managed**; pinned release. |
 
 ## Layer 3 — Recipes
 

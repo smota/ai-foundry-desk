@@ -12,8 +12,10 @@ case "$AFD_CALLER_DIR" in /mnt/?/Users/*) afd_windows_home="$(printf '%s' "$AFD_
 export USERPROFILE="$HOME"
 export PATH="$HOME/.local/bin:$MISE_DATA_DIR/shims:$PNPM_HOME/bin:$PATH"
 cd "$HOME"
+hash -r 2>/dev/null || true
 failed=0
-for command in claude codex pi grok rg fd jq yq bat delta; do
+for command in claude codex pi grok rg fd jq yq bat delta glow; do
+  hash -r 2>/dev/null || true
   if ! command -v "$command" >/dev/null 2>&1; then printf 'FAIL %-10s missing\n' "$command"; failed=$((failed+1)); continue; fi
   if output="$("$command" --version 2>&1)"; then printf 'OK   %-10s %s | %s\n' "$command" "$(command -v "$command")" "$(printf '%s' "$output" | head -n1)"; else printf 'FAIL %-10s %s\n' "$command" "$(printf '%s' "$output" | head -n1)"; failed=$((failed+1)); fi
 done

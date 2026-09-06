@@ -59,8 +59,8 @@ try {
         $_ -eq 'setup.ps1'
     })
     if ($forbidden) { throw "Forbidden development or local content found in the artifact: $($forbidden -join ', ')" }
-    # v0.7.0 adds the project initializer, its recipes/schema, and the Rust environment helper (279 files).
-    if ($files.Count -gt 280) { throw "Artifact file-count ceiling exceeded: $($files.Count) > 280." }
+    # v0.8.0 retains the project initializer and layer tooling while adding the doctor renderer (283 files).
+    if ($files.Count -gt 300) { throw "Artifact file-count ceiling exceeded: $($files.Count) > 300." }
 
     $totalBytes = 0L
     $sensitive = [regex]'(?i)(C:\\Users\\samue|/home/[a-z0-9._-]+/|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|npm_[a-z0-9]{20,}|gh[pousr]_[a-z0-9]{20,}|AKIA[0-9A-Z]{16})'

@@ -13,16 +13,36 @@ case "$AFD_CALLER_DIR" in /mnt/?/Users/*) afd_windows_home="$(printf '%s' "$AFD_
 export USERPROFILE="$HOME"
 export PATH="$HOME/.local/bin:$MISE_DATA_DIR/shims:$PATH"
 cd "$HOME"
-TOOLS='github:BurntSushi/ripgrep@15.2.0 github:sharkdp/fd@10.5.0 github:jqlang/jq@jq-1.8.2 github:mikefarah/yq@4.53.6 github:sharkdp/bat@0.26.1 github:dandavison/delta@0.19.2'
+TOOLS='github:BurntSushi/ripgrep@15.2.0 github:sharkdp/fd@10.5.0 github:jqlang/jq@jq-1.8.2 github:mikefarah/yq@4.53.6 github:sharkdp/bat@0.26.1 github:dandavison/delta@0.19.2 github:charmbracelet/glow@3.0.0'
 if [ "$MODE" = "--dry-run" ]; then
   for tool in $TOOLS; do echo "[dry-run] ensure $tool through mise github"; done
   echo '[dry-run] RTK, fzf, zoxide, eza and sd remain excluded'
   exit 0
 fi
 command -v mise >/dev/null 2>&1 || { echo "Layer 1 mise is required." >&2; exit 4; }
+refresh_path() { hash -r 2>/dev/null || true; }
+check_tool() {
+  name="$1"
+  tries="${2:-3}"
+  while [ "$tries" -gt 0 ]; do
+    refresh_path
+    if command -v "$name" >/dev/null 2>&1; then
+      if "$name" --version | head -n1 >/dev/null 2>&1; then
+        "$name" --version | head -n1
+        return 0
+      fi
+    fi
+    tries=$((tries-1))
+    sleep 0.25
+  done
+  return 1
+}
+
 for tool in $TOOLS; do mise use --global "$tool"; done
 mise reshim
 yq_root="$(mise where github:mikefarah/yq)"
 if [ -x "$yq_root/yq_linux_amd64" ]; then ln -sfn "$yq_root/yq_linux_amd64" "$HOME/.local/bin/yq"; fi
-for command in rg fd jq yq bat delta; do command -v "$command" >/dev/null 2>&1 || { echo "$command is missing after installation." >&2; exit 5; }; "$command" --version | head -n1; done
+for command in rg fd jq yq bat delta glow; do
+  check_tool "$command" || { echo "$command is missing after installation." >&2; exit 5; }
+done
 echo 'Linux Common Agent Toolbox is ready. No container was used.'

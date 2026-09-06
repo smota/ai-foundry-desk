@@ -1,6 +1,6 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [string]$Version = "0.7.0",
+    [string]$Version = "0.8.0",
     [string]$Repository = "smota/ai-foundry-desk",
     [string]$LocalAssetDirectory
 )

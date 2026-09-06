@@ -5,6 +5,23 @@ import { NodePlatformAdapter, type PlatformAdapter } from "./platform.js";
 
 export type DiagnosticStatus = "PASS" | "WARN" | "FAIL" | "INFO";
 export interface Diagnostic { readonly status: DiagnosticStatus; readonly id: string; readonly detail: string; readonly remedy: string }
+export type DiagnosticComponent = "platform" | "execution" | "runtime" | "command" | "project" | "sandbox" | "other";
+export const doctorComponentOrder: readonly DiagnosticComponent[] = ["platform", "execution", "runtime", "command", "project", "sandbox", "other"] as const;
+
+const diagnosticComponentPrefixes: readonly [string, DiagnosticComponent][] = [
+  ["platform.", "platform"],
+  ["execution.", "execution"],
+  ["runtime.", "runtime"],
+  ["command.", "command"],
+  ["project.", "project"],
+  ["sandbox.", "sandbox"],
+] as const;
+
+export function diagnosticComponent(id: string): DiagnosticComponent {
+  for (const [prefix, component] of diagnosticComponentPrefixes) if (id.startsWith(prefix)) return component;
+  return "other";
+}
+
 export interface ExecutionIdentity {
   readonly context: "interactive-user" | "sandbox" | "service" | "hybrid";
   readonly account: string;
