@@ -71,4 +71,4 @@ test("MCP CLI exposes redacted plans and requires an exact mutation mode", () =>
   const unverified=isolatedCli(root,"mcp","discover","pi","--scope","user","--json");assert.notEqual(unverified.status,0);assert.match(unverified.stderr,/no verified native adapter/);
 });
 
-test("MCP catalog exposes per-scope capability instead of silently claiming all-agent support",()=>{const result=cli("catalog");assert.equal(result.status,0);assert.match(result.stdout,/hermes.*mcp-project=unsupported/);assert.match(result.stdout,/antigravity.*mcp-project=native/);assert.match(result.stdout,/pi.*mcp-project=extension/);});
+test("MCP catalog exposes per-scope capability instead of silently claiming all-agent support",()=>{const result=cli("catalog");assert.equal(result.status,0);assert.match(result.stdout,/hermes .*project=unsupported/);assert.match(result.stdout,/antigravity .*project=native/);assert.match(result.stdout,/pi .*project=extension/);});
