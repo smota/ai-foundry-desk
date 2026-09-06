@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.8.0 — 2026-09-06
+
+- Improve `afd doctor` with component-grouped output, English status summaries, actionable warnings and failures, and color-aware terminal rendering while preserving the raw `--json` contract.
+- Include the accumulated workspace, documentation, and layer-tooling updates in this minor release.
+
 ## 0.7.0 — 2026-09-05
 
 - Initialize policy-only and Rust project foundations from reviewed briefs with canonical

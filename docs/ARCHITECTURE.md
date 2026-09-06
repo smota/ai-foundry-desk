@@ -76,8 +76,8 @@ scripts and passes structured, bounded arguments; it is not a general remote-scr
 - Layer 1 owns the mise-managed language runtimes, uv, pnpm, the integrity-pinned LavaMoat
   allow-scripts CLI, declared PATH entries, shims, and native Docker host capability. Project policy
   remains project-owned and Docker never becomes the execution wrapper for Layers 1–3.
-- Layer 2 owns supported agent installers and the common toolbox (`rg`, `fd`, `jq`, `yq`, `bat`, and
-  `delta`). It does not own agent authentication or general third-party updates.
+- Layer 2 owns supported agent installers and the common toolbox (`rg`, `fd`, `jq`, `yq`, `bat`, `delta`,
+  and `glow`). It does not own agent authentication or general third-party updates.
 - macOS Layer 1 uses architecture-specific checksummed runtime and Docker artifacts; Layer 2 remains
   unimplemented and fails closed. Real-hardware validation is required before a validated claim.
 
