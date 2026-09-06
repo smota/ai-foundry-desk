@@ -23,6 +23,7 @@ import { foundationPlan, layer2Plan } from "./foundation.js";
 import { NodePlatformAdapter, writePrivateText } from "./platform.js";
 import { sandboxAccessDiagnostic } from "./sandbox-access.js";
 import { renderDoctorRows } from "./doctor-render.js";
+import { renderChanges, renderItems, renderKeyValue, renderResult } from "./cli-render.js";
 import { auditHarness, renderHarnessAudit } from "./harness-audit.js";
 import { parseHarnessAgents, planHarness, renderHarnessPlan, stageHarness } from "./harness-plan.js";
 import { renderHarnessSmoke, testHarness, writeHarnessEvidence } from "./harness-smoke.js";
@@ -35,56 +36,61 @@ import { runProjectCommand } from "./project-command.js";
 
 export const VERSION = "0.8.0";
 const productRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-export const help = `afd — AI Foundry Desk · Multi-Agent Workbench
+export const help = `AFD - AI Foundry Desk
+Multi-agent workbench for a governed AI workstation.
 
 Usage:
-  afd status | review | verify
-  afd doctor [--json]
-  afd doctor --project <path> [--json]
-  afd exec <project> -- <command> [args...]
-  afd fix rust --dry-run|--apply
-  afd fix layer1|sandbox --dry-run|--apply
-  afd sync [--dry-run]
-  afd adopt|import <agent> <skill> [--dry-run]
-  afd pending
-  afd hermes update --dry-run|--apply
-  afd promote|reject <agent> <skill> [--dry-run|--confirm]
-  afd recover <agent> <rejected-snapshot> [--dry-run|--confirm]
-  afd layer3 recipes|show|plan|apply|verify|rollback <source>
-  afd layer3 extract --output <file> [--include <id,id>]
-  afd telemetry plan|apply|verify|status|stop|resume [--json] [--recipe <source>] [--confirm <plan-token>]
-  afd telemetry explain <run-id> [--json]
-  afd telemetry refresh --agentacct
-  afd telemetry trace --workspace <path> --agent <name> --operation <name> [--outcome ok|error|cancelled] [--duration-ms <ms>]
-  afd telemetry uninstall-autostart
-  afd init [--dry-run]
-  afd migrate --dry-run|--apply
-  afd backup status | maintain --dry-run|--apply
-  afd provenance [--json]
-  afd layer1|layer2 --dry-run|--apply [--allow-claude-postinstall]
-  afd catalog | help | --version
-  afd harness audit <project> [--json]
-  afd project recipes|inspect|plan|stage|validate|apply|verify|rollback|recover|status [options] [--json]
-  afd harness plan <project> [--agents <auto|list>] [--remove-legacy] [--json]
-  afd harness stage <project> --output <directory> [--agents <auto|list>] [--remove-legacy] [--json]
-  afd harness test <project> [--agents <auto|list>] [--remove-legacy] [--live] [--evidence <outside-project-file>] [--json]
-  afd harness apply <project> [--agents <auto|list>] [--remove-legacy] --evidence <file> --confirm <plan-token> [--json]
-  afd harness verify <project> --receipt <file> [--json]
-  afd harness rollback <project> --receipt <file> --confirm <plan-token> [--json]
-  afd mcp status|verify [--scope user|project|effective] [--project <path>] [--agents <list>] [--json]
-  afd mcp discover <agent> --scope user|project [--project <path>] [--json]
-  afd mcp sync --scope user|project|effective [--project <path>] [--agents <list>] [--enable-pi-adapter] --dry-run|--confirm <plan-token> [--json]
-  afd mcp adopt <agent> <server> --from-scope user|project --to-scope user|project [--project <path>] [--agents <list>] --dry-run|--confirm <plan-token> [--json]
-  afd mcp enable|disable <server> --scope user|project [--project <path>] [--agents <list>] --dry-run|--confirm <plan-token> [--json]
-  afd mcp move <server> --from user|project --to user|project --project <path> [--agents <list>] --dry-run|--confirm <plan-token> [--json]
-  afd tui
+  afd <command> [options]
 
-No layer is applied automatically. Use --dry-run before --apply.`;
+Start here:
+  afd doctor                         Check runtime, tools, and sandbox access
+  afd doctor --project <path>        Check a project environment
+  afd status                         Inspect managed state without changing it
+  afd init                           Show the safe next steps for a new workstation
+
+Workstation:
+  afd layer1 --dry-run|--apply       Plan or apply foundation setup
+  afd layer2 --dry-run|--apply       Plan or apply agent-tool setup
+  afd fix <target> --dry-run|--apply Repair a supported target
+  afd sync [--dry-run]               Reconcile managed configuration
+  afd backup status|maintain          Inspect or maintain backups
+
+Projects and agents:
+  afd exec <project> -- <command>    Run a command with project bounds
+  afd project <command>               Inspect, plan, stage, apply, or verify projects
+  afd harness <command>               Audit and test project harnesses
+  afd adopt|import <agent> <skill>   Stage a skill for review
+  afd pending|promote|reject         Review pending skill changes
+
+Integrations:
+  afd mcp <command>                   Inspect or plan MCP configuration changes
+  afd telemetry <command>             Inspect governed observability state
+  afd hermes update --dry-run|--apply Update the managed Hermes integration
+  afd layer3 <command>                Inspect and apply optional recipes
+
+Information:
+  afd provenance [--json]             Show the active CLI and runtime identity
+  afd catalog                         Show supported agents and capabilities
+  afd tui                             Open the interactive interface
+  afd --version                       Show the installed version
+
+Output:
+  Add --json where supported for automation and machine-readable output.
+  Mutating commands require --dry-run first or an explicit confirmation.
+
+Examples:
+  afd doctor
+  afd doctor --project .
+  afd layer1 --dry-run
+  afd project inspect . --json
+  afd mcp status --scope effective
+
+Run afd <command> with an invalid option to see that command's usage.`;
 
 export interface CommandIO { stdout(value: string): void; stderr(value: string): void }
 const processIO: CommandIO = { stdout: (value) => process.stdout.write(value), stderr: (value) => process.stderr.write(value) };
 let activeIO = processIO;
-function print(changes: readonly Change[]): void { for (const change of changes) activeIO.stdout(`${change.kind.toUpperCase()}\t${change.agent}\t${change.path}\t${change.detail}\n`); }
+function print(changes: readonly Change[]): void { activeIO.stdout(renderChanges(changes)); }
 const cliPlatform = new NodePlatformAdapter();
 async function runHost(executable: string, args: readonly string[]): Promise<number> { const result = await cliPlatform.run({ executable, args, timeoutMs: 300_000 }); if(result.stdout)activeIO.stdout(result.stdout);if(result.stderr)activeIO.stderr(result.stderr);return result.status; }
 async function readTelemetryStatus(brokered: boolean): Promise<Awaited<ReturnType<typeof telemetryStatus>>> {
@@ -103,10 +109,10 @@ async function dispatch(args: readonly string[]): Promise<number> {
   if (command === "project") return runProjectCommand(args.slice(1), value => activeIO.stdout(value));
   if (["--version", "-v"].includes(command)) { console.log(VERSION); return 0; }
   if (["help", "--help", "-h"].includes(command)) { console.log(help); return 0; }
-  if (command === "layer3" && args[1] === "recipes") { console.log("builtin:smota-foundations\nbuiltin:observability"); return 0; }
+  if (command === "layer3" && args[1] === "recipes") { console.log(renderItems("AFD recipes", ["builtin:smota-foundations", "builtin:observability"])); return 0; }
   if (command === "init") { if (args.slice(1).some((arg) => arg !== "--dry-run")) throw new Error("Usage: afd init [--dry-run]"); console.log("AI Foundry Desk is ready for inspection. No layer was applied."); console.log("Next: afd status, then afd layer1 --dry-run and afd layer2 --dry-run."); return 0; }
   if (command === "migrate") { if (args.slice(1).some((arg) => !["--apply", "--dry-run"].includes(arg))) throw new Error("Usage: afd migrate --dry-run|--apply"); const apply = args.includes("--apply"); const dryRun = args.includes("--dry-run"); if (apply === dryRun) throw new Error("Use exactly one option: afd migrate --dry-run or --apply."); const result = await migrateLegacyState(apply); for (const action of result.actions) console.log(action); console.log(apply ? "Migration complete." : "Dry run: no files were changed."); return 0; }
-  if (command === "backup") { const subcommand = args[1] ?? "status"; if (subcommand === "status" && args.length === 2) { for (const item of await backupReport()) console.log("BACKUP\t" + item.target + "\tsnapshots=" + item.snapshots + "\tbytes=" + item.bytes + "\tviolations=" + item.retentionViolations); return 0; } if (subcommand === "maintain" && (args[2] === "--dry-run" || args[2] === "--apply") && args.length === 3) { const removed = await enforceBackupRetention(undefined, Date.now(), args[2] === "--dry-run"); for (const item of removed) console.log((args[2] === "--dry-run" ? "WOULD_REMOVE\t" : "REMOVED\t") + item); return 0; } throw new Error("Usage: afd backup status | maintain --dry-run|--apply"); }
+  if (command === "backup") { const subcommand = args[1] ?? "status"; if (subcommand === "status" && args.length === 2) { const report = await backupReport(); const details = report.flatMap((item) => [`${item.target}: ${item.snapshots} snapshot(s), ${item.bytes} bytes, ${item.retentionViolations} retention violation(s)`]); const warning = report.some((item) => item.retentionViolations > 0); console.log(renderResult("AFD backup status", warning ? "WARN" : "PASS", report.length ? "Backup state inspected." : "No backup targets found.", details, warning ? ["Run afd backup maintain --dry-run to review retention cleanup."] : [])); return warning ? 2 : 0; } if (subcommand === "maintain" && (args[2] === "--dry-run" || args[2] === "--apply") && args.length === 3) { const removed = await enforceBackupRetention(undefined, Date.now(), args[2] === "--dry-run"); console.log(renderResult("AFD backup maintenance", args[2] === "--dry-run" ? "READY" : "CHANGED", args[2] === "--dry-run" ? "Dry run complete; no files were changed." : "Backup retention maintenance complete.", removed.map((item) => `${args[2] === "--dry-run" ? "Would remove" : "Removed"}: ${item}`), removed.length ? [] : ["No snapshots exceeded the retention policy."])); return 0; } throw new Error("Usage: afd backup status | maintain --dry-run|--apply"); }
   if (command === "exec") {
     if (!args[1] || args[2] !== "--" || !args[3]) throw new Error("Usage: afd exec <project> -- <command> [args...]");
     return executeProject(args[1], args[3], args.slice(4), productRoot, cliPlatform);
@@ -125,7 +131,6 @@ async function dispatch(args: readonly string[]): Promise<number> {
     if (args[2] === "--apply" && (identity.mismatch || identity.context !== "interactive-user")) throw new Error("Rust prerequisite installation requires the intended interactive-user context.");
     return runPowerShellArgs("01-rust-build-tools.ps1", ["-Mode", args[2] === "--apply" ? "Apply" : "Plan", ...(args[2] === "--apply" ? ["-Approved"] : [])]);
   }
-  if (command === "doctor") { if (args.slice(1).some((arg) => arg !== "--json")) throw new Error("Usage: afd doctor [--json]"); const identity=await executionIdentity();const rows = [...await doctor()];const access=await sandboxAccessDiagnostic(productRoot,cliPlatform,identity);if(access)rows.push(access); if (args.includes("--json")) console.log(JSON.stringify(rows, null, 2)); else for (const row of rows) console.log(row.status + "\t" + row.id + "\t" + row.detail + "\t" + row.remedy); return rows.some((row) => row.status === "FAIL") ? 2 : 0; }
   if (command === "doctor") {
     if (args.slice(1).some((arg) => arg !== "--json")) throw new Error("Usage: afd doctor [--json]");
     const identity = await executionIdentity();
@@ -148,7 +153,7 @@ async function dispatch(args: readonly string[]): Promise<number> {
     if(process.platform==="darwin"&&command==="layer1"){if(allowClaude)throw new Error("Claude postinstall opt-in is Linux-only.");for(const script of ["01-layer1-runtime-macos.sh","02-docker-macos.sh"]){const code=await runPosix(script,[dryRun?"--dry-run":"--apply"]);if(code!==0)return code;}return 0;}
     throw new Error("Layer 2 automation is not implemented for macOS.");
   }
-  if (command === "catalog") { if (args.length !== 1) throw new Error("Usage: afd catalog"); for (const target of agentTargets) { const mcp=mcpCapabilities[target.id]; console.log(`${target.id}\tskills=${target.skills}\tprofile=${target.profile}\tmcp-user=${mcp.user}\tmcp-project=${mcp.project}\t${target.reason ?? mcp.detail ?? ""}`); } return 0; }
+  if (command === "catalog") { if (args.length !== 1) throw new Error("Usage: afd catalog"); const lines = agentTargets.map((target) => { const mcp=mcpCapabilities[target.id]; return `${target.id} - ${target.skills} skill(s); profile=${target.profile}; MCP user=${mcp.user}, project=${mcp.project}${target.reason ?? mcp.detail ? `; ${target.reason ?? mcp.detail}` : ""}`; }); console.log(renderItems("AFD agent catalog", lines)); return 0; }
   if (command === "mcp") {
     const sub = args[1] ?? "status"; const flag = (name: string) => { const index = args.indexOf(name); return index >= 0 ? args[index + 1] : undefined; }; const json = args.includes("--json");
     const valuedFlags = new Set(["--scope", "--project", "--agents", "--confirm", "--from-scope", "--to-scope", "--from", "--to"]); const booleanFlags = new Set(["--json", "--dry-run", "--enable-pi-adapter"]);
@@ -159,7 +164,7 @@ async function dispatch(args: readonly string[]): Promise<number> {
     const optionsFor = (scope: McpScope | "effective"): McpManagerOptions => { const projectFlag=flag("--project");const project=scope!=="user"?(projectFlag??process.cwd()):projectFlag;const targets=parseAgents();return { ...(project?{project}:{}),...(targets?{targets}:{}),...(args.includes("--enable-pi-adapter")?{enablePiAdapter:true}:{}) }; };
     const mode = () => { const dry=args.includes("--dry-run"),confirm=flag("--confirm");if(dry===Boolean(confirm))throw new Error("Use exactly one of --dry-run or --confirm <plan-token>.");return {dry,confirm}; };
     const outputPlan = (plan: Awaited<ReturnType<typeof planMcpSync>>) => console.log(json?JSON.stringify(publicMcpPlan(plan),null,2):renderMcpPlan(plan));
-    if(sub==="discover") { const agent=args[2] as AgentId|undefined;const scope=parseScope(flag("--scope"),false) as McpScope;if(!agent||!agentTargets.some(target=>target.id===agent))throw new Error("Usage: afd mcp discover <agent> --scope user|project [--project <path>] [--json]");const options=optionsFor(scope);const capability=mcpCapabilities[agent][scope];if(capability!=="native"&&!(agent==="pi"&&capability==="extension"&&await piMcpAdapterConfigured(scope,options)))throw new Error(`${agent} ${scope} MCP discovery is ${capability}; no verified native adapter or declared pinned extension is available.`);const targets=parseAgents()??agentTargets.map(target=>target.id);const entries=await discoverNativeMcp(agent,scope,options,targets);const visible=entries.map(entry=>({agent:entry.agent,scope:entry.scope,id:entry.id,path:entry.path,transport:entry.server.transport,enabled:entry.server.enabled,fingerprint:sha256(JSON.stringify(entry.server))}));console.log(json?JSON.stringify(visible,null,2):visible.map(item=>`${item.agent}\t${item.scope}\t${item.id}\t${item.transport}\tenabled=${item.enabled}\t${item.path}\t${item.fingerprint}`).join("\n"));return 0;}
+    if(sub==="discover") { const agent=args[2] as AgentId|undefined;const scope=parseScope(flag("--scope"),false) as McpScope;if(!agent||!agentTargets.some(target=>target.id===agent))throw new Error("Usage: afd mcp discover <agent> --scope user|project [--project <path>] [--json]");const options=optionsFor(scope);const capability=mcpCapabilities[agent][scope];if(capability!=="native"&&!(agent==="pi"&&capability==="extension"&&await piMcpAdapterConfigured(scope,options)))throw new Error(`${agent} ${scope} MCP discovery is ${capability}; no verified native adapter or declared pinned extension is available.`);const targets=parseAgents()??agentTargets.map(target=>target.id);const entries=await discoverNativeMcp(agent,scope,options,targets);const visible=entries.map(entry=>({agent:entry.agent,scope:entry.scope,id:entry.id,path:entry.path,transport:entry.server.transport,enabled:entry.server.enabled,fingerprint:sha256(JSON.stringify(entry.server))}));if(json){console.log(JSON.stringify(visible,null,2));}else{const lines=visible.flatMap(item=>[`${item.agent}/${item.id}`,renderKeyValue("Scope",item.scope),renderKeyValue("Transport",item.transport),renderKeyValue("Enabled",String(item.enabled)),renderKeyValue("Path",item.path),renderKeyValue("Fingerprint",item.fingerprint),""]);console.log(["AFD MCP discovery","",...lines].join("\n"));}return 0;}
     if(sub==="status"||sub==="verify") { const scope=parseScope(flag("--scope"),true);const plan=await planMcpSync(scope,optionsFor(scope));outputPlan(plan);return plan.blocked||plan.actions.some(action=>!["in-sync"].includes(action.kind))?2:0; }
     if(sub==="sync") { if(!flag("--scope"))throw new Error("afd mcp sync requires --scope user|project|effective.");const scope=parseScope(flag("--scope"),true);const options=optionsFor(scope);const plan=await planMcpSync(scope,options);const selected=mode();if(selected.dry){outputPlan(plan);return plan.blocked?2:0;}console.log(JSON.stringify(await applyMcpPlan(plan,selected.confirm!,options),null,json?2:0));return 0; }
     if(sub==="adopt") { const agent=args[2] as AgentId|undefined,id=args[3];if(!flag("--from-scope")||!flag("--to-scope"))throw new Error("afd mcp adopt requires --from-scope and --to-scope.");const from=parseScope(flag("--from-scope"),false) as McpScope,to=parseScope(flag("--to-scope"),false) as McpScope;if(!agent||!id||!agentTargets.some(target=>target.id===agent))throw new Error("Usage: afd mcp adopt <agent> <server> --from-scope user|project --to-scope user|project ...");const options=optionsFor(to==="project"||from==="project"?"project":"user");const plan=await planMcpAdopt(agent,id,from,to,options);const selected=mode();if(selected.dry){outputPlan(plan);return plan.blocked?2:0;}console.log(JSON.stringify(await applyMcpPlan(plan,selected.confirm!,options),null,json?2:0));return 0; }
@@ -201,10 +206,10 @@ async function dispatch(args: readonly string[]): Promise<number> {
     if (sub === "apply") { const confirmIndex = args.indexOf("--confirm"); if (confirmIndex < 0 || !args[confirmIndex + 1]) throw new Error("Use the token from telemetry plan: afd telemetry apply --confirm <plan-token>."); const result=await applyRecipe(source, { confirm: true, approvalToken: args[confirmIndex + 1] });if(process.platform==="win32")await ensureTelemetryBrokerProcess(fileURLToPath(new URL("./cli.js",import.meta.url)),cliPlatform);console.log(JSON.stringify(result, null, 2)); return 0; }
     if (sub === "status") { const status=await readTelemetryStatus(brokered); console.log(JSON.stringify(status, null, json ? 2 : 0)); return status.state === "healthy" || status.state === "disabled" ? 0 : 2; }
     if (sub === "verify") { const status=brokered?await requestTelemetryBroker("verify",{},cliPlatform):await verifyTelemetry();console.log(JSON.stringify(status, null, 2)); return 0; }
-    if (sub === "stop") { if(brokered)await requestTelemetryBroker("stop",{},cliPlatform);else await stopTelemetry(); console.log("STOPPED\ttelemetry-v2"); return 0; }
-    if (sub === "uninstall-autostart") { await uninstallTelemetryAutostart(); console.log("AUTOSTART_REMOVED\ttelemetry-v2"); return 0; }
+    if (sub === "stop") { if(brokered)await requestTelemetryBroker("stop",{},cliPlatform);else await stopTelemetry(); console.log(renderResult("AFD telemetry", "CHANGED", "Telemetry runtime stopped.")); return 0; }
+    if (sub === "uninstall-autostart") { await uninstallTelemetryAutostart(); console.log(renderResult("AFD telemetry", "CHANGED", "Telemetry autostart removed.")); return 0; }
     if (sub === "resume") { const status=brokered?await requestTelemetryBroker("resume",{},cliPlatform) as Awaited<ReturnType<typeof telemetryStatus>>:await resumeTelemetry();if(!brokered&&process.platform==="win32")await ensureTelemetryBrokerProcess(fileURLToPath(new URL("./cli.js",import.meta.url)),cliPlatform);console.log(JSON.stringify(status));return status.state==="healthy"?0:2; }
-    if (sub === "refresh" && args[2] === "--agentacct" && args.length === 3) { if(brokered)await requestTelemetryBroker("refresh",{},cliPlatform);else{const status = await telemetryStatus(); if (!status.agentacct.version) throw new Error("agentacct is not configured."); await new AgentacctAdapter(cliPlatform, status.agentacct.version).refresh();} console.log("REFRESHED\tagentacct"); return 0; }
+    if (sub === "refresh" && args[2] === "--agentacct" && args.length === 3) { if(brokered)await requestTelemetryBroker("refresh",{},cliPlatform);else{const status = await telemetryStatus(); if (!status.agentacct.version) throw new Error("agentacct is not configured."); await new AgentacctAdapter(cliPlatform, status.agentacct.version).refresh();} console.log(renderResult("AFD telemetry", "CHANGED", "agentacct evidence refreshed.")); return 0; }
     if (sub === "explain") { const runId = args[2]; if (!runId || args.slice(3).some((arg) => arg !== "--json")) throw new Error("Usage: afd telemetry explain <run-id> [--json]"); const explanation=brokered?await requestTelemetryBroker("explain",{runId},cliPlatform) as Awaited<ReturnType<typeof explainTelemetry>>:await explainTelemetry(runId); console.log(json ? JSON.stringify(explanation, null, 2) : renderTelemetryExplanation(explanation)); return explanation.status === "not_found" ? 2 : 0; }
     if (sub === "trace") {
       const value = (name: string) => { const index = args.indexOf(name); return index >= 0 ? args[index + 1] : undefined; };
@@ -219,15 +224,15 @@ async function dispatch(args: readonly string[]): Promise<number> {
       const trace = buildOtlpJsonTrace(identity, [{ spanId: rootSpanId, name: operation, startedAtUnixMs: endedAt - duration, endedAtUnixMs: endedAt, outcome: outcome as TelemetryOutcome }]);
       await emitLoopbackOtlpJson("http://127.0.0.1:4318/v1/traces", trace); const status = await telemetryStatus();
       await recordTelemetryRun({ schemaVersion: 2, runId: identity["afd.run.id"], traceId: identity.traceId, rootSpanId, projectId: identity["afd.project.id"], agent, startedAt: new Date(endedAt-duration).toISOString(), endedAt: new Date(endedAt).toISOString(), outcome: outcome as TelemetryOutcome, source: "afd-otel" }, status.retention?.correlationDays ?? 30);
-      console.log(`EXPORTED\t${identity["afd.project.id"]}\t${identity["afd.run.id"]}`); return 0;
+      console.log(renderResult("AFD telemetry", "CHANGED", "Trace exported.", [`Project: ${identity["afd.project.id"]}`, `Run: ${identity["afd.run.id"]}`])); return 0;
     }
     throw new Error("Usage: afd telemetry plan|apply|verify|status|stop|resume|uninstall-autostart|explain|refresh|trace");
   }
   if(command==="hermes"){if(args[1]!=="update"||args.slice(2).some(arg=>!["--dry-run","--apply"].includes(arg)))throw new Error("Usage: afd hermes update --dry-run|--apply");const dry=args.includes("--dry-run"),apply=args.includes("--apply");if(dry===apply)throw new Error("Use exactly one of --dry-run or --apply.");return runPowerShellArgs("08-update-hermes.ps1",dry?["-WhatIf"]:["-Confirm"]);}
-  if (["status", "review", "verify"].includes(command)) { if (args.length !== 1) throw new Error(`Usage: afd ${command}`); const result = await inspect({ dryRun: true }); print(result.changes); if(command==="review") for(const item of await listPending(result.root)) console.log(`PENDING\t${item.agent}\t${item.id}\t${item.path}`); const pending = result.changes.some((change) => ["drift", "create", "update"].includes(change.kind)); if(command==="verify"){if(process.platform==="win32")for(const script of ["01-verify-layer1.ps1","07-verify-layer2-agent-clis.ps1","07-verify-layer2-toolbox.ps1","10-verify-backups.ps1"]){const code=await runPowerShell(script);if(code!==0)return code;}else if(process.platform==="linux")for(const script of ["01-verify-layer1-linux.sh","07-verify-layer2-linux.sh"]){const code=await runPosix(script,[]);if(code!==0)return code;}else if(process.platform==="darwin"){const code=await runPosix("01-verify-layer1-macos.sh",[]);if(code!==0)return code;}} return command === "verify" && pending ? 2 : 0; }
+  if (["status", "review", "verify"].includes(command)) { if (args.length !== 1) throw new Error(`Usage: afd ${command}`); const result = await inspect({ dryRun: true }); print(result.changes); if(command==="review"){const pendingItems=await listPending(result.root);if(pendingItems.length)console.log(renderItems("AFD pending skills",pendingItems.map(item=>`${item.agent}/${item.id} - ${item.path}`)));} const pending = result.changes.some((change) => ["drift", "create", "update"].includes(change.kind)); if(command==="verify"){if(process.platform==="win32")for(const script of ["01-verify-layer1.ps1","07-verify-layer2-agent-clis.ps1","07-verify-layer2-toolbox.ps1","10-verify-backups.ps1"]){const code=await runPowerShell(script);if(code!==0)return code;}else if(process.platform==="linux")for(const script of ["01-verify-layer1-linux.sh","07-verify-layer2-linux.sh"]){const code=await runPosix(script,[]);if(code!==0)return code;}else if(process.platform==="darwin"){const code=await runPosix("01-verify-layer1-macos.sh",[]);if(code!==0)return code;}} return command === "verify" && pending ? 2 : 0; }
   if (command === "sync") { if (args.slice(1).some((arg) => arg !== "--dry-run")) throw new Error("Usage: afd sync [--dry-run]"); const result = await sync({ dryRun: args.includes("--dry-run") }); print(result.changes); return result.changes.some((change) => change.kind === "drift") ? 2 : 0; }
   if (command === "adopt" || command === "import") { const agent = args[1] as AgentId | undefined; const name = args[2]; if (!agent || !agentTargets.some((target) => target.id === agent) || !name) throw new Error("Usage: afd adopt <agent> <skill> [--dry-run]"); console.log(`${args.includes("--dry-run") ? "DRY-RUN" : "PENDING"}: ${await adopt(agent, name, { dryRun: args.includes("--dry-run") })}`); return 0; }
-  if(command==="pending"){if(args.length!==1)throw new Error("Usage: afd pending");for(const item of await listPending(path.join(homedir(),".afd")))console.log(`${item.agent}\t${item.id}\t${item.path}`);return 0;}
+  if(command==="pending"){if(args.length!==1)throw new Error("Usage: afd pending");const pending=await listPending(path.join(homedir(),".afd"));console.log(renderItems("AFD pending skills",pending.map(item=>`${item.agent}/${item.id} - ${item.path}`),"No skills are awaiting review."));return 0;}
   if(command==="promote"||command==="reject"){const agent=args[1] as AgentId;const id=args[2];if(!agent||!id)throw new Error(`Usage: afd ${command} <agent> <skill> --dry-run|--confirm`);const options={dryRun:args.includes("--dry-run"),confirm:args.includes("--confirm")};if(options.dryRun===options.confirm)throw new Error("Use exactly one of --dry-run or --confirm.");const root=path.join(homedir(),".afd");console.log(await(command==="promote"?promotePending(root,agent,id,options):rejectPending(root,agent,id,options)));return 0;}
   if(command==="recover"){const agent=args[1] as AgentId;const snapshot=args[2];if(!agent||!snapshot)throw new Error("Usage: afd recover <agent> <snapshot> --dry-run|--confirm");const options={dryRun:args.includes("--dry-run"),confirm:args.includes("--confirm")};if(options.dryRun===options.confirm)throw new Error("Use exactly one of --dry-run or --confirm.");console.log(await recoverRejected(path.join(homedir(),".afd"),agent,snapshot,options));return 0;}
   if(command==="layer3"){const sub=args[1];if(sub==="recipes"){console.log("builtin:smota-foundations");return 0;}if(sub==="extract"){const outputIndex=args.indexOf("--output");const output=outputIndex>=0?args[outputIndex+1]:undefined;if(!output||output.startsWith("--"))throw new Error("Usage: afd layer3 extract --output <file> [--include <id,id>]");const inventory=await inventoryGlobal();const includeIndex=args.indexOf("--include");const includeArg=includeIndex>=0?args[includeIndex+1]:undefined;if(!includeArg||includeArg.startsWith("--")){console.log(JSON.stringify(inventory,null,2));throw new Error("Review the inventory, then repeat with --include <id,id>.");}console.log(JSON.stringify(await extractRecipe(path.resolve(output),includeArg.split(",")),null,2));return 0;}const source=args[2]??(sub&&!['show','plan','apply','verify','rollback'].includes(sub)?sub:undefined);if(!source)throw new Error("Usage: afd layer3 recipes|show|plan|apply|verify|rollback <source>");if(sub==="show"){console.log(JSON.stringify((await loadRecipe(source)).recipe,null,2));return 0;}if(sub==="apply"){const confirmIndex=args.indexOf("--confirm");console.log(JSON.stringify(await applyRecipe(source,{confirm:confirmIndex>=0,approvalToken:confirmIndex>=0?args[confirmIndex+1]:undefined}),null,2));return 0;}if(sub==="verify"){const result=await verifyRecipe(source);console.log(JSON.stringify(result,null,2));return result.ok?0:2;}if(sub==="rollback"){console.log(JSON.stringify(await rollbackRecipe(source,{confirm:args.includes("--confirm")}),null,2));return 0;}console.log(JSON.stringify(await planRecipe(source),null,2));return 0;}
