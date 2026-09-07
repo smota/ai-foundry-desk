@@ -4,10 +4,17 @@ on:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing GitHub release tag to restage on npm
+        required: true
+        type: string
 
 jobs:
   build:
     name: Build and audit release artifact
+    if: github.event_name == 'push'
     runs-on: windows-latest
     permissions:
       contents: read
@@ -46,6 +53,7 @@ jobs:
 
   github-release:
     name: Publish GitHub release
+    if: github.event_name == 'push'
     needs: build
     runs-on: windows-latest
     permissions:
@@ -70,6 +78,7 @@ jobs:
 
   npm-stage:
     name: Stage exact package on npm
+    if: github.event_name == 'push'
     needs: [build, github-release]
     runs-on: ubuntu-latest
     permissions:
@@ -91,4 +100,40 @@ jobs:
         shell: bash
         run: cd release && sha256sum --check ai-foundry-desk-*.tgz.sha256
       - name: Submit package for maintainer review
-        run: npm stage publish release/ai-foundry-desk-*.tgz --access public --tag next
+        run: npm stage publish ./release/ai-foundry-desk-*.tgz --access public --tag next
+
+  npm-restage:
+    name: Restage existing GitHub release on npm
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Validate tag and download exact release package
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must match vX.Y.Z." >&2
+            exit 2
+          fi
+          mkdir release
+          gh release download "$RELEASE_TAG" \
+            --repo "${{ github.repository }}" \
+            --pattern 'ai-foundry-desk-*.tgz*' \
+            --dir release
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Pin npm staged-publishing client
+        run: npm install --global npm@11.17.0 --ignore-scripts
+      - name: Verify release checksum
+        shell: bash
+        run: cd release && sha256sum --check ai-foundry-desk-*.tgz.sha256
+      - name: Submit exact existing release for maintainer review
+        run: npm stage publish ./release/ai-foundry-desk-*.tgz --access public --tag next
