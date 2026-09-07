@@ -9,7 +9,7 @@ import type { HostCommand, PlatformAdapter } from "../src/platform.js";
 async function fixture(){
   const stateRoot=await mkdtemp(path.join(tmpdir(),"afd-broker-"));const calls:HostCommand[]=[];
   const adapter:PlatformAdapter={id:"win32",stateRoot,
-    async run(command){calls.push(command);if(command.executable==="whoami.exe")return{status:0,stdout:'"user","S-1-5-21-1"\n',stderr:"",timedOut:false};return{status:0,stdout:"",stderr:"",timedOut:false};},
+    async run(command){calls.push(command);if(command.executable==="whoami.exe")return{status:0,stdout:'"user","S-1-5-21-1"\n',stderr:"",timedOut:false};if(command.executable==="hostname.exe")return{status:0,stdout:"TESTHOST\n",stderr:"",timedOut:false};return{status:0,stdout:"",stderr:"",timedOut:false};},
     async start(){return 1;},async stop(){},async isRunning(){return false;},async processFingerprint(){return undefined;},async isListening(){return false;},
     async writeText(file,text){await mkdir(path.dirname(file),{recursive:true});await writeFile(file,text);},async readText(file){try{return await readFile(file,"utf8");}catch{return undefined;}},async remove(file){await rm(file,{force:true});},async downloadVerified(){},
   };

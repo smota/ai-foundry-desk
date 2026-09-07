@@ -58,7 +58,7 @@ The main source areas are:
 | `capability-registry.ts`, `tui/*` | Complete UI taxonomy, responsive rendering, input state, explicit confirmation, and command palette |
 | `catalog.ts`, `manager.ts`, `review.ts` | Agent capability catalog, inspection, synchronization, pending review, promotion, rejection, and recovery |
 | `mcp-*.ts` | Scoped MCP registries, format-preserving native adapters, redacted discovery, hash-bound planning, transactional apply, and verification |
-| `foundation.ts`, `doctor.ts`, `sandbox-access.ts` | Declarative foundation plans, diagnostics, execution identity, and sandbox-access postconditions |
+| `host-capabilities.ts`, `host-lifecycle.ts`, `doctor.ts`, `sandbox-access.ts` | Capability ownership, transactional host-layer lifecycle, diagnostics, execution identity, and sandbox-access postconditions |
 | `recipes.ts`, `extract.ts` | Recipe loading, schema validation, planning, approval tokens, managed apply/verify/rollback, and sanitized extraction |
 | `harness-*.ts` | Project-policy audit, planning, external staging, disposable smoke tests, transactional apply, receipts, verification, and rollback |
 | `telemetry*.ts`, `agentacct-adapter.ts`, `autostart.ts` | Bounded telemetry contracts, runtime lifecycle, evidence correlation, native integrations, broker, and autostart |

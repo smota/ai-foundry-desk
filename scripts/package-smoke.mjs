@@ -89,7 +89,7 @@ async function smoke(selected, base) {
   const relativeProductRoot = path.relative(canonicalPrefix, canonicalProductRoot);
   const productRootIsIsolated = relativeProductRoot !== "" && relativeProductRoot !== ".." && !relativeProductRoot.startsWith(`..${path.sep}`) && !path.isAbsolute(relativeProductRoot);
   if (parsed.version !== manifest.version || !productRootIsIsolated) throw new Error(`${selected} provenance does not resolve to the isolated package.`);
-  if (hostDryRun && ["win32", "linux"].includes(process.platform)) invoke(launcher, ["layer1", "--dry-run"], { cwd: base, env, timeout: 300_000 });
+  if (hostDryRun && ["win32", "linux"].includes(process.platform)) invoke(launcher, ["layer1", "plan"], { cwd: base, env, timeout: 300_000 });
   console.log(`${selected} isolated package smoke OK.`);
 }
 

@@ -11,7 +11,7 @@ session, not only in the interactive user shell.
 | Toolchain | Raw shell commands for Node 24, pnpm 11.23.0, mise, uv/uvx, Python 3.14, Go 1.26, and Rust/Cargo 1.98 resolve and execute within bounded time without substituting direct runtime paths for broken shims. |
 | Product | `pnpm check` passes lint, typecheck, tests, and build. |
 | Process lifecycle | The process-tree fixture times out and leaves its parent, child, and grandchild stopped. |
-| Provenance | Workspace and global CLI report AFD 0.8.0 and identify their CLI/runtime paths. |
+| Provenance | Workspace and global CLI report AFD 0.9.0 and identify their CLI/runtime paths. |
 | Doctor | No `FAIL` diagnostic remains; a hybrid context never recommends or performs profile/HKCU repair. |
 | Observability — runtime | One confirmed recipe apply activates every declared component without nested confirmation. The current-user broker owns bounded lifecycle operations; agentacct runs in an AFD-managed native environment while Phoenix retains its separate WSL runtime. `afd telemetry verify` proves Collector, Phoenix, agentacct, broker routing, loopback/privacy policy, schema compatibility, an allowlisted control attribute, and synthetic rejection canaries. Contract and live-health gates are separate. |
 | Observability — release | A disposable supported run is resolved by `explain`; restart and rollback pass on a fresh workstation; recipe-bound PEP 751 locks and the CycloneDX SBOM are complete; and no capability declared required is degraded. Native Codex import reads the declared local store through agentacct's public importer without copying transcripts. |
@@ -56,7 +56,7 @@ The recipe plan is the review boundary. Validation must prove that its approval 
 complete expanded Observability desired state and that no component asks for duplicate activation
 during apply.
 
-If the toolchain gate fails with access denied, do not run `afd fix layer1 --apply`: expose a
+If the toolchain gate fails with access denied, do not run `afd layer1 apply`: expose a
 reviewed executor-owned toolchain or grant read/execute only to the exact managed runtime roots,
 then start a new sandbox session and repeat the complete matrix. The Windows-only reviewed
 reconciliation and rollback procedure is documented in [Agent sandbox toolchain repair](AGENT-SANDBOX-REPAIR.md).

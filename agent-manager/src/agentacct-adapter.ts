@@ -52,26 +52,28 @@ function dependencyLockPath(): string { return repositoryFile("requirements","py
 function compatibilityPath(name:"afd_agentacct_windows.py"|"fcntl.py"|"sitecustomize.py"):string{return repositoryFile("scripts","agentacct-native",name);}
 
 export class AgentacctAdapter {
+  private readonly pathModule: typeof path.win32 | typeof path.posix;
   private readonly pythonExecutable: string;
   private readonly uvExecutable: string;
   private readonly nativeManagedRoot: string;
   constructor(private readonly adapter: PlatformAdapter, private readonly expectedVersion: string, options: AgentacctAdapterOptions = {}) {
     if (!SAFE_VERSION.test(expectedVersion)) throw new Error("An exact agentacct version is required.");
+    this.pathModule=adapter.id==="win32"?path.win32:path.posix;
     this.pythonExecutable=options.pythonExecutable??"python";
     this.uvExecutable=options.uvExecutable??"uv";
-    this.nativeManagedRoot=path.resolve(options.managedRoot??(adapter.id==="win32"?path.join(homedir(),".afd","managed","telemetry-v2","agentacct"):path.join(adapter.stateRoot,"telemetry-v2","agentacct")));
+    this.nativeManagedRoot=this.pathModule.resolve(options.managedRoot??(adapter.id==="win32"?this.pathModule.join(homedir(),".afd","managed","telemetry-v2","agentacct"):this.pathModule.join(adapter.stateRoot,"telemetry-v2","agentacct")));
   }
 
   private managedRoot(): string { return this.nativeManagedRoot; }
-  private storeRoot():string{return path.join(this.managedRoot(),"store");}
-  private compatibilityRoot():string{return path.join(this.managedRoot(),"compat");}
-  private executable():string{return path.join(this.managedRoot(),"bin",this.adapter.id==="win32"?"agentacct.exe":"agentacct");}
-  private toolPython():string{return path.join(this.managedRoot(),"tools","agentacct",this.adapter.id==="win32"?"Scripts":"bin",this.adapter.id==="win32"?"python.exe":"python");}
+  private storeRoot():string{return this.pathModule.join(this.managedRoot(),"store");}
+  private compatibilityRoot():string{return this.pathModule.join(this.managedRoot(),"compat");}
+  private executable():string{return this.pathModule.join(this.managedRoot(),"bin",this.adapter.id==="win32"?"agentacct.exe":"agentacct");}
+  private toolPython():string{return this.pathModule.join(this.managedRoot(),"tools","agentacct",this.adapter.id==="win32"?"Scripts":"bin",this.adapter.id==="win32"?"python.exe":"python");}
   private sourceHomes(): Readonly<{ CODEX_HOME: string; CLAUDE_CONFIG_DIR: string; HERMES_HOME: string }> {
     return {
-      CODEX_HOME: path.resolve(process.env.CODEX_HOME ?? path.join(homedir(), ".codex")),
-      CLAUDE_CONFIG_DIR: path.resolve(process.env.CLAUDE_CONFIG_DIR ?? path.join(homedir(), ".claude")),
-      HERMES_HOME: path.resolve(process.env.HERMES_HOME ?? path.join(homedir(), ".hermes")),
+      CODEX_HOME: this.pathModule.resolve(process.env.CODEX_HOME ?? this.pathModule.join(homedir(), ".codex")),
+      CLAUDE_CONFIG_DIR: this.pathModule.resolve(process.env.CLAUDE_CONFIG_DIR ?? this.pathModule.join(homedir(), ".claude")),
+      HERMES_HOME: this.pathModule.resolve(process.env.HERMES_HOME ?? this.pathModule.join(homedir(), ".hermes")),
     };
   }
   private environment():Readonly<Record<string,string>>{
@@ -85,7 +87,7 @@ export class AgentacctAdapter {
     };
   }
   private command(args: readonly string[], timeoutMs = 30_000): HostCommand { return this.adapter.id==="win32"?{executable:this.toolPython(),args:["-c","from agentacct.cli import app; app()",...args],env:this.environment(),timeoutMs}:{executable:this.executable(),args,env:this.environment(),timeoutMs}; }
-  private processFile(name:NativeProcessName):string{return path.join(this.managedRoot(),"runtime",`${name}.json`);}
+  private processFile(name:NativeProcessName):string{return this.pathModule.join(this.managedRoot(),"runtime",`${name}.json`);}
   private async readNativeProcess(name:NativeProcessName):Promise<NativeProcessState|undefined>{
     const raw=await this.adapter.readText(this.processFile(name));if(!raw)return undefined;
     try{const value=JSON.parse(raw) as NativeProcessState;if(value.schemaVersion!==1||!Number.isSafeInteger(value.pid)||value.pid<=0||!/^[a-f0-9]{64}$/.test(value.fingerprint)||!value.command||typeof value.command.executable!=="string"||!Array.isArray(value.command.args))return undefined;return value;}catch{return undefined;}
@@ -131,12 +133,12 @@ export class AgentacctAdapter {
     const actualLockSha256=createHash("sha256").update((await readFile(lockFile,"utf8")).replace(/\r\n/g,"\n")).digest("hex");
     if(!/^[a-f0-9]{64}$/.test(input.lockSha256)||actualLockSha256!==input.lockSha256.toLowerCase())throw new Error("The agentacct dependency lock does not match the reviewed recipe.");
     if(!input.verifiedArtifact)throw new Error("A locally verified agentacct artifact is required.");
-    await this.adapter.writeText(path.join(this.storeRoot(),".afd-root"),"managed\n");
-    if(this.adapter.id==="win32")for(const name of ["afd_agentacct_windows.py","fcntl.py","sitecustomize.py"] as const)await this.adapter.writeText(path.join(this.compatibilityRoot(),name),await readFile(compatibilityPath(name),"utf8"));
+    await this.adapter.writeText(this.pathModule.join(this.storeRoot(),".afd-root"),"managed\n");
+    if(this.adapter.id==="win32")for(const name of ["afd_agentacct_windows.py","fcntl.py","sitecustomize.py"] as const)await this.adapter.writeText(this.pathModule.join(this.compatibilityRoot(),name),await readFile(compatibilityPath(name),"utf8"));
     const result=await this.adapter.run({
       executable:this.uvExecutable,
       args:["tool","install","--force","--link-mode","copy","--python",this.pythonExecutable,"--no-python-downloads","--with-requirements",lockFile,input.verifiedArtifact],
-      env:{UV_TOOL_DIR:path.join(this.managedRoot(),"tools"),UV_TOOL_BIN_DIR:path.join(this.managedRoot(),"bin"),UV_CACHE_DIR:path.join(this.managedRoot(),"cache")},
+      env:{UV_TOOL_DIR:this.pathModule.join(this.managedRoot(),"tools"),UV_TOOL_BIN_DIR:this.pathModule.join(this.managedRoot(),"bin"),UV_CACHE_DIR:this.pathModule.join(this.managedRoot(),"cache")},
       timeoutMs:300_000,
     });
     if(result.status!==0||result.timedOut)throw new Error("Pinned native agentacct installation failed: "+(result.stderr||result.stdout).trim());
@@ -159,10 +161,10 @@ export class AgentacctAdapter {
   }
   async autostartCommand():Promise<HostCommand>{return this.adapter.id==="win32"?this.command(["api","serve","--host","127.0.0.1","--port","8765","--store-dir",this.storeRoot()],0):this.command(["start","--foreground"],0);}
   async uninstallManagedRuntime():Promise<void>{
-    const managed=path.resolve(this.managedRoot());const allowedRoot=path.resolve(this.adapter.id==="win32"?path.join(homedir(),".afd","managed"):this.adapter.stateRoot);
-    if(!managed.startsWith(allowedRoot+path.sep))throw new Error("Unsafe AFD-managed agentacct root.");
+    const managed=this.pathModule.resolve(this.managedRoot());const allowedRoot=this.pathModule.resolve(this.adapter.id==="win32"?this.pathModule.join(homedir(),".afd","managed"):this.adapter.stateRoot);
+    if(!managed.startsWith(allowedRoot+this.pathModule.sep))throw new Error("Unsafe AFD-managed agentacct root.");
     await this.stop().catch(()=>undefined);
-    const result=await this.adapter.run({executable:this.uvExecutable,args:["tool","uninstall","agentacct"],env:{UV_TOOL_DIR:path.join(managed,"tools"),UV_TOOL_BIN_DIR:path.join(managed,"bin"),UV_CACHE_DIR:path.join(managed,"cache")},timeoutMs:60_000});
+    const result=await this.adapter.run({executable:this.uvExecutable,args:["tool","uninstall","agentacct"],env:{UV_TOOL_DIR:this.pathModule.join(managed,"tools"),UV_TOOL_BIN_DIR:this.pathModule.join(managed,"bin"),UV_CACHE_DIR:this.pathModule.join(managed,"cache")},timeoutMs:60_000});
     if(result.status!==0&&!/not installed/i.test(result.stderr+result.stdout))throw new Error("Could not uninstall the native AFD-managed agentacct runtime.");
     await rm(managed,{recursive:true,force:true});
   }

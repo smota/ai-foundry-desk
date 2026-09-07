@@ -44,9 +44,8 @@ try {
         "requirements/agentacct.in", "requirements/phoenix.in",
         "requirements/pylock.agentacct.toml", "requirements/pylock.phoenix.toml",
         "requirements/sbom.telemetry.cdx.json",
-        "scripts/01-layer1-runtime.ps1", "scripts/02-docker-windows.ps1",
-        "scripts/01-layer1-runtime-macos.sh", "scripts/01-doctor-layer1-macos.sh",
-        "scripts/01-verify-layer1-macos.sh", "scripts/02-docker-macos.sh", "scripts/07-layer2-agent-clis.ps1",
+        "agent-manager/dist/host-capabilities.js", "agent-manager/dist/host-lifecycle.js",
+        "scripts/02-docker-windows.ps1", "scripts/02-docker-macos.sh",
         "scripts/afd-run-tree.ps1", "scripts/12-validate-agent-environment.ps1",
         "scripts/13-reconcile-sandbox-toolchain-access.ps1", "scripts/14-validate-observability-pilot.ps1",
         "docs/OBSERVABILITY.md", "docs/VALIDATION-MATRIX.md", "docs/AGENT-SANDBOX-REPAIR.md",
@@ -59,7 +58,7 @@ try {
         $_ -eq 'setup.ps1'
     })
     if ($forbidden) { throw "Forbidden development or local content found in the artifact: $($forbidden -join ', ')" }
-    # v0.8.0 retains the project initializer and layer tooling while adding the doctor renderer (283 files).
+    # v0.9.0 retains the project initializer while replacing legacy Layer 1/2 scripts with the typed host lifecycle.
     if ($files.Count -gt 300) { throw "Artifact file-count ceiling exceeded: $($files.Count) > 300." }
 
     $totalBytes = 0L

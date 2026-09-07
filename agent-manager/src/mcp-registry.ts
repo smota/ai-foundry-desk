@@ -63,9 +63,9 @@ function parseServer(value: Record<string, unknown>, id: string, scope: McpScope
     if (value.args !== undefined && !args) throw new Error(`Invalid MCP arguments: ${id}.`);
     const cwd = value.cwd === undefined ? undefined : safeText(value.cwd, `${id}.cwd`);
     if (scope === "project" && cwd) {
-      if (path.isAbsolute(cwd)) throw new Error(`Project MCP cwd must be project-relative: ${id}.`);
-      const normalized = path.normalize(cwd);
-      if (normalized === ".." || normalized.startsWith(`..${path.sep}`)) throw new Error(`Project MCP cwd must stay inside the project: ${id}.`);
+      if (path.win32.isAbsolute(cwd) || path.posix.isAbsolute(cwd)) throw new Error(`Project MCP cwd must be project-relative: ${id}.`);
+      const normalized = path.posix.normalize(cwd.replace(/\\/g, "/"));
+      if (normalized === ".." || normalized.startsWith("../")) throw new Error(`Project MCP cwd must stay inside the project: ${id}.`);
     }
     const server: McpServer = { transport: "stdio", command, enabled: value.enabled === true, targets: parseTargets(value.targets), ...(args ? { args } : {}), ...(cwd ? { cwd } : {}), ...(value.environment === undefined ? {} : { environment: parseValues(value.environment, `${id}.environment`)! }) };
     if (typeof value.enabled !== "boolean") throw new Error(`Invalid MCP enabled state: ${id}.`);

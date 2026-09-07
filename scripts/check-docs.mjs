@@ -36,7 +36,8 @@ for (const file of markdown) {
 const cliReference = readFileSync(path.join(root, "docs", "CLI.md"), "utf8");
 const requiredCliSyntax = [
   "afd help", "afd --version", "afd init", "afd provenance", "afd catalog", "afd doctor",
-  "afd layer1", "afd layer2", "afd fix layer1", "afd fix sandbox", "afd verify", "afd status",
+  "afd layer1 plan", "afd layer1 apply", "afd layer1 verify", "afd layer1 recover", "afd layer1 rollback",
+  "afd layer2 plan", "afd layer2 apply", "afd layer2 verify", "afd layer2 recover", "afd layer2 rollback", "afd fix sandbox", "afd verify", "afd status",
   "afd review", "afd sync", "afd adopt", "afd import", "afd pending", "afd promote", "afd reject",
   "afd recover", "afd hermes update", "afd layer3 recipes", "afd layer3 show", "afd layer3 plan",
   "afd layer3 apply", "afd layer3 verify", "afd layer3 rollback", "afd layer3 extract",

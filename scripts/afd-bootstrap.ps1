@@ -1,6 +1,6 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [string]$Version = "0.8.0",
+    [string]$Version = "0.9.0",
     [string]$Repository = "smota/ai-foundry-desk",
     [string]$LocalAssetDirectory
 )
@@ -28,16 +28,15 @@ if ($nodeMajor -lt 24) { throw "Node.js 24 or newer is required." }
 $nodeRuntime = (& $node.Source -p "process.execPath").Trim()
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $nodeRuntime -PathType Leaf)) { throw "Could not resolve the exact Node.js runtime." }
 
-function Install-AfdLauncher([string]$PnpmPath, [string]$ExactNode) {
-    $metadataText = & $PnpmPath list --global ai-foundry-desk --depth -1 --json | Out-String
-    if ($LASTEXITCODE -ne 0) { throw "Could not resolve the installed AFD package." }
-    $metadata = $metadataText | ConvertFrom-Json
-    $packageRoot = [string]$metadata[0].dependencies.'ai-foundry-desk'.path
+function Install-AfdLauncher([string]$GlobalDir, [string]$Bin, [string]$ExactNode) {
+    $packageRoot = Get-ChildItem -LiteralPath $GlobalDir -Directory -Recurse -Filter "ai-foundry-desk" -ErrorAction SilentlyContinue |
+        Where-Object { $_.Parent.Name -eq "node_modules" } |
+        Where-Object { try { (Get-Content -Raw -LiteralPath (Join-Path $_.FullName "package.json") | ConvertFrom-Json).version -eq $Version } catch { $false } } |
+        Select-Object -First 1 -ExpandProperty FullName
+    if (-not $packageRoot) { throw "Could not resolve the installed AFD package." }
     $cli = Join-Path $packageRoot "agent-manager\dist\cli.js"
     if (-not (Test-Path -LiteralPath $cli -PathType Leaf)) { throw "The installed AFD CLI is missing." }
-    $bin = (& $PnpmPath bin --global | Out-String).Trim()
-    if ([string]::IsNullOrWhiteSpace($bin)) { throw "Could not resolve the pnpm global bin directory." }
-    New-Item -ItemType Directory -Path $bin -Force | Out-Null
+    New-Item -ItemType Directory -Path $Bin -Force | Out-Null
     $psNode = $ExactNode.Replace("'", "''")
     $psCli = $cli.Replace("'", "''")
     $psLauncher = "#!/usr/bin/env pwsh`n& '$psNode' '$psCli' @args`nexit `$LASTEXITCODE`n"
@@ -46,9 +45,9 @@ function Install-AfdLauncher([string]$PnpmPath, [string]$ExactNode) {
     $shCli = $cli.Replace('\', '/')
     if ($shNode.Contains('"') -or $shCli.Contains('"')) { throw "Unsafe launcher path." }
     $shLauncher = "#!/bin/sh`nexec `"$shNode`" `"$shCli`" `"`$@`"`n"
-    Set-Content -LiteralPath (Join-Path $bin "afd.ps1") -Value $psLauncher -Encoding utf8 -NoNewline
-    Set-Content -LiteralPath (Join-Path $bin "afd.CMD") -Value $cmdLauncher -Encoding ascii -NoNewline
-    Set-Content -LiteralPath (Join-Path $bin "afd") -Value $shLauncher -Encoding ascii -NoNewline
+    Set-Content -LiteralPath (Join-Path $Bin "afd.ps1") -Value $psLauncher -Encoding utf8 -NoNewline
+    Set-Content -LiteralPath (Join-Path $Bin "afd.CMD") -Value $cmdLauncher -Encoding ascii -NoNewline
+    Set-Content -LiteralPath (Join-Path $Bin "afd") -Value $shLauncher -Encoding ascii -NoNewline
 }
 
 $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ("afd-bootstrap-" + [guid]::NewGuid().ToString("N"))
@@ -69,17 +68,19 @@ try {
     $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $packagePath).Hash
     if ($actual -ne $expected) { throw "SHA-256 verification failed; nothing was installed." }
 
-    & $pnpm.Source add --global $packagePath --ignore-scripts
+    $installRoot = Join-Path $env:LOCALAPPDATA "AI Foundry Desk\cli"
+    $globalDir = Join-Path $installRoot "share\ai-foundry-desk\versions\$Version\global"
+    $storeDir = Join-Path $installRoot "share\ai-foundry-desk\store"
+    $bin = Join-Path $installRoot "bin"
+    New-Item -ItemType Directory -Path $bin -Force | Out-Null
+    & $pnpm.Source add --global --global-dir $globalDir --global-bin-dir $bin --store-dir $storeDir $packagePath --ignore-scripts
     if ($LASTEXITCODE -ne 0) { throw "pnpm global installation failed with code $LASTEXITCODE." }
-    Install-AfdLauncher $pnpm.Source $nodeRuntime
+    Install-AfdLauncher $globalDir $bin $nodeRuntime
 
-    $pnpmHome = Join-Path $env:LOCALAPPDATA "pnpm"
-    $pnpmBin = Join-Path $pnpmHome "bin"
-    [Environment]::SetEnvironmentVariable("PNPM_HOME", $pnpmHome, "User")
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
     $entries = @($userPath -split ';' | Where-Object { $_ })
-    if ($entries -notcontains $pnpmBin) {
-        [Environment]::SetEnvironmentVariable("Path", (($entries + $pnpmBin) -join ';') + ';', "User")
+    if ($entries -notcontains $bin) {
+        [Environment]::SetEnvironmentVariable("Path", (($entries + $bin) -join ';') + ';', "User")
     }
     Write-Host "AI Foundry Desk $Version installed for Windows. Open a new PowerShell or cmd and run: afd init --dry-run"
     Write-Host "No layer was applied."

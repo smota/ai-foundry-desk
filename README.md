@@ -122,7 +122,7 @@ Windows bootstrap and checksum separately, verifies SHA-256, and installs only t
 It does **not** configure either Layer automatically.
 
 ```powershell
-$v='0.8.0'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
+$v='0.9.0'; $u="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; $d=Join-Path $env:TEMP "afd-$v"; New-Item -ItemType Directory -Force $d | Out-Null; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1" -OutFile "$d/afd-bootstrap-windows.ps1"; Invoke-WebRequest "$u/afd-bootstrap-windows.ps1.sha256" -OutFile "$d/afd-bootstrap-windows.ps1.sha256"; $e=((Get-Content "$d/afd-bootstrap-windows.ps1.sha256") -split '\s+')[0]; if((Get-FileHash "$d/afd-bootstrap-windows.ps1" -Algorithm SHA256).Hash -ne $e){throw 'AFD bootstrap checksum mismatch'}; & "$d/afd-bootstrap-windows.ps1" -Version $v
 ```
 
 The bootstrap requires Node.js 24 or newer and pnpm. If a prerequisite is missing, it stops and
@@ -135,15 +135,16 @@ Open a new PowerShell window and run:
 ```powershell
 afd init --dry-run
 afd doctor
-afd layer1 --dry-run
+afd layer1 plan
 ```
 
 Review the output. When you are comfortable with the plan:
 
 ```powershell
-afd layer1 --apply
-afd layer2 --dry-run
-afd layer2 --apply
+afd layer1 apply --confirm <plan-token>
+afd layer1 verify
+afd layer2 plan
+afd layer2 apply --confirm <plan-token>
 ```
 
 Login or OAuth remains a manual step inside each agent. AFD never asks for or stores those
@@ -170,15 +171,16 @@ single consent decision for Collector, Phoenix, agentacct, native integrations a
 is no second agentacct prompt. See [Observability](docs/OBSERVABILITY.md) for current agent coverage
 and privacy boundaries.
 
-If Layer 1 needs repair, preview the exact reconciliation first:
+If Layer 1 needs repair, use the same receipt-backed lifecycle:
 
 ```powershell
-afd fix layer1 --dry-run
-afd fix layer1 --apply
+afd layer1 plan
+afd layer1 apply --confirm <plan-token>
+afd layer1 verify
 ```
 
-`fix` does not reset the computer. It only reconciles declared AFD packages and runtimes, managed
-PATH/environment entries, shims, PNPM_HOME, and marked profile blocks. Windows aliases,
+Layer apply does not reset the computer. It only reconciles declared packages and runtimes, managed
+PATH/environment entries, PNPM_HOME, and marked profile blocks. Windows aliases,
 third-party runtimes, projects, credentials, services, agents, and Layer 2 remain untouched.
 
 AFD does not replace WinGet or take ownership of third-party updates. Portable-package upgrades can
@@ -242,15 +244,16 @@ evidence.
 
 `scripts/afd-bootstrap-posix.sh` is a separate Linux/macOS adapter with `--dry-run`, SHA-256
 verification, and an isolated `--prefix`. The bootstrap installs only `afd` and never applies Layers.
-On Linux or macOS, run `afd layer1 --dry-run`, review the native runtime and Docker plan, then use
-`--apply`. Linux Layer 2 follows the same preview/apply contract; macOS Layer 2 fails closed.
+On Linux or macOS, run `afd layer1 plan`, review the native runtime and optional Docker boundary,
+then confirm that exact token. Linux Layer 2 follows the same contract. A clean macOS host remains
+blocked where an architecture-specific verified runtime installer is not yet declared.
 
 ```sh
-afd layer1 --dry-run
-afd layer1 --apply
+afd layer1 plan
+afd layer1 apply --confirm <plan-token>
 afd doctor
-afd layer2 --dry-run
-afd layer2 --apply
+afd layer2 plan
+afd layer2 apply --confirm <plan-token>
 afd verify
 ```
 Never use a blind remote pipe; download the script and checksum separately before execution.
@@ -258,7 +261,7 @@ Never use a blind remote pipe; download the script and checksum separately befor
 Validated Linux/WSL bootstrap (downloads, verifies, then executes as separate steps):
 
 ```sh
-v=0.8.0; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
+v=0.9.0; base="https://github.com/smota/ai-foundry-desk/releases/download/v$v"; dir="$(mktemp -d)"; curl -fL "$base/afd-bootstrap-posix.sh" -o "$dir/afd-bootstrap-posix.sh"; curl -fL "$base/afd-bootstrap-posix.sh.sha256" -o "$dir/afd-bootstrap-posix.sh.sha256"; (cd "$dir" && sha256sum -c afd-bootstrap-posix.sh.sha256); sh "$dir/afd-bootstrap-posix.sh" --version "$v"
 ```
 
 The same downloaded bootstrap uses macOS-native `shasum -a 256 --check`; that path remains pending

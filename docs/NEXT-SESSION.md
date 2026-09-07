@@ -19,9 +19,10 @@ afd status
 afd verify
 afd doctor
 afd doctor --json
-afd fix layer1 --dry-run
-afd layer1 --dry-run
-afd layer2 --dry-run
+afd layer1 plan
+afd layer1 verify
+afd layer2 plan
+afd layer2 verify
 afd sync --dry-run
 afd recipes
 afd plan builtin:smota-foundations
@@ -29,10 +30,9 @@ afd plan builtin:smota-foundations
 pnpm check
 ```
 
-Start with doctor. Use fix dry-run only for managed Layer 1 reconciliation, and require explicit
-`--apply` before writing. Linux/WSL currently covers the portable bootstrap/CLI cycle only; Windows
-Layers remain fail-closed there. macOS Layer 1 is implemented but unvalidated on hardware; Layer 2
-remains fail-closed.
+Start with doctor. Layer apply requires the exact current plan token. Linux/WSL and Windows use the
+same TypeScript lifecycle; Docker and elevation remain separate boundaries. A clean macOS host fails
+closed where no architecture-specific verified installer is declared.
 
 Do not promote pending/private skills automatically, overwrite drift, run `pnpm setup`, or manage
 tokens/login/history/plugins. Continue from [ROADMAP.md](ROADMAP.md).
