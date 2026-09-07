@@ -1,35 +1,15 @@
-# Layer 2 agent bootstrap
+# Layer 2 agent and toolbox bootstrap
 
-Layer 2 detects/preserves Claude Desktop and Codex Desktop and provides Claude Code, Codex CLI,
-Antigravity CLI, Pi, Hermes Agent, and Grok Build through official channels. It never authenticates
-agents or writes tokens.
+Layer 2 detects and preserves independently managed agent CLIs, and installs missing reviewed defaults through the installer declared in the TypeScript capability catalogue. It never authenticates an agent or writes tokens.
 
 ```powershell
-afd layer2 --dry-run
-afd layer2 --apply
-.\scripts\07-verify-layer2-agent-clis.ps1
-.\scripts\07-verify-layer2-toolbox.ps1
+afd layer2 plan
+afd layer2 apply --confirm <plan-token>
+afd layer2 verify
 ```
 
-On Linux/WSL, Layer 2 installs the toolbox through mise's attestation-aware GitHub backend and
-installs supported Node CLIs only after matching pinned npm integrity. Claude's native postinstall
-requires a separate explicit `--allow-claude-postinstall` review. Antigravity and Hermes remain
-detection-only until checksum-verifiable official Linux artifacts are available.
+The catalogue covers Claude Code, Codex CLI, Antigravity CLI, Pi, Hermes Agent, Grok Build, `rg`, `fd`, `jq`, `yq`, `bat`, `delta`, and `glow`. Installation pins and compatibility ranges are separate, so compatible user updates are retained. pnpm packages are integrity-checked before installation and verified through their exact global launcher. Packages with an upstream lifecycle build name that consent explicitly in the plan bound to the confirmation token.
 
-After reviewing that third-party postinstall separately, the explicit Linux command is:
+WinGet is used for reviewed Windows packages. Linux/WSL toolbox commands use mise; Node CLIs use the compatible user-managed pnpm. Missing optional tools such as Hermes or Antigravity are reported without blocking the layer when no verified automated installer is declared.
 
-```sh
-afd layer2 --apply --allow-claude-postinstall
-```
-
-WinGet is preferred when an appropriate official package exists. Pi and Grok use their official npm
-packages through pnpm. Hermes uses a pinned official installer and a canonical `hermes.cmd` launcher
-that invokes its existing Python entry point, avoiding the uv trampoline failure seen across MSIX
-virtualization. Competing Hermes bin paths are removed. Interactive `hermes update` remains blocked;
-`afd hermes update --dry-run|--apply` verifies the pinned installer, installs with mise Python 3.11
-inside staging, validates the command, preserves skills, and publishes under `~/.afd/managed/hermes`.
-Personal configuration and credentials remain in their existing Hermes home.
-
-The shared toolbox contains `rg`, `fd`, `jq`, `yq`, `bat`, `delta` (git-delta), and `glow`.
-It creates no global cat/git
-aliases. RTK, Paperclip, loopersai, ai-memory, ponytail, agentacct, and Tokscale are not installed.
+Receipts persist after each checkpoint. Recovery replans current state and does not repeat capabilities that are already compatible. Rollback retires AFD operation state but never uninstalls user-owned packages or overwrites independent updates.

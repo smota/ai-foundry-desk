@@ -13,6 +13,38 @@ install and update third-party tools through their normal trusted mechanisms, in
 | Codex Windows sandbox | Codex/OpenAI and Windows | Validate that declared tools remain executable; reconcile only reviewed RX metadata after approval | Sandbox users, firewall policy, workspace roots or approval policy |
 | AFD CLI | AFD's local or released installer | Report its exact version, CLI path and Node runtime | Third-party CLI replacement or transparent command brokering |
 
+The release bootstrap uses the compatible user pnpm executable only as an installer engine. AFD is
+placed in an AFD-owned, versioned global directory with a stable AFD launcher directory; it is not
+added to the user's ordinary pnpm global package graph. Updating pnpm outside AFD therefore remains
+supported and does not relocate the installed AFD package.
+
+Installation pins are reviewed defaults, not permanent ownership claims. Each capability also has a
+compatibility range. If a user independently updates pnpm, uv, an agent CLI, or another user-managed
+tool and the resulting executable remains compatible, Layer planning records `preserve` and performs
+no installation. An incompatible user-managed command is reported and preserved; AFD does not
+downgrade or replace it automatically.
+
+Layer plans include every discovered command candidate and select the effective executable for a
+bounded version probe. pnpm installations are verified using the exact launcher directory returned by
+the same pnpm executable, avoiding a stale-shell PATH lookup after installation. Linux and macOS
+inventories reject Windows drive paths inherited through WSL interop, so a Windows launcher cannot
+masquerade as a native POSIX installation. When running under WSL from a mounted Windows workspace,
+the marked profile block also excludes only the detected Windows user-level mise config from WSL
+mise discovery; AFD neither trusts nor edits that cross-host config, and project configs remain visible.
+
+If WinGet reports a portable package installed but its command alias is absent, AFD first requests
+WinGet repair. When that installer technology explicitly does not support repair, AFD performs an
+exact-version forced reinstall through WinGet and still requires the command-level compatibility
+postcondition. It does not create an AFD-owned alias into WinGet's package directory.
+
+## Transaction boundary
+
+`afd layer1` and `afd layer2` use plan tokens and checkpoint receipts. Apply refuses a stale plan,
+persists progress after each capability, and leaves failure evidence for recovery. Linux/WSL profile
+blocks and Windows user-environment values are hashed into the plan. Rollback restores them only when
+their applied values are unchanged; it refuses to overwrite later user edits. Package rollback never
+uninstalls user-owned tools.
+
 ## Why updates can create drift
 
 Windows ACLs belong to filesystem objects, not abstract command names. WinGet portable-package

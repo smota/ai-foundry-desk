@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-VERSION="0.8.0"
+VERSION="0.9.0"
 REPOSITORY="smota/ai-foundry-desk"
 PREFIX="${HOME}/.local"
 ASSET_DIR=""
@@ -65,9 +65,11 @@ if [ "$CHECKSUM_COMMAND" = sha256sum ]; then
 else
   (cd "$TMP" && shasum -a 256 --check "$CHECKSUM")
 fi
-mkdir -p "$PREFIX/bin" "$PREFIX/share/pnpm/global"
+AFD_GLOBAL_DIR="$PREFIX/share/ai-foundry-desk/versions/$VERSION/global"
+AFD_STORE_DIR="$PREFIX/share/ai-foundry-desk/store"
+mkdir -p "$PREFIX/bin" "$AFD_GLOBAL_DIR" "$AFD_STORE_DIR"
 PATH="$PREFIX/bin:$PATH"
 export PATH
-pnpm add --global --global-dir "$PREFIX/share/pnpm/global" --global-bin-dir "$PREFIX/bin" --ignore-scripts "$TMP/$PACKAGE"
+pnpm add --global --global-dir "$AFD_GLOBAL_DIR" --global-bin-dir "$PREFIX/bin" --store-dir "$AFD_STORE_DIR" --ignore-scripts "$TMP/$PACKAGE"
 echo "AI Foundry Desk ${VERSION} installed in ${PREFIX}."
 echo "No Layer was applied. Add ${PREFIX}/bin to PATH, then run: afd init --dry-run"

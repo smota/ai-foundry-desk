@@ -10,20 +10,20 @@ flowchart LR
     A -. does not own .-> P["Projects · credentials · login state"]
     A -. does not normalize .-> H["Unrelated host configuration"]
 
-    D["Dry-run and doctor"] -->|read-only evidence| U
+    D["Plan, verify, and doctor"] -->|read-only evidence| U
     M -->|verify postconditions| V["Verified managed state"]
     B -->|exact recorded scope| R["Rollback"]
 ```
 
-- Use official sources, verifiable versions, dry-run, and separate verification.
+- Use official sources, verifiable installation pins, compatibility ranges, hash-bound plans, and separate verification.
 - Keep project dependencies isolated and never manage user secrets or login state.
 - Preserve drift and require human review before promoting pending or Hermes-created skills.
 - Back up existing managed files under `%LOCALAPPDATA%\AI Foundry Desk\backups` before replacement.
-- Keep `afd doctor` and `afd fix layer1 --dry-run` strictly read-only, including logs and state.
+- Keep `afd doctor` and `afd layer1|layer2 plan|verify` strictly read-only, including logs and state.
 - Keep `afd fix sandbox --dry-run` read-only. `afd doctor` may inspect the fixed sandbox-access
   target set but must never repair it implicitly.
-- Limit `afd fix layer1 --apply` to declared AFD packages, runtimes, environment, PATH, shims,
-  PNPM_HOME, the pinned allow-scripts CLI, Docker host capability, and marked profile blocks; never
+- Limit `afd layer1 apply` to declared packages, runtimes, environment, PATH, PNPM_HOME, the pinned
+  allow-scripts CLI, and marked profile blocks; never
   normalize unrelated machine state.
 - Install `@lavamoat/allow-scripts` with lifecycle hooks disabled and verify its exact registry
   integrity. Installing the CLI does not approve scripts: pnpm `allowBuilds` or a reviewed

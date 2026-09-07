@@ -21,7 +21,8 @@ async function requestBody(request:IncomingMessage):Promise<Record<string,unknow
 export async function ensureTelemetryBrokerToken(adapter:PlatformAdapter=new NodePlatformAdapter()):Promise<string>{
   const file=tokenFile(adapter);const existing=(await adapter.readText(file))?.trim();const validExisting=existing&&TOKEN.test(existing);const token=validExisting?existing:randomBytes(32).toString("hex");if(!validExisting)await writePrivateText(adapter,file,token+"\n");
   if(adapter.id==="win32"){
-    const computer=process.env.COMPUTERNAME;if(!computer)throw new Error("COMPUTERNAME is required to grant broker access.");
+    const hostname=process.env.COMPUTERNAME?undefined:await adapter.run({executable:"hostname.exe",args:[],timeoutMs:5_000});
+    const computer=process.env.COMPUTERNAME??hostname?.stdout.trim();if(!computer)throw new Error("The Windows computer name is required to grant broker access.");
     const group=`${computer}\\CodexSandboxUsers`;const directory=path.dirname(file);
     for(const [target,rights] of [[directory,"(RX)"],[file,"(R)"]] as const){const grant=await adapter.run({executable:"icacls.exe",args:[target,"/grant:r",`${group}:${rights}`],timeoutMs:10_000});if(grant.status!==0){if(!validExisting)await adapter.remove(file);throw new Error("Could not grant the sandbox read-only access to the telemetry broker token.");}}
   }

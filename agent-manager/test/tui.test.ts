@@ -13,7 +13,7 @@ test("capability registry is complete, unique, and categorized", () => {
   const commands = capabilityRegistry.map((item) => item.command);
   const searchableCoverage = capabilityRegistry.map((item) => `${item.command} ${item.description}`).join("\n");
   for (const required of [
-    "help", "--version", "init", "provenance", "catalog", "doctor", "layer1", "layer2", "fix layer1", "fix sandbox", "verify",
+    "help", "--version", "init", "provenance", "catalog", "doctor", "layer1", "layer2", "fix sandbox", "verify",
     "status", "review", "sync", "adopt", "import", "pending", "promote", "reject", "recover", "hermes update",
     "layer3 recipes", "layer3 show", "layer3 plan", "layer3 apply", "layer3 verify", "layer3 rollback", "layer3 extract",
     "mcp status", "mcp verify", "mcp discover", "mcp sync", "mcp adopt", "mcp enable", "mcp disable", "mcp move",
@@ -22,7 +22,7 @@ test("capability registry is complete, unique, and categorized", () => {
     "backup status", "backup maintain", "migrate",
   ]) assert.ok(searchableCoverage.includes(required), `taxonomy does not cover ${required}`);
   for (const required of [
-    "doctor", "layer1 --dry-run", "layer2 --apply", "fix sandbox --apply", "backup maintain --apply", "migrate --apply",
+    "doctor", "layer1 plan", "layer1 apply --confirm <plan-token>", "layer2 apply --confirm <plan-token>", "fix sandbox --apply", "backup maintain --apply", "migrate --apply",
     "catalog", "review", "sync", "adopt <agent> <skill>", "promote <agent> <skill> --confirm", "hermes update --apply",
     "mcp status --scope effective", "mcp discover <agent> --scope user", "mcp sync --scope effective --confirm <plan-token>",
     "layer3 recipes", "layer3 apply <source> --confirm <plan-token>", "layer3 rollback <source> --confirm",
@@ -52,7 +52,7 @@ test("typed application service and CLI adapter share command behavior", async (
   const result = await executeAfdUseCase(["--version"]);
   assert.equal(result.exitCode, 0);
   assert.equal(result.outcome, "passed");
-  assert.equal(result.events.map((event) => event.text).join("").trim(), "0.8.0");
+  assert.equal(result.events.map((event) => event.text).join("").trim(), "0.9.0");
 });
 
 test("TUI renders real responsive screens at wide, standard, and compact sizes", () => {

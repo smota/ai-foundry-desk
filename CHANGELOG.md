@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.9.0 — 2026-09-07
+
+- Replace the legacy Layer 1 and Layer 2 setup scripts with one typed, cross-platform host
+  lifecycle supporting hash-bound plans, explicit apply confirmation, durable checkpoint receipts,
+  exact verification, interrupted-operation recovery, stale-lock reclamation, and guarded rollback.
+- Preserve compatible user-managed tool updates, resolve exact npm-style launchers safely, and
+  recover WinGet portable packages whose registration survives a missing user-visible alias.
+- Isolate AFD-managed mise runtimes without suppressing project configuration, and keep WSL on
+  native Linux executables while ignoring only the exact mounted Windows user mise configuration.
+- Add Windows and WSL regression coverage, fresh-shell postcondition checks, packaged npm/pnpm
+  installation smokes, and updated ownership, security, architecture, CLI, and validation guidance.
+
 ## 0.8.0 — 2026-09-06
 
 - Improve `afd doctor` with component-grouped output, English status summaries, actionable warnings and failures, and color-aware terminal rendering while preserving the raw `--json` contract.
