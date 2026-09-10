@@ -6,12 +6,12 @@ import test from "node:test";
 import { NodePlatformAdapter, type HostCommand } from "../src/platform.js";
 import { executeProject, projectCommand, projectDoctor } from "../src/project-environment.js";
 
-test("project execution bounds mise discovery without mutating global trust or PATH", async () => {
+test("project execution allows mise auto-install without mutating global trust or PATH", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "afd-project-env-"));
   const before = { ceiling: process.env.MISE_CEILING_PATHS, trust: process.env.MISE_TRUSTED_CONFIG_PATHS, path: process.env.PATH };
   const command = await projectCommand(root, "cargo", ["test", "--locked"]);
   assert.equal(command.cwd, await realpath(root));
-  assert.deepEqual(command.env, { MISE_CEILING_PATHS: await realpath(root), MISE_NOT_FOUND_AUTO_INSTALL: "false" });
+  assert.deepEqual(command.env, { MISE_NOT_FOUND_AUTO_INSTALL: "true" });
   assert.deepEqual(command.args, ["test", "--locked"]);
   assert.deepEqual({ ceiling: process.env.MISE_CEILING_PATHS, trust: process.env.MISE_TRUSTED_CONFIG_PATHS, path: process.env.PATH }, before);
 });
