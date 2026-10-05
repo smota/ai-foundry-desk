@@ -8,7 +8,7 @@ import { NodePlatformAdapter, type HostCommand, type PlatformAdapter } from "./p
 /** Explicit project execution scope: do not scan inaccessible or unrelated ancestors. */
 export async function projectCommand(project: string, executable: string, args: readonly string[]): Promise<HostCommand> {
   const root = await realpath(path.resolve(project));
-  return { executable, args, cwd: root, env: { MISE_CEILING_PATHS: root, MISE_NOT_FOUND_AUTO_INSTALL: "false" }, timeoutMs: 300_000 };
+  return { executable, args, cwd: root, env: { MISE_NOT_FOUND_AUTO_INSTALL: "true" }, timeoutMs: 300_000 };
 }
 
 export async function projectDoctor(project: string, productRoot: string, adapter: PlatformAdapter = new NodePlatformAdapter()): Promise<readonly Diagnostic[]> {

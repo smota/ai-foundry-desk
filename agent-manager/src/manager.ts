@@ -11,33 +11,22 @@ const SKILL_ID = "afd-workbench-principles";
 const PREVIOUS_SKILL_HASHES = new Set(["163acb47a395880ed2bccb2a13851fac0541e14f461bd358bfcd2e2eca7d2e0c", "e49213e3b1a4a0d0326b68bfa62edb41de0f572dc5bf5f1a854c044d67901c1b", "50a852b7a547842feb9f457730b272f8a7563e2a0adc1e62fd7888a31b3e7610"]);
 const SKILL = `---
 name: afd-workbench-principles
-description: Safe workbench principles for runtimes, dependencies, tools, and third-party scripts.
+description: Recommended common tools for text search, file discovery, data formats, and source reading.
 metadata:
   managed-by: afd-agent-manager
-  revision: 4
+  revision: 5
 ---
 
-# Workbench principles
-
-- Use mise-managed runtimes and project-isolated dependencies.
-- Prefer uv for Python and pnpm for Node.js projects; respect lockfiles.
-- Do not install globally, elevate privileges, alter profiles, or create services without explicit review.
-- Stop and review scripts that write outside the project or request credentials.
-- Never expose tokens, keys, sessions, or authentication files.
-
-## Common tools
+# Common tools
 
 - When appropriate, prefer \`rg\` for ignore-aware text search and \`fd\` for file discovery.
 - Prefer \`jq\` for JSON, \`yq\` for YAML/TOML, \`bat\` for source reading, \`delta\` (git-delta) for diffs, and \`glow\` for markdown.
 - Use native alternatives when the project or operating system requires different compatibility.
-- Tool availability never authorizes mutating commands; preserve scope and review effects first.
-- RTK, fzf, zoxide, eza, and sd are not part of this baseline.
 `;
-const PROFILE = `# AI Foundry Desk — base profile
+const PROFILE = `# Recommended tools
 
-Work conservatively: preserve existing changes, use project-scoped dependencies, respect lockfiles,
-and request review before elevating privileges, altering profiles, creating services, or writing
-outside the repository. Never read, print, or store credentials without an explicit request.
+- Prefer \`rg\` for text search and \`fd\` for file discovery.
+- Prefer \`jq\` for JSON, \`yq\` for YAML/TOML, \`bat\` for source reading, \`delta\` for diffs, and \`glow\` for markdown.
 `;
 const MANIFEST: AgentManifest = { manifestVersion: 1, profile: { source: "profile/base.md" }, catalog: [{ id: SKILL_ID, kind: "skill", source: `catalog/skills/${SKILL_ID}` }], targets: agentTargets.map((target) => ({ agent: target.id, entries: [SKILL_ID], profile: target.profile === "supported" })) };
 const START = "<!-- >>> AI Foundry Desk profile >>>";
@@ -54,7 +43,7 @@ async function hashManagedPath(target: string): Promise<string | undefined> { tr
 function managedBlock(profile: string): string { return `${START}\n${profile.trim()}\n${END}`; }
 function isPreviousManagedSkill(value: string): boolean { return PREVIOUS_SKILL_HASHES.has(hash(value)); }
 function sameJson(left: string, right: string): boolean { try { return JSON.stringify(JSON.parse(left.replace(/^\uFEFF/, ""))) === JSON.stringify(JSON.parse(right)); } catch { return false; } }
-function hasToolboxPolicy(value: string): boolean { return ["`rg`", "`fd`", "`jq`", "`yq`", "`bat`", "`delta`", "`glow`", "RTK, fzf, zoxide, eza, and sd"].every((marker) => value.includes(marker)); }
+function hasToolboxPolicy(value: string): boolean { return ["`rg`", "`fd`", "`jq`", "`yq`", "`bat`", "`delta`", "`glow`"].every((marker) => value.includes(marker)); }
 async function backupFile(root: string, agent: AgentId | "canonical", target: string, content: string): Promise<void> {
   const local = process.env.LOCALAPPDATA ?? path.join(homedir(), ".local", "share");
   const backupRoot = path.join(local, "AI Foundry Desk", "backups");
