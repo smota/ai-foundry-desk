@@ -39,3 +39,6 @@ venv/
 .cache/
 __pycache__/
 *.py[cod]
+
+# graphify knowledge-graph output (regenerated)
+graphify-out/
