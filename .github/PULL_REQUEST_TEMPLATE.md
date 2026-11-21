@@ -1,32 +1,42 @@
-## Problem and outcome
+## Summary
 
-<!-- What user or maintainer problem does this solve? What changes for them? -->
+<!-- Why this change, and what it changes -->
 
-## Scope
+## Implemented issues
 
-<!-- Summarize the implementation and explicitly name important exclusions. -->
+Closes #<issue-number>
 
-## Safety and compatibility
+## Related issues
 
-- [ ] Read-only and dry-run behavior remains read-only.
-- [ ] Managed state, privilege, profile, service, credential, and network effects are described.
-- [ ] Existing drift and user-owned content are preserved.
-- [ ] Platform claims are limited to environments actually validated.
+<!-- `Refs #<n>` for non-closing references, or `none` -->
 
-## Validation
+## Workflow evidence
 
-<!-- List commands, test results, platforms, and any checks that were not run. -->
+- Workflow-status comment: <issue comment URL>
+- Handover comments: <URL> | exception: <reason>
+- Role-pass summary: <passes completed, for example developer, tester, reviewer>
+- Validation evidence: <where the test output is recorded>
 
-- [ ] `pnpm check`
-- [ ] Mutating paths were previewed with `--dry-run` or `-WhatIf`.
-- [ ] Relevant platform adapter or PowerShell parse checks passed.
+## Agent review
 
-## Documentation
+- Implemented by: <registered platform slug>
+- Launcher: <registered platform slug>
+- Executor: <execution target, for example codex-cli>
+- Transport: local-cli | provider-api | pi-subagent | intercom-session | orchestrated-worktree | manual
+- Delegation boundary: current-session | child-subagent | separate-local-session | child-worktree | human-handoff
+- Model / runtime: <model identifier>
+- Reviewed by: <registered platform slug>
+- Independent reviewer: YES | NO
+- Review: self-review | human-review-requested | human-reviewed
+- Workflow profile: bounded | standard | high-assurance
+- Merge owner: human/operator
+- Mode: single-agent | multi-agent
 
-- [ ] User-facing behavior and the CLI reference were updated, or no documentation change is needed.
-- [ ] `CHANGELOG.md` was updated under `Unreleased`, or the change has no user-visible release impact.
-- [ ] Local documentation links pass validation.
+## CI-equivalent validation
 
-## Review notes
+- Status: passed | not-run-with-reason | expected-fail-with-follow-up
+- Commands: `pnpm check`
 
-<!-- Call out security-sensitive decisions, migration effects, follow-up work, or reviewer focus areas. -->
+## Follow-up issues
+
+<!-- `#<n>` for each follow-up, or `none` -->
