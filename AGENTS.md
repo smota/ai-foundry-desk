@@ -15,3 +15,6 @@ This project is maintained by a small team and welcomes focused bug fixes, docum
 - **Architecture changes**: open a proposal issue for broad or security-sensitive changes; wait for scope agreement before implementation.
 - **Branch naming**: use `fix/<description>`, `feat/<description>`, or `docs/<description>` from `main`.
 - **Pull requests**: complete the [pull request template](.github/PULL_REQUEST_TEMPLATE.md); link any relevant issues and include validation evidence. PRs are reviewed before merge.
+- **Delivery standard**: GitHub Issues is the backlog. Use one issue, one `work/<slug>` branch, and one PR with `Closes #<n>` into `main`. This supersedes the roadmap intake and branch naming guidance above.
+- **Role passes and verification**: run AgentFlow `bounded` role passes with one agent by default. Disclose self-review. Before the PR, run the `ciCommands` verify list in `agent-workflow.config.json`.
+- **Merge and orchestration**: Samuel merges with squash merge. Use Meshloop only when the user names it.

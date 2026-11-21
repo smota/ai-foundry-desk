@@ -6,6 +6,15 @@ import process from "node:process";
 const root = process.cwd();
 const excluded = new Set([".git", "node_modules", "dist", ".test-dist", "output"]);
 const markdown = [];
+// AgentFlow-managed files follow the framework's own docs layout; their links are checked upstream.
+const lockPath = path.join(root, "agent-framework-lock.json");
+const frameworkManaged = new Set(
+  existsSync(lockPath)
+    ? JSON.parse(readFileSync(lockPath, "utf8"))
+        .entries.filter((entry) => entry.ownership === "managed")
+        .map((entry) => entry.target)
+    : [],
+);
 
 function visit(directory) {
   for (const entry of readdirSync(directory)) {
@@ -13,7 +22,8 @@ function visit(directory) {
     const absolute = path.join(directory, entry);
     const stat = statSync(absolute);
     if (stat.isDirectory()) visit(absolute);
-    else if (entry.endsWith(".md")) markdown.push(absolute);
+    else if (entry.endsWith(".md") && !frameworkManaged.has(path.relative(root, absolute).split(path.sep).join("/")))
+      markdown.push(absolute);
   }
 }
 
